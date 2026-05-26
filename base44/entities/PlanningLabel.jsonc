@@ -1,0 +1,42 @@
+{
+  "name": "PlanningLabel",
+  "type": "object",
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Data de cria\u00e7\u00e3o da etiqueta"
+    },
+    "operator_name": {
+      "type": "string",
+      "description": "Nome do operador"
+    },
+    "operator_photo": {
+      "type": "string",
+      "description": "URL da foto do operador"
+    },
+    "operation_code": {
+      "type": "string",
+      "description": "C\u00f3digo da opera\u00e7\u00e3o"
+    },
+    "operation_name": {
+      "type": "string",
+      "description": "Nome da opera\u00e7\u00e3o"
+    },
+    "orchard_number": {
+      "type": "string",
+      "description": "N\u00famero/c\u00f3digo do pomar"
+    },
+    "qr_data": {
+      "type": "string",
+      "description": "Dados para gera\u00e7\u00e3o do QR code"
+    }
+  },
+  "required": [
+    "date",
+    "operator_name",
+    "operation_name",
+    "orchard_number",
+    "qr_data"
+  ]
+}
