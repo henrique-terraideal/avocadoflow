@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Loader2, ToggleLeft, ToggleRight, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-const CATEGORIES = ["Irrigação", "Poda", "Colheita", "Adubação", "Fitossanidade", "Mecanização", "Outros"];
+const DEFAULT_CATEGORIES = ["Irrigação", "Poda", "Colheita", "Adubação", "Fitossanidade", "Mecanização", "Outros"];
 
 const COLOR_OPTIONS = [
   "bg-green-500", "bg-emerald-500", "bg-teal-500", "bg-cyan-500",
@@ -48,10 +48,37 @@ export default function OperationsPanel() {
   const [seeding, setSeeding] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [editingFields, setEditingFields] = useState({});
+  const [editingCatId, setEditingCatId] = useState(null);
+  const [editingCatName, setEditingCatName] = useState("");
+  const [newCatName, setNewCatName] = useState("");
 
   const { data: operations = [], isLoading } = useQuery({
     queryKey: ["operations"],
     queryFn: () => base44.entities.Operation.list("sort_order"),
+  });
+
+  const { data: categoryConfig } = useQuery({
+    queryKey: ["appconfig-categories"],
+    queryFn: async () => {
+      const results = await base44.entities.AppConfig.filter({ key: "operation_categories" });
+      return results[0] || null;
+    },
+  });
+
+  const categories = categoryConfig
+    ? JSON.parse(categoryConfig.value)
+    : DEFAULT_CATEGORIES;
+
+  const saveCategoriesMutation = useMutation({
+    mutationFn: async (newList) => {
+      const value = JSON.stringify(newList);
+      if (categoryConfig?.id) {
+        return base44.entities.AppConfig.update(categoryConfig.id, { value });
+      } else {
+        return base44.entities.AppConfig.create({ key: "operation_categories", value });
+      }
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["appconfig-categories"] }),
   });
 
   // Seed defaults if empty
@@ -153,7 +180,7 @@ export default function OperationsPanel() {
         <div>
           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Macrocategoria</p>
           <div className="flex flex-wrap gap-2">
-            {CATEGORIES.map((cat) => (
+            {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setNewCategory(newCategory === cat ? "" : cat)}
@@ -175,6 +202,74 @@ export default function OperationsPanel() {
           {createMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           Adicionar Operação
         </Button>
+      </div>
+
+      {/* Manage categories */}
+      <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
+        <h3 className="font-bold text-base">Macrocategorias</h3>
+        <div className="space-y-2">
+          {categories.map((cat, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              {editingCatId === idx ? (
+                <>
+                  <Input
+                    value={editingCatName}
+                    onChange={(e) => setEditingCatName(e.target.value)}
+                    className="h-8 rounded-lg flex-1 text-sm"
+                    autoFocus
+                  />
+                  <Button size="icon" className="w-8 h-8 rounded-lg shrink-0"
+                    disabled={!editingCatName.trim()}
+                    onClick={() => {
+                      const updated = categories.map((c, i) => i === idx ? editingCatName.trim() : c);
+                      saveCategoriesMutation.mutate(updated);
+                      setEditingCatId(null);
+                    }}>
+                    <Check className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="w-8 h-8 rounded-lg shrink-0" onClick={() => setEditingCatId(null)}>
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <span className="flex-1 text-sm px-3 py-1.5 bg-muted/50 rounded-lg">{cat}</span>
+                  <Button size="icon" variant="ghost" className="w-8 h-8 rounded-lg shrink-0 text-muted-foreground hover:text-foreground"
+                    onClick={() => { setEditingCatId(idx); setEditingCatName(cat); }}>
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button size="icon" variant="ghost" className="w-8 h-8 rounded-lg shrink-0 text-destructive hover:bg-destructive/10"
+                    onClick={() => saveCategoriesMutation.mutate(categories.filter((_, i) => i !== idx))}>
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+        {/* Add new category */}
+        <div className="flex gap-2 pt-1">
+          <Input
+            placeholder="Nova macrocategoria..."
+            value={newCatName}
+            onChange={(e) => setNewCatName(e.target.value)}
+            className="h-9 rounded-xl flex-1 text-sm"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newCatName.trim()) {
+                saveCategoriesMutation.mutate([...categories, newCatName.trim()]);
+                setNewCatName("");
+              }
+            }}
+          />
+          <Button size="sm" className="rounded-xl h-9 px-3"
+            disabled={!newCatName.trim() || saveCategoriesMutation.isPending}
+            onClick={() => {
+              saveCategoriesMutation.mutate([...categories, newCatName.trim()]);
+              setNewCatName("");
+            }}>
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Operations list */}
@@ -228,7 +323,7 @@ export default function OperationsPanel() {
                 <div>
                   <p className="text-xs text-muted-foreground mb-1.5 font-semibold uppercase tracking-wide">Macrocategoria</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {CATEGORIES.map((cat) => (
+                    {categories.map((cat) => (
                       <button key={cat} onClick={() => setEditingFields(f => ({ ...f, category: f.category === cat ? "" : cat }))}
                         className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all
                           ${editingFields.category === cat ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border hover:border-primary/40"}`}>
