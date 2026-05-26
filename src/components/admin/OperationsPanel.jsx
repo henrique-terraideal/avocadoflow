@@ -3,8 +3,10 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Loader2, ToggleLeft, ToggleRight, GripVertical } from "lucide-react";
+import { Plus, Trash2, Loader2, ToggleLeft, ToggleRight, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+
+const CATEGORIES = ["Irrigação", "Poda", "Colheita", "Adubação", "Fitossanidade", "Mecanização", "Outros"];
 
 const COLOR_OPTIONS = [
   "bg-green-500", "bg-emerald-500", "bg-teal-500", "bg-cyan-500",
@@ -42,7 +44,10 @@ export default function OperationsPanel() {
   const [newName, setNewName] = useState("");
   const [newCode, setNewCode] = useState("");
   const [newColor, setNewColor] = useState("bg-green-500");
+  const [newCategory, setNewCategory] = useState("");
   const [seeding, setSeeding] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editingCategoryValue, setEditingCategoryValue] = useState("");
 
   const { data: operations = [], isLoading } = useQuery({
     queryKey: ["operations"],
@@ -64,6 +69,7 @@ export default function OperationsPanel() {
       code: newCode.trim() || String(operations.length + 1).padStart(2, "0"),
       name: newName.trim(),
       color: newColor,
+      category: newCategory || undefined,
       active: true,
       sort_order: operations.length + 1,
     }),
@@ -71,7 +77,17 @@ export default function OperationsPanel() {
       queryClient.invalidateQueries({ queryKey: ["operations"] });
       setNewName("");
       setNewCode("");
+      setNewCategory("");
       toast({ title: "Operação adicionada!" });
+    },
+  });
+
+  const updateCategoryMutation = useMutation({
+    mutationFn: ({ id, category }) => base44.entities.Operation.update(id, { category }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["operations"] });
+      setEditingCategoryId(null);
+      toast({ title: "Categoria atualizada!" });
     },
   });
 
@@ -128,6 +144,24 @@ export default function OperationsPanel() {
             ))}
           </div>
         </div>
+        {/* Category picker */}
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Macrocategoria</p>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORIES.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setNewCategory(newCategory === cat ? "" : cat)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-all
+                  ${newCategory === cat
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/50 text-muted-foreground border-border hover:border-primary/40"}`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
         <Button
           onClick={() => createMutation.mutate()}
           disabled={!newName.trim() || createMutation.isPending}
@@ -146,31 +180,69 @@ export default function OperationsPanel() {
         {operations.map((op) => (
           <div
             key={op.id}
-            className={`bg-card rounded-xl border p-4 flex items-center gap-3 transition-opacity ${op.active ? "border-border" : "border-border/50 opacity-60"}`}
+            className={`bg-card rounded-xl border p-4 flex flex-col gap-2 transition-opacity ${op.active ? "border-border" : "border-border/50 opacity-60"}`}
           >
-            <div className={`w-9 h-9 rounded-lg ${op.color} flex items-center justify-center shrink-0`}>
-              <span className="text-white text-xs font-bold">{op.code}</span>
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-lg ${op.color} flex items-center justify-center shrink-0`}>
+                <span className="text-white text-xs font-bold">{op.code}</span>
+              </div>
+              <span className={`flex-1 font-medium text-sm ${!op.active ? "line-through text-muted-foreground" : ""}`}>
+                {op.name}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => toggleMutation.mutate({ id: op.id, active: op.active })}
+                className={op.active ? "text-primary" : "text-muted-foreground"}
+                title={op.active ? "Desativar" : "Ativar"}
+              >
+                {op.active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => deleteMutation.mutate(op.id)}
+                className="text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
-            <span className={`flex-1 font-medium text-sm ${!op.active ? "line-through text-muted-foreground" : ""}`}>
-              {op.name}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => toggleMutation.mutate({ id: op.id, active: op.active })}
-              className={op.active ? "text-primary" : "text-muted-foreground"}
-              title={op.active ? "Desativar" : "Ativar"}
-            >
-              {op.active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => deleteMutation.mutate(op.id)}
-              className="text-destructive hover:bg-destructive/10"
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+
+            {/* Category row */}
+            {editingCategoryId === op.id ? (
+              <div className="flex flex-wrap gap-1.5 items-center pl-12">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setEditingCategoryValue(cat)}
+                    className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all
+                      ${editingCategoryValue === cat
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/50 text-muted-foreground border-border hover:border-primary/40"}`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+                <Button size="icon" className="w-7 h-7 rounded-full" onClick={() => updateCategoryMutation.mutate({ id: op.id, category: editingCategoryValue })}>
+                  {updateCategoryMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                </Button>
+                <Button size="icon" variant="ghost" className="w-7 h-7 rounded-full" onClick={() => setEditingCategoryId(null)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 pl-12">
+                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${op.category ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  {op.category || "Sem categoria"}
+                </span>
+                <button
+                  onClick={() => { setEditingCategoryId(op.id); setEditingCategoryValue(op.category || ""); }}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Pencil className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </div>
         ))}
       </div>
