@@ -135,9 +135,20 @@ export default function SheetsConfig() {
       </div>
 
       {saved && (
-        <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 rounded-xl p-3">
-          <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-          <span>Cada novo registro será enviado automaticamente para esta planilha.</span>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 rounded-xl p-3">
+            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+            <span>Cada novo registro será enviado automaticamente para esta planilha.</span>
+          </div>
+          <a
+            href={`https://docs.google.com/spreadsheets/d/${sheetId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full h-10 rounded-xl border border-green-300 text-green-700 text-sm font-medium hover:bg-green-50 transition-colors"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Abrir planilha no Google Sheets
+          </a>
         </div>
       )}
     </div>
