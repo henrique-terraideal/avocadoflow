@@ -15,38 +15,36 @@ function QRImg({ data, size = 120 }) {
 
 export default function LabelPreview({ label, compact, forPrint }) {
   if (forPrint) {
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(label.qrData)}`;
+    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(label.qrData)}`;
     return (
-      <div className="label-page">
+      <div className="label-page" style={{ width: "80mm", maxWidth: "80mm" }}>
         {/* Header */}
         <div style={{ borderBottom: "2px solid #1a7a3a", paddingBottom: "2mm", marginBottom: "3mm", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div className="label-title">HP Avocado</div>
           <div className="label-subtitle">Boletim Diário de Serviços</div>
         </div>
 
-        {/* Body: info + QR lado a lado */}
-        <div style={{ display: "flex", gap: "3mm", alignItems: "center" }}>
-          {/* Info */}
-          <div style={{ flex: 1 }}>
-            {/* Operador destaque */}
-            <div style={{ fontSize: "11pt", fontWeight: "800", color: "#111", lineHeight: 1.2, marginBottom: "2mm" }}>
-              {label.operatorName}
-            </div>
-            {/* Atividade destaque */}
-            <div style={{ fontSize: "10pt", fontWeight: "700", color: "#1a7a3a", lineHeight: 1.3, marginBottom: "3mm" }}>
-              {label.operationCode}. {label.operationName}
-            </div>
-            {/* Pomar */}
-            <div style={{ display: "inline-block", background: "#f0f0f0", borderRadius: "3mm", padding: "1mm 3mm", fontSize: "9pt", fontWeight: "600", color: "#444" }}>
-              🌳 Pomar {label.orchardNumber}
-            </div>
-          </div>
+        {/* Operador destaque */}
+        <div style={{ fontSize: "13pt", fontWeight: "800", color: "#111", lineHeight: 1.2, marginBottom: "2mm" }}>
+          {label.operatorName}
+        </div>
 
-          {/* QR grande */}
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1mm" }}>
-            <img src={qrUrl} alt="QR" style={{ width: "40mm", height: "40mm" }} />
-            <div style={{ fontSize: "6.5pt", color: "#999" }}>Escaneie para registrar</div>
-          </div>
+        {/* Atividade destaque */}
+        <div style={{ fontSize: "11pt", fontWeight: "700", color: "#1a7a3a", lineHeight: 1.3, marginBottom: "3mm" }}>
+          {label.operationCode}. {label.operationName}
+        </div>
+
+        {/* Pomar */}
+        <div style={{ display: "inline-block", background: "#f0f0f0", borderRadius: "3mm", padding: "1mm 3mm", fontSize: "9pt", fontWeight: "600", color: "#444", marginBottom: "4mm" }}>
+          🌳 Pomar {label.orchardNumber}
+        </div>
+
+        <div className="label-divider" />
+
+        {/* QR centralizado em baixo */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1mm", marginTop: "2mm" }}>
+          <img src={qrUrl} alt="QR" style={{ width: "60mm", height: "60mm" }} />
+          <div style={{ fontSize: "7pt", color: "#999" }}>Escaneie para registrar</div>
         </div>
       </div>
     );
