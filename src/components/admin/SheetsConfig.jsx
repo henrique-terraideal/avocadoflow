@@ -58,9 +58,7 @@ export default function SheetsConfig() {
     const res = await base44.functions.invoke("initSheet", { create: true });
     setCreating(false);
     if (res.data?.success) {
-      setSheetId(res.data.spreadsheetId);
-      setConfigId(true);
-      setSaved(true);
+      await loadConfig();
       toast({
         title: "Planilha criada!",
         description: "Cabeçalhos configurados automaticamente.",
