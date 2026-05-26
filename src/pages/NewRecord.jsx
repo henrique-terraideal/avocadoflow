@@ -51,9 +51,9 @@ export default function NewRecord() {
   // Pré-selecionar operador para usuário não-admin após carregar lista
   useEffect(() => {
     if (!currentUser || isAdmin || operators.length === 0 || selectedOperator) return;
-    const match = operators.find(
-      (op) => op.name.toLowerCase() === currentUser.full_name?.toLowerCase()
-    );
+    // Primeiro tenta pelo linked_operator_id, depois pelo nome como fallback
+    const match = operators.find((op) => op.id === currentUser.linked_operator_id)
+      || operators.find((op) => op.name.toLowerCase() === currentUser.full_name?.toLowerCase());
     if (match) setSelectedOperator(match);
   }, [currentUser, operators, isAdmin]);
 

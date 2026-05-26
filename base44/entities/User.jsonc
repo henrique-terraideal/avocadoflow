@@ -6,10 +6,14 @@
       "type": "string",
       "enum": [
         "admin",
-        "operator"
+        "user"
       ],
-      "default": "operator",
-      "description": "Papel do usu\u00e1rio: admin tem acesso completo, operator s\u00f3 registra opera\u00e7\u00f5es"
+      "default": "user",
+      "description": "N\u00edvel de acesso: admin ou operador"
+    },
+    "linked_operator_id": {
+      "type": "string",
+      "description": "ID do operador vinculado a este usu\u00e1rio"
     }
   }
 }

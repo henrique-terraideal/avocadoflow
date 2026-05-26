@@ -1,17 +1,19 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ListChecks, Settings2 } from "lucide-react";
+import { ArrowLeft, Users, ListChecks, Settings2, UserCog } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import OperatorsPanel from "../components/admin/OperatorsPanel";
 import OperationsPanel from "../components/admin/OperationsPanel";
 import SheetsConfig from "../components/admin/SheetsConfig";
+import UsersPanel from "../components/admin/UsersPanel";
 import BottomNav from "../components/field/BottomNav";
 
 const TABS = [
   { id: "operators", label: "Operadores", icon: Users },
   { id: "operations", label: "Operações", icon: ListChecks },
-  { id: "config", label: "Configurações", icon: Settings2 },
+  { id: "users", label: "Usuários", icon: UserCog },
+  { id: "config", label: "Config", icon: Settings2 },
 ];
 
 export default function Admin() {
@@ -68,6 +70,7 @@ export default function Admin() {
       <div className="max-w-lg mx-auto px-4 py-5">
         {activeTab === "operators" && <OperatorsPanel />}
         {activeTab === "operations" && <OperationsPanel />}
+        {activeTab === "users" && <UsersPanel />}
         {activeTab === "config" && <SheetsConfig />}
       </div>
 
