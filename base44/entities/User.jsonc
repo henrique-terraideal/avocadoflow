@@ -1,0 +1,15 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "operator"
+      ],
+      "default": "operator",
+      "description": "Papel do usu\u00e1rio: admin tem acesso completo, operator s\u00f3 registra opera\u00e7\u00f5es"
+    }
+  }
+}
