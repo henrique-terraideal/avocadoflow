@@ -1,6 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-// Call this once to create the header row in your Google Sheet
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -11,13 +10,14 @@ Deno.serve(async (req) => {
     }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
-    const spreadsheetId = Deno.env.get("GOOGLE_SHEET_ID");
 
-    if (!spreadsheetId) {
-      return Response.json({ error: 'GOOGLE_SHEET_ID not set' }, { status: 500 });
+    // Get spreadsheet ID from AppConfig entity
+    const configs = await base44.asServiceRole.entities.AppConfig.filter({ key: "google_sheet_id" });
+    if (!configs || configs.length === 0) {
+      return Response.json({ error: 'Planilha não configurada. Salve o ID no painel Admin.' }, { status: 400 });
     }
+    const spreadsheetId = configs[0].value;
 
-    // Write header row
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1!A1:H1?valueInputOption=USER_ENTERED`;
     const response = await fetch(url, {
       method: "PUT",
@@ -34,7 +34,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: await response.text() }, { status: 500 });
     }
 
-    return Response.json({ success: true, message: "Header row created in Sheet1" });
+    return Response.json({ success: true, message: "Cabeçalhos criados na Sheet1" });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

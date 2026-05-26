@@ -1,20 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { PlusCircle, List, Settings } from "lucide-react";
-
-const NAV_ITEMS = [
-  { to: "/", icon: PlusCircle, label: "Novo" },
-  { to: "/registros", icon: List, label: "Registros" },
-  { to: "/admin", icon: Settings, label: "Admin" },
-];
+import { base44 } from "@/api/base44Client";
 
 export default function BottomNav() {
   const location = useLocation();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then(u => setIsAdmin(u?.role === "admin")).catch(() => setIsAdmin(false));
+  }, []);
+
+  const navItems = [
+    { to: "/", icon: PlusCircle, label: "Novo" },
+    { to: "/registros", icon: List, label: "Registros" },
+    ...(isAdmin ? [{ to: "/admin", icon: Settings, label: "Admin" }] : []),
+  ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-40">
       <div className="max-w-lg mx-auto flex">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;
           return (

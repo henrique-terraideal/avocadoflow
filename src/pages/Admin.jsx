@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/use-toast";
 
 import QRGenerator from "../components/field/QRGenerator";
 import BottomNav from "../components/field/BottomNav";
+import SheetsConfig from "../components/admin/SheetsConfig";
 
 export default function Admin() {
   const { toast } = useToast();
