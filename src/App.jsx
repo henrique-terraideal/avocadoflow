@@ -9,6 +9,7 @@ import NewRecord from './pages/NewRecord';
 import Records from './pages/Records';
 import Admin from './pages/Admin';
 import AdminGuard from './components/admin/AdminGuard';
+import Planning from './pages/Planning';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,6 +39,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<NewRecord />} />
       <Route path="/registros" element={<Records />} />
+      <Route path="/planejamento" element={<Planning />} />
       <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
