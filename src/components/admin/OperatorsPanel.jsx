@@ -108,14 +108,6 @@ export default function OperatorsPanel() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setShowQR(showQR === op.id ? null : op.id)}
-                className="text-primary"
-              >
-                <QrCode className="w-5 h-5" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
                 onClick={() => deleteMutation.mutate(op.id)}
                 className="text-destructive hover:bg-destructive/10"
               >
