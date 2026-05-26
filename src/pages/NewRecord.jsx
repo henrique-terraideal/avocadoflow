@@ -61,19 +61,21 @@ export default function NewRecord() {
     setShowScanner(false);
     try {
       const data = JSON.parse(rawValue);
-      if (data.operator) {
-        const found = operators.find(o => o.name.toLowerCase() === data.operator.toLowerCase());
+      // Busca operador pelo id ou pelo nome
+      if (data.operator_id || data.operator) {
+        const found = operators.find(o => o.id === data.operator_id)
+          || operators.find(o => o.name.toLowerCase() === data.operator?.toLowerCase());
         if (found) setSelectedOperator(found);
       }
+      // operation é o code (ex: "01"), operation_name é o nome legível
       if (data.operation) {
-        // QR operation field maps to operation code; will be resolved by OperationSelector
         setSelectedOperation({ id: data.operation, name: data.operation_name || data.operation });
       }
       if (data.orchard) {
         setSelectedOrchard(data.orchard);
       }
-      // Jump to time step if all pre-filled
-      if (data.operator && data.operation && data.orchard) {
+      // Pula direto para o passo de horários se tudo preenchido
+      if ((data.operator_id || data.operator) && data.operation && data.orchard) {
         setStep(3);
       }
       toast({ title: "QR Code lido!", description: "Dados preenchidos automaticamente." });
