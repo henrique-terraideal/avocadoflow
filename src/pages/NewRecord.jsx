@@ -56,40 +56,79 @@ export default function NewRecord() {
   // Pré-selecionar operador para usuário não-admin após carregar lista
   useEffect(() => {
     if (!currentUser || isAdmin || operators.length === 0 || selectedOperator) return;
-    // Primeiro tenta pelo linked_operator_id, depois pelo nome como fallback
     const match = operators.find((op) => op.id === currentUser.linked_operator_id)
       || operators.find((op) => op.name.toLowerCase() === currentUser.full_name?.toLowerCase());
     if (match) setSelectedOperator(match);
   }, [currentUser, operators, isAdmin]);
 
+  // Ler parâmetros da URL (QR code do app nativo do celular)
+  useEffect(() => {
+    if (operators.length === 0 || operations.length === 0) return;
+    const params = new URLSearchParams(window.location.search);
+    const op_id = params.get("op_id");
+    const act_id = params.get("act_id");
+    const act_code = params.get("act_code");
+    const act_name = params.get("act_name");
+    const orchard = params.get("orchard");
+    if (!op_id && !act_id) return;
+
+    if (op_id) {
+      const found = operators.find(o => o.id === op_id);
+      if (found) setSelectedOperator(found);
+    }
+    if (act_id) {
+      const foundOp = operations.find(o => o.id === act_id);
+      if (foundOp) {
+        setSelectedOperation({ id: foundOp.code, name: foundOp.name });
+      } else if (act_code && act_name) {
+        setSelectedOperation({ id: act_code, name: act_name });
+      }
+    }
+    if (orchard) setSelectedOrchard(orchard);
+
+    // Se tudo preenchido, pula para horários
+    if (op_id && act_id && orchard) setStep(3);
+
+    // Limpa os params da URL sem recarregar
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [operators, operations]);
+
   const handleQRScan = (rawValue) => {
     setShowScanner(false);
     try {
-      const data = JSON.parse(rawValue);
-      // Busca operador pelo id ou pelo nome
-      if (data.operator_id || data.operator) {
-        const found = operators.find(o => o.id === data.operator_id)
-          || operators.find(o => o.name.toLowerCase() === data.operator?.toLowerCase());
+      // Suporte a URL (novo formato) ou JSON (formato legado)
+      let op_id, act_id, act_code, act_name, orchard;
+
+      if (rawValue.startsWith("http")) {
+        const url = new URL(rawValue);
+        op_id = url.searchParams.get("op_id");
+        act_id = url.searchParams.get("act_id");
+        act_code = url.searchParams.get("act_code");
+        act_name = url.searchParams.get("act_name");
+        orchard = url.searchParams.get("orchard");
+      } else {
+        const data = JSON.parse(rawValue);
+        op_id = data.operator_id;
+        act_id = data.operation;
+        act_name = data.operation_name;
+        orchard = data.orchard;
+      }
+
+      if (op_id) {
+        const found = operators.find(o => o.id === op_id);
         if (found) setSelectedOperator(found);
       }
-      // data.operation é o UUID do banco — busca pelo id para obter o code correto
-      if (data.operation) {
-        const foundOp = operations.find(o => o.id === data.operation);
+      if (act_id) {
+        const foundOp = operations.find(o => o.id === act_id);
         if (foundOp) {
           setSelectedOperation({ id: foundOp.code, name: foundOp.name });
-        } else if (data.operation_name) {
-          // fallback: tenta pelo nome
-          const byName = operations.find(o => o.name.toLowerCase() === data.operation_name.toLowerCase());
-          setSelectedOperation({ id: byName?.code || data.operation, name: data.operation_name });
+        } else if (act_code && act_name) {
+          setSelectedOperation({ id: act_code, name: act_name });
         }
       }
-      if (data.orchard) {
-        setSelectedOrchard(data.orchard);
-      }
-      // Pula direto para o passo de horários se tudo preenchido
-      if ((data.operator_id || data.operator) && data.operation && data.orchard) {
-        setStep(3);
-      }
+      if (orchard) setSelectedOrchard(orchard);
+      if (op_id && act_id && orchard) setStep(3);
+
       toast({ title: "QR Code lido!", description: "Dados preenchidos automaticamente." });
     } catch {
       toast({ title: "QR Code inválido", description: "Formato não reconhecido.", variant: "destructive" });

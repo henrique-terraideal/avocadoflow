@@ -16,17 +16,21 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
 
   const handleAdd = () => {
     if (!canAdd) return;
-    const qrData = JSON.stringify({
-      operator: selectedOperator.name,
-      operator_id: selectedOperator.id,
-      operation: selectedOperation.id,
-      operation_name: selectedOperation.name,
+    // URL para funcionar tanto pelo app nativo (câmera do celular) quanto pelo scanner interno
+    const base = window.location.origin;
+    const params = new URLSearchParams({
+      op_id: selectedOperator.id,
+      op_name: selectedOperator.name,
+      act_id: selectedOperation.id,
+      act_code: selectedOperation.code,
+      act_name: selectedOperation.name,
       orchard: selectedOrchard,
     });
+    const qrData = `${base}/?${params.toString()}`;
     onAdd({
       operatorName: selectedOperator.name,
       operatorPhoto: selectedOperator.photo_url || null,
-      operationCode: selectedOperation.id,
+      operationCode: selectedOperation.code,
       operationName: selectedOperation.name,
       orchardNumber: selectedOrchard,
       qrData,
