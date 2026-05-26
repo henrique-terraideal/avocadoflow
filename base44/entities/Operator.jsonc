@@ -1,0 +1,22 @@
+{
+  "name": "Operator",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do operador"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "URL da foto do operador"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o operador est\u00e1 ativo"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}
