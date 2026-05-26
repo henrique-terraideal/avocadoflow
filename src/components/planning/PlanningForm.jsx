@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { motion } from "framer-motion";
@@ -9,7 +11,11 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
   const [selectedOperation, setSelectedOperation] = useState(null);
   const [selectedOrchard, setSelectedOrchard] = useState(null);
 
-  const orchards = Array.from({ length: 20 }, (_, i) => `P${i + 1}`);
+  const { data: orchardList = [] } = useQuery({
+    queryKey: ["orchards"],
+    queryFn: () => base44.entities.Orchard.filter({ active: true }, "sort_order", 200),
+  });
+  const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
   const canAdd = selectedOperator && selectedOperation && selectedOrchard;
 
