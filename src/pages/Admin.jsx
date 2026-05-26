@@ -40,7 +40,29 @@ export default function Admin() {
 
       {/* Tabs */}
       <div className="max-w-lg mx-auto px-4 mt-5">
-        <div className="flex bg-muted rounded-2xl p-1 gap-1">
+        {/* Mobile: grid de cards */}
+        <div className="grid grid-cols-2 gap-3 sm:hidden">
+          {TABS.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-3 px-4 py-4 rounded-2xl border-2 text-left transition-all
+                  ${isActive
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }`}
+              >
+                <Icon className={`w-5 h-5 shrink-0 ${isActive ? "text-primary" : ""}`} />
+                <span className="font-semibold text-sm">{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Desktop: tabs horizontais */}
+        <div className="hidden sm:flex bg-muted rounded-2xl p-1 gap-1">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -52,20 +74,11 @@ export default function Admin() {
                   ${isActive ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
               >
                 <Icon className="w-4 h-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
+                <span>{tab.label}</span>
               </button>
             );
           })}
         </div>
-      </div>
-
-      {/* Tab labels on mobile */}
-      <div className="max-w-lg mx-auto px-4 mt-1 flex sm:hidden">
-        {TABS.map((tab) => (
-          <div key={tab.id} className="flex-1 text-center text-[10px] font-semibold text-muted-foreground">
-            {tab.label}
-          </div>
-        ))}
       </div>
 
       {/* Content */}
