@@ -36,6 +36,11 @@ export default function NewRecord() {
     queryFn: () => base44.entities.Operator.filter({ active: true }),
   });
 
+  const { data: operations = [] } = useQuery({
+    queryKey: ["operations"],
+    queryFn: () => base44.entities.Operation.filter({ active: true }),
+  });
+
   const isAdmin = currentUser?.role === "admin";
 
   useEffect(() => {
@@ -67,9 +72,16 @@ export default function NewRecord() {
           || operators.find(o => o.name.toLowerCase() === data.operator?.toLowerCase());
         if (found) setSelectedOperator(found);
       }
-      // operation é o code (ex: "01"), operation_name é o nome legível
+      // data.operation é o UUID do banco — busca pelo id para obter o code correto
       if (data.operation) {
-        setSelectedOperation({ id: data.operation, name: data.operation_name || data.operation });
+        const foundOp = operations.find(o => o.id === data.operation);
+        if (foundOp) {
+          setSelectedOperation({ id: foundOp.code, name: foundOp.name });
+        } else if (data.operation_name) {
+          // fallback: tenta pelo nome
+          const byName = operations.find(o => o.name.toLowerCase() === data.operation_name.toLowerCase());
+          setSelectedOperation({ id: byName?.code || data.operation, name: data.operation_name });
+        }
       }
       if (data.orchard) {
         setSelectedOrchard(data.orchard);
