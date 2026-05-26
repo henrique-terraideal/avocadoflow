@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { Sheet, ExternalLink, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { ExternalLink, CheckCircle2, Loader2, Plus } from "lucide-react";
 
 export default function SheetsConfig() {
   const { toast } = useToast();
@@ -11,6 +11,7 @@ export default function SheetsConfig() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [initializing, setInitializing] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [configId, setConfigId] = useState(null);
 
   useEffect(() => {
@@ -46,9 +47,29 @@ export default function SheetsConfig() {
     const res = await base44.functions.invoke("initSheet", {});
     setInitializing(false);
     if (res.data?.success) {
-      toast({ title: "Planilha inicializada!", description: "Cabeçalhos criados na aba Sheet1." });
+      toast({ title: "Planilha inicializada!", description: "Cabeçalhos criados na aba Registros." });
     } else {
       toast({ title: "Erro", description: res.data?.error || "Tente novamente.", variant: "destructive" });
+    }
+  };
+
+  const handleCreateSheet = async () => {
+    setCreating(true);
+    const res = await base44.functions.invoke("initSheet", { create: true });
+    setCreating(false);
+    if (res.data?.success) {
+      setSheetId(res.data.spreadsheetId);
+      setConfigId(true);
+      setSaved(true);
+      toast({
+        title: "Planilha criada!",
+        description: "Cabeçalhos configurados automaticamente.",
+      });
+      if (res.data.sheetUrl) {
+        window.open(res.data.sheetUrl, "_blank");
+      }
+    } else {
+      toast({ title: "Erro ao criar planilha", description: res.data?.error || "Tente novamente.", variant: "destructive" });
     }
   };
 
@@ -79,15 +100,15 @@ export default function SheetsConfig() {
         Cole o ID ou a URL completa da planilha onde os registros serão enviados automaticamente.
       </p>
 
-      <a
-        href="https://sheets.google.com/create"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+      <Button
+        variant="outline"
+        onClick={handleCreateSheet}
+        disabled={creating}
+        className="w-full h-11 rounded-xl border-dashed gap-2"
       >
-        <ExternalLink className="w-3 h-3" />
+        {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
         Criar nova planilha no Google
-      </a>
+      </Button>
 
       <Input
         placeholder="Cole o ID ou URL da planilha"
