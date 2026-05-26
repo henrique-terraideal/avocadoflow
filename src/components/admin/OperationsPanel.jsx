@@ -46,8 +46,8 @@ export default function OperationsPanel() {
   const [newColor, setNewColor] = useState("bg-green-500");
   const [newCategory, setNewCategory] = useState("");
   const [seeding, setSeeding] = useState(false);
-  const [editingCategoryId, setEditingCategoryId] = useState(null);
-  const [editingCategoryValue, setEditingCategoryValue] = useState("");
+  const [editingId, setEditingId] = useState(null);
+  const [editingFields, setEditingFields] = useState({});
 
   const { data: operations = [], isLoading } = useQuery({
     queryKey: ["operations"],
@@ -82,14 +82,19 @@ export default function OperationsPanel() {
     },
   });
 
-  const updateCategoryMutation = useMutation({
-    mutationFn: ({ id, category }) => base44.entities.Operation.update(id, { category }),
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Operation.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["operations"] });
-      setEditingCategoryId(null);
-      toast({ title: "Categoria atualizada!" });
+      setEditingId(null);
+      toast({ title: "Operação atualizada!" });
     },
   });
+
+  const startEdit = (op) => {
+    setEditingId(op.id);
+    setEditingFields({ name: op.name, code: op.code, color: op.color || "bg-green-500", category: op.category || "" });
+  };
 
   const toggleMutation = useMutation({
     mutationFn: ({ id, active }) => base44.entities.Operation.update(id, { active: !active }),
@@ -182,65 +187,66 @@ export default function OperationsPanel() {
             key={op.id}
             className={`bg-card rounded-xl border p-4 flex flex-col gap-2 transition-opacity ${op.active ? "border-border" : "border-border/50 opacity-60"}`}
           >
+            {/* Row principal */}
             <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-lg ${op.color} flex items-center justify-center shrink-0`}>
+              <div className={`w-9 h-9 rounded-lg ${op.color || "bg-primary"} flex items-center justify-center shrink-0`}>
                 <span className="text-white text-xs font-bold">{op.code}</span>
               </div>
-              <span className={`flex-1 font-medium text-sm ${!op.active ? "line-through text-muted-foreground" : ""}`}>
-                {op.name}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => toggleMutation.mutate({ id: op.id, active: op.active })}
-                className={op.active ? "text-primary" : "text-muted-foreground"}
-                title={op.active ? "Desativar" : "Ativar"}
-              >
+              <div className="flex-1 min-w-0">
+                <p className={`font-medium text-sm truncate ${!op.active ? "line-through text-muted-foreground" : ""}`}>{op.name}</p>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${op.category ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  {op.category || "Sem categoria"}
+                </span>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => editingId === op.id ? setEditingId(null) : startEdit(op)} className="text-muted-foreground hover:text-foreground">
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => toggleMutation.mutate({ id: op.id, active: op.active })} className={op.active ? "text-primary" : "text-muted-foreground"} title={op.active ? "Desativar" : "Ativar"}>
                 {op.active ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteMutation.mutate(op.id)}
-                className="text-destructive hover:bg-destructive/10"
-              >
+              <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(op.id)} className="text-destructive hover:bg-destructive/10">
                 <Trash2 className="w-4 h-4" />
               </Button>
             </div>
 
-            {/* Category row */}
-            {editingCategoryId === op.id ? (
-              <div className="flex flex-wrap gap-1.5 items-center pl-12">
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setEditingCategoryValue(cat)}
-                    className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all
-                      ${editingCategoryValue === cat
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-muted/50 text-muted-foreground border-border hover:border-primary/40"}`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-                <Button size="icon" className="w-7 h-7 rounded-full" onClick={() => updateCategoryMutation.mutate({ id: op.id, category: editingCategoryValue })}>
-                  {updateCategoryMutation.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
-                </Button>
-                <Button size="icon" variant="ghost" className="w-7 h-7 rounded-full" onClick={() => setEditingCategoryId(null)}>
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 pl-12">
-                <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${op.category ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
-                  {op.category || "Sem categoria"}
-                </span>
-                <button
-                  onClick={() => { setEditingCategoryId(op.id); setEditingCategoryValue(op.category || ""); }}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <Pencil className="w-3 h-3" />
-                </button>
+            {/* Formulário de edição inline */}
+            {editingId === op.id && (
+              <div className="space-y-3 pt-2 border-t border-border">
+                <div className="flex gap-2">
+                  <Input value={editingFields.code} onChange={(e) => setEditingFields(f => ({ ...f, code: e.target.value }))} placeholder="Código" className="h-9 rounded-xl w-20" />
+                  <Input value={editingFields.name} onChange={(e) => setEditingFields(f => ({ ...f, name: e.target.value }))} placeholder="Nome" className="h-9 rounded-xl flex-1" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-semibold uppercase tracking-wide">Cor</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COLOR_OPTIONS.map((c) => (
+                      <button key={c} onClick={() => setEditingFields(f => ({ ...f, color: c }))}
+                        className={`w-6 h-6 rounded-full ${c} transition-transform ${editingFields.color === c ? "ring-2 ring-offset-1 ring-primary scale-110" : ""}`} />
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground mb-1.5 font-semibold uppercase tracking-wide">Macrocategoria</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {CATEGORIES.map((cat) => (
+                      <button key={cat} onClick={() => setEditingFields(f => ({ ...f, category: f.category === cat ? "" : cat }))}
+                        className={`px-2.5 py-1 rounded-full text-xs font-semibold border transition-all
+                          ${editingFields.category === cat ? "bg-primary text-primary-foreground border-primary" : "bg-muted/50 text-muted-foreground border-border hover:border-primary/40"}`}>
+                        {cat}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" className="flex-1 rounded-xl" disabled={!editingFields.name?.trim() || updateMutation.isPending}
+                    onClick={() => updateMutation.mutate({ id: op.id, data: { name: editingFields.name.trim(), code: editingFields.code.trim(), color: editingFields.color, category: editingFields.category || undefined } })}>
+                    {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                    Salvar
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditingId(null)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             )}
           </div>

@@ -3,9 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, User, Upload, Loader2, QrCode } from "lucide-react";
+import { Plus, Trash2, User, Upload, Loader2, Pencil, Check, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import QRGenerator from "../field/QRGenerator";
 
 export default function OperatorsPanel() {
   const { toast } = useToast();
@@ -13,7 +12,10 @@ export default function OperatorsPanel() {
   const [name, setName] = useState("");
   const [photoFile, setPhotoFile] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [showQR, setShowQR] = useState(null);
+  const [editingId, setEditingId] = useState(null);
+  const [editingName, setEditingName] = useState("");
+  const [editingPhotoFile, setEditingPhotoFile] = useState(null);
+  const [editingUploading, setEditingUploading] = useState(false);
 
   const { data: operators = [], isLoading } = useQuery({
     queryKey: ["operators"],
@@ -47,6 +49,32 @@ export default function OperatorsPanel() {
       toast({ title: "Operador removido" });
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, currentPhotoUrl }) => {
+      setEditingUploading(true);
+      let photo_url = currentPhotoUrl;
+      if (editingPhotoFile) {
+        const result = await base44.integrations.Core.UploadFile({ file: editingPhotoFile });
+        photo_url = result.file_url;
+      }
+      await base44.entities.Operator.update(id, { name: editingName.trim(), photo_url });
+      setEditingUploading(false);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["operators"] });
+      setEditingId(null);
+      setEditingPhotoFile(null);
+      toast({ title: "Operador atualizado!" });
+    },
+    onError: () => setEditingUploading(false),
+  });
+
+  const startEdit = (op) => {
+    setEditingId(op.id);
+    setEditingName(op.name);
+    setEditingPhotoFile(null);
+  };
 
   return (
     <div className="space-y-5">
@@ -96,31 +124,56 @@ export default function OperatorsPanel() {
           <div className="text-center py-10 text-muted-foreground">Nenhum operador cadastrado.</div>
         ) : (
           operators.map((op) => (
-            <div key={op.id} className="bg-card rounded-xl border border-border p-4 flex items-center gap-3">
-              {op.photo_url ? (
-                <img src={op.photo_url} alt={op.name} className="w-11 h-11 rounded-full object-cover" />
-              ) : (
-                <div className="w-11 h-11 rounded-full bg-muted flex items-center justify-center">
-                  <User className="w-5 h-5 text-muted-foreground" />
+            <div key={op.id} className="bg-card rounded-xl border border-border p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                {op.photo_url ? (
+                  <img src={op.photo_url} alt={op.name} className="w-11 h-11 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-11 h-11 rounded-full bg-muted flex items-center justify-center shrink-0">
+                    <User className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                )}
+                <span className="flex-1 font-semibold">{op.name}</span>
+                <Button variant="ghost" size="icon" onClick={() => startEdit(op)} className="text-muted-foreground hover:text-foreground">
+                  <Pencil className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(op.id)} className="text-destructive hover:bg-destructive/10">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {editingId === op.id && (
+                <div className="space-y-2 pt-1 border-t border-border">
+                  <Input
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    className="h-10 rounded-xl"
+                    placeholder="Nome do operador"
+                  />
+                  <label className="flex items-center gap-2 px-4 h-10 rounded-xl border-2 border-dashed border-border cursor-pointer hover:border-primary/40 transition-colors">
+                    <Upload className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground truncate">
+                      {editingPhotoFile ? editingPhotoFile.name : "Trocar foto (opcional)"}
+                    </span>
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => setEditingPhotoFile(e.target.files?.[0] || null)} />
+                  </label>
+                  <div className="flex gap-2">
+                    <Button size="sm" className="flex-1 rounded-xl" disabled={!editingName.trim() || editingUploading} onClick={() => updateMutation.mutate({ id: op.id, currentPhotoUrl: op.photo_url })}>
+                      {editingUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                      Salvar
+                    </Button>
+                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => setEditingId(null)}>
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
-              <span className="flex-1 font-semibold">{op.name}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteMutation.mutate(op.id)}
-                className="text-destructive hover:bg-destructive/10"
-              >
-                <Trash2 className="w-5 h-5" />
-              </Button>
             </div>
           ))
         )}
       </div>
 
-      {showQR && (
-        <QRGenerator operatorName={operators.find((o) => o.id === showQR)?.name || ""} />
-      )}
+
     </div>
   );
 }
