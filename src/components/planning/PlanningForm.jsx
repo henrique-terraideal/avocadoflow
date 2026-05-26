@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { motion } from "framer-motion";
+import OperationFilter from "../field/OperationFilter";
 
 export default function PlanningForm({ operators, operations, onAdd, onCancel }) {
   const [selectedOperator, setSelectedOperator] = useState(null);
@@ -9,9 +10,7 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
   const [selectedOrchard, setSelectedOrchard] = useState(null);
 
   const orchards = Array.from({ length: 20 }, (_, i) => `P${i + 1}`);
-
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
-
   const canAdd = selectedOperator && selectedOperation && selectedOrchard;
 
   const handleAdd = () => {
@@ -68,23 +67,14 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
       {/* Operação */}
       <div>
         <p className="text-sm font-semibold mb-2 text-foreground">Atividade</p>
-        <div className="grid grid-cols-2 gap-2">
-          {sortedOperations.map((op) => (
-            <button
-              key={op.id}
-              onClick={() => setSelectedOperation(op)}
-              className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all text-left
-                ${selectedOperation?.id === op.id
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-muted/30 hover:border-primary/40"}`}
-            >
-              <span className={`w-7 h-7 rounded-lg flex-shrink-0 flex items-center justify-center text-white text-xs font-bold ${op.color || "bg-primary"}`}>
-                {op.code}
-              </span>
-              <span className="text-xs font-medium leading-tight">{op.name}</span>
-            </button>
-          ))}
-        </div>
+        <OperationFilter
+          operations={sortedOperations}
+          selectedId={selectedOperation?.code}
+          onSelect={(op) => {
+            const found = operations.find(o => o.code === op.id);
+            setSelectedOperation(found || null);
+          }}
+        />
       </div>
 
       {/* Pomar */}

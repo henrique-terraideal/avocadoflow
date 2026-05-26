@@ -22,6 +22,19 @@
     "sort_order": {
       "type": "number",
       "description": "Ordem de exibi\u00e7\u00e3o"
+    },
+    "category": {
+      "type": "string",
+      "description": "Macrocategoria da opera\u00e7\u00e3o (ex: Irriga\u00e7\u00e3o, Poda, Colheita)",
+      "enum": [
+        "Irriga\u00e7\u00e3o",
+        "Poda",
+        "Colheita",
+        "Aduba\u00e7\u00e3o",
+        "Fitossanidade",
+        "Mecaniza\u00e7\u00e3o",
+        "Outros"
+      ]
     }
   },
   "required": [
