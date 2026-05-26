@@ -8,7 +8,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import NewRecord from './pages/NewRecord';
 import Records from './pages/Records';
 import Admin from './pages/Admin';
-import AdminRoute from './components/AdminRoute';
+import AdminGuard from './components/admin/AdminGuard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,7 +38,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/" element={<NewRecord />} />
       <Route path="/registros" element={<Records />} />
-      <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+      <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

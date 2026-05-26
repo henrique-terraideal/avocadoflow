@@ -146,6 +146,9 @@ export default function Admin() {
         </div>
 
         {showQR && <QRGenerator operatorName={operators.find(o => o.id === showQR)?.name || ""} />}
+
+        {/* Google Sheets Config */}
+        <SheetsConfig />
       </div>
 
       <BottomNav />

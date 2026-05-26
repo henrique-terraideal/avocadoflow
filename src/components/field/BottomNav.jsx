@@ -8,10 +8,10 @@ export default function BottomNav() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(u => setIsAdmin(u?.role === "admin")).catch(() => setIsAdmin(false));
+    base44.auth.me().then((u) => setIsAdmin(u?.role === "admin")).catch(() => {});
   }, []);
 
-  const navItems = [
+  const NAV_ITEMS = [
     { to: "/", icon: PlusCircle, label: "Novo" },
     { to: "/registros", icon: List, label: "Registros" },
     ...(isAdmin ? [{ to: "/admin", icon: Settings, label: "Admin" }] : []),
@@ -20,7 +20,7 @@ export default function BottomNav() {
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-lg border-t border-border z-40">
       <div className="max-w-lg mx-auto flex">
-        {navItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;
           return (
