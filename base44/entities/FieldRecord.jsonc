@@ -39,6 +39,10 @@
       "type": "boolean",
       "default": false,
       "description": "Se foi preenchido via QR code"
+    },
+    "created_by_user_id": {
+      "type": "string",
+      "description": "ID do usu\u00e1rio que criou o registro"
     }
   },
   "required": [

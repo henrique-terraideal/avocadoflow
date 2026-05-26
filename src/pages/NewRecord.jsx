@@ -24,6 +24,7 @@ export default function NewRecord() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
+  const [currentUser, setCurrentUser] = useState(null);
   const [selectedOperator, setSelectedOperator] = useState(null);
   const [selectedOperation, setSelectedOperation] = useState(null);
   const [selectedOrchard, setSelectedOrchard] = useState(null);
@@ -34,6 +35,27 @@ export default function NewRecord() {
     queryKey: ["operators"],
     queryFn: () => base44.entities.Operator.filter({ active: true }),
   });
+
+  const isAdmin = currentUser?.role === "admin";
+
+  useEffect(() => {
+    base44.auth.me().then((u) => {
+      setCurrentUser(u);
+      // Se for operador (não admin), pré-selecionar o operador pelo nome
+      if (u && u.role !== "admin") {
+        // Será feito após os operadores carregarem
+      }
+    }).catch(() => {});
+  }, []);
+
+  // Pré-selecionar operador para usuário não-admin após carregar lista
+  useEffect(() => {
+    if (!currentUser || isAdmin || operators.length === 0 || selectedOperator) return;
+    const match = operators.find(
+      (op) => op.name.toLowerCase() === currentUser.full_name?.toLowerCase()
+    );
+    if (match) setSelectedOperator(match);
+  }, [currentUser, operators, isAdmin]);
 
   const handleQRScan = (rawValue) => {
     setShowScanner(false);
@@ -82,6 +104,7 @@ export default function NewRecord() {
       end_time: endTime,
       date: today,
       qr_scanned: false,
+      created_by_user_id: currentUser?.id,
     });
     queryClient.invalidateQueries({ queryKey: ["field-records"] });
     setSubmitting(false);
@@ -169,6 +192,28 @@ export default function NewRecord() {
                 <div className="text-center py-12 text-muted-foreground">
                   <p>Nenhum operador cadastrado.</p>
                   <p className="text-sm mt-1">Cadastre operadores na aba Admin.</p>
+                </div>
+              ) : !isAdmin ? (
+                // Operador: mostra apenas o card dele, bloqueado
+                <div>
+                  {selectedOperator ? (
+                    <div className="flex flex-col items-center gap-3 p-6 bg-primary/10 rounded-2xl border-2 border-primary">
+                      {selectedOperator.photo_url ? (
+                        <img src={selectedOperator.photo_url} alt={selectedOperator.name} className="w-20 h-20 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-bold">
+                          {selectedOperator.name[0]}
+                        </div>
+                      )}
+                      <span className="font-bold text-lg">{selectedOperator.name}</span>
+                      <span className="text-xs text-muted-foreground">Você está logado como este operador</span>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <p>Nenhum operador vinculado à sua conta.</p>
+                      <p className="text-sm mt-1">Peça ao administrador para cadastrar um operador com seu nome.</p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <OperatorSelector operators={operators} selectedId={selectedOperator?.id} onSelect={(op) => setSelectedOperator(op)} />

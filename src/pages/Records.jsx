@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -10,9 +10,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 import BottomNav from "../components/field/BottomNav";
 
 export default function Records() {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userLoaded, setUserLoaded] = useState(false);
+
+  useEffect(() => {
+    base44.auth.me().then((u) => { setCurrentUser(u); setUserLoaded(true); }).catch(() => setUserLoaded(true));
+  }, []);
+
+  const isAdmin = currentUser?.role === "admin";
+
   const { data: records = [], isLoading } = useQuery({
-    queryKey: ["field-records"],
-    queryFn: () => base44.entities.FieldRecord.list("-created_date", 100),
+    queryKey: ["field-records", currentUser?.id, isAdmin],
+    queryFn: () => isAdmin
+      ? base44.entities.FieldRecord.list("-created_date", 200)
+      : base44.entities.FieldRecord.filter({ created_by_user_id: currentUser?.id }, "-created_date", 200),
+    enabled: userLoaded,
   });
 
   // Group by date
