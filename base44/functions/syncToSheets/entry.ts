@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
     ];
 
-    const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Sheet1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Registros:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
 
     const response = await fetch(appendUrl, {
       method: "POST",
