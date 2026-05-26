@@ -9,7 +9,6 @@ import { useToast } from "@/components/ui/use-toast";
 import StepIndicator from "../components/field/StepIndicator";
 import OperatorSelector from "../components/field/OperatorSelector";
 import OperationSelector from "../components/field/OperationSelector";
-import { OPERATIONS } from "../components/field/OperationSelector";
 import OrchardSelector from "../components/field/OrchardSelector";
 import TimeEntry from "../components/field/TimeEntry";
 import ReviewCard from "../components/field/ReviewCard";
@@ -45,8 +44,8 @@ export default function NewRecord() {
         if (found) setSelectedOperator(found);
       }
       if (data.operation) {
-        const found = OPERATIONS.find(o => o.id === data.operation);
-        if (found) setSelectedOperation(found);
+        // QR operation field maps to operation code; will be resolved by OperationSelector
+        setSelectedOperation({ id: data.operation, name: data.operation_name || data.operation });
       }
       if (data.orchard) {
         setSelectedOrchard(data.orchard);
@@ -180,7 +179,7 @@ export default function NewRecord() {
           {step === 1 && (
             <motion.div key="step1" initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -50 }}>
               <h2 className="text-lg font-bold mb-4">Qual operação?</h2>
-              <OperationSelector selectedId={selectedOperation?.id} onSelect={(op) => setSelectedOperation(op)} />
+              <OperationSelector selectedId={selectedOperation?.id} onSelect={(op) => setSelectedOperation({ id: op.id, name: op.name })} />
             </motion.div>
           )}
 

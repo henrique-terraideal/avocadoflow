@@ -1,13 +1,20 @@
 import React, { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { OPERATIONS } from "./OperationSelector";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 const ORCHARDS = Array.from({ length: 20 }, (_, i) => `P${i + 1}`);
 
 export default function QRGenerator({ operatorName }) {
   const [operation, setOperation] = useState("");
   const [orchard, setOrchard] = useState("");
+
+  const { data: operations = [] } = useQuery({
+    queryKey: ["operations"],
+    queryFn: () => base44.entities.Operation.list("sort_order"),
+    select: (data) => data.filter((op) => op.active),
+  });
 
   const qrData = JSON.stringify({
     operator: operatorName,
@@ -30,9 +37,9 @@ export default function QRGenerator({ operatorName }) {
           <SelectValue placeholder="Selecione a operação" />
         </SelectTrigger>
         <SelectContent>
-          {OPERATIONS.map((op) => (
-            <SelectItem key={op.id} value={op.id}>
-              {op.id}. {op.name}
+          {operations.map((op) => (
+            <SelectItem key={op.id} value={op.code}>
+              {op.code}. {op.name}
             </SelectItem>
           ))}
         </SelectContent>
