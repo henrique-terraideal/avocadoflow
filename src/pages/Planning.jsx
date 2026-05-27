@@ -130,26 +130,14 @@ export default function Planning() {
   <body>${items}</body>
 </html>`;
 
-    // Use data URI — works on both Android Chrome and iOS Safari
-    const encoded = "data:text/html;charset=utf-8," + encodeURIComponent(html);
-    const win = window.open(encoded, "_blank");
-    if (!win) {
-      // Fallback: inject iframe if popup was blocked
-      let iframe = document.getElementById("print-frame");
-      if (!iframe) {
-        iframe = document.createElement("iframe");
-        iframe.id = "print-frame";
-        iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;";
-        document.body.appendChild(iframe);
-      }
-      const iframeDoc = iframe.contentWindow.document;
-      iframeDoc.open();
-      iframeDoc.write(html);
-      iframeDoc.close();
-      setTimeout(() => {
-        iframe.contentWindow.focus();
-        iframe.contentWindow.print();
-      }, 800);
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+      // Wait for images (QR codes) to load before printing
+      win.onload = () => setTimeout(() => win.print(), 500);
+      setTimeout(() => win.print(), 2000); // Fallback timeout
     }
   };
 
