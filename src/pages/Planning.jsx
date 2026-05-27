@@ -130,7 +130,9 @@ export default function Planning() {
   <body>${items}</body>
 </html>`;
 
-    const blob = new Blob([html], { type: "text/html" });
+    // Adiciona auto-print no HTML antes de abrir
+    const htmlWithPrint = html.replace("</body>", "<script>window.onload=function(){window.print();}<\/script></body>");
+    const blob = new Blob([htmlWithPrint], { type: "text/html" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -139,7 +141,7 @@ export default function Planning() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
   const formattedDate = format(new Date(selectedDate + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR });
