@@ -2,7 +2,9 @@ import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Printer, Plus, Trash2, ClipboardList, ChevronLeft, ChevronRight, CheckSquare, Square } from "lucide-react";
+import { Printer, Plus, Trash2, ClipboardList, ChevronLeft, ChevronRight, CheckSquare, Square, Pencil, Clock } from "lucide-react";
+import EditLabelModal from "../components/planning/EditLabelModal";
+import FillTimesModal from "../components/planning/FillTimesModal";
 import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -16,6 +18,8 @@ export default function Planning() {
   const [selectedDate, setSelectedDate] = useState(today());
   const [showForm, setShowForm] = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
+  const [editingLabel, setEditingLabel] = useState(null);
+  const [fillingLabel, setFillingLabel] = useState(null);
   const printRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -43,6 +47,33 @@ export default function Planning() {
     mutationFn: (id) => base44.entities.PlanningLabel.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["planning-labels", selectedDate] }),
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.PlanningLabel.update(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["planning-labels", selectedDate] }),
+  });
+
+  const handleEditSave = (updatedData) => {
+    updateMutation.mutate({ id: editingLabel.id, data: updatedData });
+    setEditingLabel(null);
+  };
+
+  const handleFillTimes = ({ startTime, endTime, observations }) => {
+    const label = fillingLabel;
+    const params = new URLSearchParams(new URL(label.qr_data).search);
+    base44.entities.FieldRecord.create({
+      operator_name: label.operator_name,
+      operator_id: params.get("op_id") || "",
+      operation: label.operation_name,
+      orchard_number: label.orchard_number,
+      start_time: startTime,
+      end_time: endTime,
+      date: selectedDate,
+      observations,
+      qr_scanned: false,
+    });
+    setFillingLabel(null);
+  };
 
   const handleAddLabel = (label) => {
     createMutation.mutate({
@@ -226,14 +257,34 @@ export default function Planning() {
                       {label.operator_name} · {label.orchard_number}
                     </span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => { e.stopPropagation(); handleRemove(label.id); }}
-                    className="text-destructive hover:bg-destructive/10 w-8 h-8"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); setFillingLabel(label); }}
+                      className="text-primary hover:bg-primary/10 w-8 h-8"
+                      title="Preencher horários"
+                    >
+                      <Clock className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); setEditingLabel(label); }}
+                      className="text-muted-foreground hover:bg-muted w-8 h-8"
+                      title="Editar etiqueta"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => { e.stopPropagation(); handleRemove(label.id); }}
+                      className="text-destructive hover:bg-destructive/10 w-8 h-8"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
                 <div className="p-4">
                   <LabelPreview label={toLabelPreviewProps(label)} compact />
@@ -262,6 +313,24 @@ export default function Planning() {
       </div>
 
       <BottomNav />
+
+      {editingLabel && (
+        <EditLabelModal
+          label={editingLabel}
+          operators={operators}
+          operations={operations}
+          onSave={handleEditSave}
+          onClose={() => setEditingLabel(null)}
+        />
+      )}
+
+      {fillingLabel && (
+        <FillTimesModal
+          label={fillingLabel}
+          onSave={handleFillTimes}
+          onClose={() => setFillingLabel(null)}
+        />
+      )}
     </div>
   );
 }
