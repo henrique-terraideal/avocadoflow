@@ -104,7 +104,7 @@ export default function Planning() {
           <div style="display:inline-block;background:#f0f0f0;border-radius:3mm;padding:1mm 3mm;font-size:9pt;font-weight:600;color:#444;margin-bottom:4mm;">🌳 Pomar ${label.orchard_number}</div>
           <div style="border-top:1px dashed #ccc;margin:2mm 0 3mm;"></div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:1mm;">
-            <img src="${qrUrl}" style="width:50mm;height:50mm;" />
+            <img src="${qrUrl}" style="width:30mm;height:30mm;" />
             <div style="font-size:7pt;color:#999;">Escaneie para registrar</div>
           </div>
         </div>
