@@ -14,6 +14,7 @@ import TimeEntry from "../components/field/TimeEntry";
 import ReviewCard from "../components/field/ReviewCard";
 import QRScanner from "../components/field/QRScanner";
 import BottomNav from "../components/field/BottomNav";
+import PendingRecords from "../components/field/PendingRecords";
 
 export default function NewRecord() {
   const { toast } = useToast();
@@ -174,6 +175,17 @@ export default function NewRecord() {
     setSubmitted(false);
   };
 
+  const handleSelectPending = ({ actId, actCode, actName, orchard }) => {
+    const foundOp = operations.find(o => o.id === actId);
+    if (foundOp) {
+      setSelectedOperation({ id: foundOp.code, name: foundOp.name });
+    } else if (actCode && actName) {
+      setSelectedOperation({ id: actCode, name: actName });
+    }
+    if (orchard) setSelectedOrchard(orchard);
+    setStep(3);
+  };
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
@@ -250,17 +262,23 @@ export default function NewRecord() {
                 // Operador: mostra apenas o card dele, bloqueado
                 <div>
                   {selectedOperator ? (
-                    <div className="flex flex-col items-center gap-3 p-6 bg-primary/10 rounded-2xl border-2 border-primary">
-                      {selectedOperator.photo_url ? (
-                        <img src={selectedOperator.photo_url} alt={selectedOperator.name} className="w-20 h-20 rounded-full object-cover" />
-                      ) : (
-                        <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-bold">
-                          {selectedOperator.name[0]}
-                        </div>
-                      )}
-                      <span className="font-bold text-lg">{selectedOperator.name}</span>
-                      <span className="text-xs text-muted-foreground">Você está logado como este operador</span>
-                    </div>
+                    <>
+                      <div className="flex flex-col items-center gap-3 p-6 bg-primary/10 rounded-2xl border-2 border-primary">
+                        {selectedOperator.photo_url ? (
+                          <img src={selectedOperator.photo_url} alt={selectedOperator.name} className="w-20 h-20 rounded-full object-cover" />
+                        ) : (
+                          <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-3xl font-bold">
+                            {selectedOperator.name[0]}
+                          </div>
+                        )}
+                        <span className="font-bold text-lg">{selectedOperator.name}</span>
+                        <span className="text-xs text-muted-foreground">Você está logado como este operador</span>
+                      </div>
+                      <PendingRecords
+                        operatorId={selectedOperator.id}
+                        onSelect={handleSelectPending}
+                      />
+                    </>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
                       <p>Nenhum operador vinculado à sua conta.</p>
