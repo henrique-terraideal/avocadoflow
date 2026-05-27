@@ -130,15 +130,25 @@ export default function Planning() {
   <body>${items}</body>
 </html>`;
 
-    const win = window.open("", "_blank");
-    if (win) {
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-      // Wait for images (QR codes) to load before printing
-      win.onload = () => setTimeout(() => win.print(), 500);
-      setTimeout(() => win.print(), 2000); // Fallback timeout
-    }
+    // Remove iframe anterior se existir
+    const old = document.getElementById("hp-print-frame");
+    if (old) old.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "hp-print-frame";
+    iframe.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;background:white;";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow.document;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    setTimeout(() => {
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+      setTimeout(() => iframe.remove(), 1000);
+    }, 1500);
   };
 
   const formattedDate = format(new Date(selectedDate + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR });
