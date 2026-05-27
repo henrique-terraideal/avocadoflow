@@ -99,8 +99,8 @@ export default function Planning() {
             <div class="label-title">HP Avocado</div>
             <div class="label-subtitle">Boletim Diário de Serviços</div>
           </div>
-          <div style="font-size:13pt;font-weight:800;color:#111;line-height:1.2;margin-bottom:2mm;">${label.operator_name}</div>
-          <div style="font-size:11pt;font-weight:700;color:#1a7a3a;line-height:1.3;margin-bottom:3mm;">${label.operation_code}. ${label.operation_name}</div>
+          <div style="font-size:16pt;font-weight:900;color:#111;line-height:1.2;margin-bottom:2mm;">${label.operator_name}</div>
+          <div style="font-size:14pt;font-weight:800;color:#1a7a3a;line-height:1.3;margin-bottom:3mm;">${label.operation_code}. ${label.operation_name}</div>
           <div style="display:inline-block;background:#f0f0f0;border-radius:3mm;padding:1mm 3mm;font-size:9pt;font-weight:600;color:#444;margin-bottom:4mm;">🌳 Pomar ${label.orchard_number}</div>
           <div style="border-top:1px dashed #ccc;margin:2mm 0 3mm;"></div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:1mm;">
@@ -119,11 +119,11 @@ export default function Planning() {
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { background: white; }
-            .label-page { width: 80mm; max-width: 80mm; page-break-after: always; padding: 4mm; font-family: Arial, sans-serif; }
+            .label-page { width: 58mm; max-width: 58mm; page-break-after: always; padding: 3mm; font-family: Arial, sans-serif; }
             .label-page:last-child { page-break-after: auto; }
-            .label-title { font-size: 11pt; font-weight: bold; }
-            .label-subtitle { font-size: 8pt; color: #555; }
-            @media print { @page { size: 80mm auto; margin: 0; } }
+            .label-title { font-size: 10pt; font-weight: bold; }
+            .label-subtitle { font-size: 7pt; color: #555; }
+            @media print { @page { size: 58mm auto; margin: 0; } }
           </style>
         </head>
         <body>${items}</body>
