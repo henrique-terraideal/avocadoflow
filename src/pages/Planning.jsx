@@ -130,14 +130,26 @@ export default function Planning() {
   <body>${items}</body>
 </html>`;
 
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    // Inject into hidden iframe in the same page — works on Android
+    let iframe = document.getElementById("print-frame");
+    if (!iframe) {
+      iframe = document.createElement("iframe");
+      iframe.id = "print-frame";
+      iframe.style.cssText = "position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:none;";
+      document.body.appendChild(iframe);
+    }
+
+    const iframeDoc = iframe.contentWindow.document;
+    iframeDoc.open();
+    iframeDoc.write(html);
+    iframeDoc.close();
+
+    iframe.onload = () => {
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+      }, 300);
+    };
   };
 
   const formattedDate = format(new Date(selectedDate + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR });
