@@ -130,25 +130,26 @@ export default function Planning() {
   <body>${items}</body>
 </html>`;
 
-    // Remove iframe anterior se existir
-    const old = document.getElementById("hp-print-frame");
-    if (old) old.remove();
-
-    const iframe = document.createElement("iframe");
-    iframe.id = "hp-print-frame";
-    iframe.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;border:none;z-index:9999;background:white;";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow.document;
-    doc.open();
-    doc.write(html);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-      setTimeout(() => iframe.remove(), 1000);
-    }, 1500);
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const printWin = window.open(url, "_blank");
+    if (printWin) {
+      printWin.onload = () => {
+        printWin.focus();
+        printWin.print();
+        setTimeout(() => {
+          printWin.close();
+          URL.revokeObjectURL(url);
+        }, 1000);
+      };
+    } else {
+      // Fallback: link para download se popup bloqueado
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "etiquetas-hp-avocado.html";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
   };
 
   const formattedDate = format(new Date(selectedDate + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR });
