@@ -120,11 +120,11 @@ export default function Planning() {
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body { background: white; }
-      .label-page { width: 100%; page-break-after: always; padding: 4mm; font-family: Arial, sans-serif; }
+      .label-page { width: 58mm; max-width: 58mm; page-break-after: always; padding: 3mm; font-family: Arial, sans-serif; }
       .label-page:last-child { page-break-after: auto; }
-      .label-title { font-size: 11pt; font-weight: bold; }
-      .label-subtitle { font-size: 8pt; color: #555; }
-      @media print { @page { size: auto; margin: 0; } }
+      .label-title { font-size: 10pt; font-weight: bold; }
+      .label-subtitle { font-size: 7pt; color: #555; }
+      @media print { @page { size: 58mm auto; margin: 0; } }
     </style>
   </head>
   <body>${items}</body>
