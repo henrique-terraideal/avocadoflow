@@ -12,6 +12,7 @@ export default function QRScanner({ onScan, onClose }) {
   const animFrameRef = useRef(null);
   const doneRef = useRef(false);
   const lastScanRef = useRef(0);
+  const trackRef = useRef(null);
 
   useEffect(() => {
     startCamera();
@@ -34,6 +35,7 @@ export default function QRScanner({ onScan, onClose }) {
 
       // Ativa foco contínuo automático se o dispositivo suportar
       const track = stream.getVideoTracks()[0];
+      trackRef.current = track;
       if (track && track.applyConstraints) {
         const capabilities = track.getCapabilities?.() || {};
         if (capabilities.focusMode?.includes?.("continuous")) {
@@ -55,6 +57,30 @@ export default function QRScanner({ onScan, onClose }) {
 
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach(t => t.stop());
+  };
+
+  const [tapPoint, setTapPoint] = useState(null);
+
+  const handleTapFocus = async (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+
+    setTapPoint({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setTimeout(() => setTapPoint(null), 800);
+
+    const track = trackRef.current;
+    if (!track) return;
+    const capabilities = track.getCapabilities?.() || {};
+    if (capabilities.focusMode?.includes?.("manual") && capabilities.pointsOfInterest) {
+      await track.applyConstraints({
+        advanced: [{ focusMode: "manual", pointsOfInterest: [{ x, y }] }]
+      }).catch(() => {});
+      // Volta para contínuo após focar
+      setTimeout(() => {
+        track.applyConstraints({ advanced: [{ focusMode: "continuous" }] }).catch(() => {});
+      }, 1500);
+    }
   };
 
   const scanFrame = (timestamp) => {
@@ -123,9 +149,20 @@ export default function QRScanner({ onScan, onClose }) {
           <X className="w-6 h-6" />
         </Button>
 
-        <div className="relative rounded-2xl overflow-hidden bg-black aspect-square">
+        <div className="relative rounded-2xl overflow-hidden bg-black aspect-square" onClick={handleTapFocus}>
           <video ref={videoRef} className="w-full h-full object-cover" playsInline muted autoPlay />
           <canvas ref={canvasRef} className="hidden" />
+
+          {/* Tap to focus indicator */}
+          {tapPoint && (
+            <motion.div
+              initial={{ opacity: 1, scale: 1.4 }}
+              animate={{ opacity: 0, scale: 1 }}
+              transition={{ duration: 0.8 }}
+              className="absolute w-12 h-12 border-2 border-yellow-400 rounded-full pointer-events-none"
+              style={{ left: tapPoint.x - 24, top: tapPoint.y - 24 }}
+            />
+          )}
 
           {/* Scan overlay */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
