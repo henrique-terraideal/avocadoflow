@@ -27,10 +27,19 @@ export default function QRScanner({ onScan, onClose }) {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode: "environment",
-          width: { ideal: 640 },
-          height: { ideal: 640 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
         }
       });
+
+      // Ativa foco contínuo automático se o dispositivo suportar
+      const track = stream.getVideoTracks()[0];
+      if (track && track.applyConstraints) {
+        const capabilities = track.getCapabilities?.() || {};
+        if (capabilities.focusMode?.includes?.("continuous")) {
+          await track.applyConstraints({ advanced: [{ focusMode: "continuous" }] }).catch(() => {});
+        }
+      }
       streamRef.current = stream;
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
