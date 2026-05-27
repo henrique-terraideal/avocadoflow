@@ -104,34 +104,40 @@ export default function Planning() {
           <div style="display:inline-block;background:#f0f0f0;border-radius:3mm;padding:1mm 3mm;font-size:9pt;font-weight:600;color:#444;margin-bottom:4mm;">🌳 Pomar ${label.orchard_number}</div>
           <div style="border-top:1px dashed #ccc;margin:2mm 0 3mm;"></div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:1mm;">
-            <img src="${qrUrl}" style="width:60mm;height:60mm;" />
+            <img src="${qrUrl}" style="width:50mm;height:50mm;" />
             <div style="font-size:7pt;color:#999;">Escaneie para registrar</div>
           </div>
         </div>
       `;
     }).join("");
 
-    const win = window.open("", "_blank");
-    win.document.write(`
-      <html>
-        <head>
-          <title>Etiquetas HP Avocado</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { background: white; }
-            .label-page { width: 58mm; max-width: 58mm; page-break-after: always; padding: 3mm; font-family: Arial, sans-serif; }
-            .label-page:last-child { page-break-after: auto; }
-            .label-title { font-size: 10pt; font-weight: bold; }
-            .label-subtitle { font-size: 7pt; color: #555; }
-            @media print { @page { size: 58mm auto; margin: 0; } }
-          </style>
-        </head>
-        <body>${items}</body>
-      </html>
-    `);
-    win.document.close();
-    win.focus();
-    setTimeout(() => { win.print(); win.close(); }, 500);
+    const html = `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Etiquetas HP Avocado</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { background: white; }
+      .label-page { width: 58mm; max-width: 58mm; page-break-after: always; padding: 3mm; font-family: Arial, sans-serif; }
+      .label-page:last-child { page-break-after: auto; }
+      .label-title { font-size: 10pt; font-weight: bold; }
+      .label-subtitle { font-size: 7pt; color: #555; }
+      @media print { @page { size: 58mm auto; margin: 0; } }
+    </style>
+  </head>
+  <body>${items}</body>
+</html>`;
+
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
   };
 
   const formattedDate = format(new Date(selectedDate + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR });
