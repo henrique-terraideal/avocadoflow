@@ -132,24 +132,14 @@ export default function Planning() {
 
     const blob = new Blob([html], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-    const printWin = window.open(url, "_blank");
-    if (printWin) {
-      printWin.onload = () => {
-        printWin.focus();
-        printWin.print();
-        setTimeout(() => {
-          printWin.close();
-          URL.revokeObjectURL(url);
-        }, 1000);
-      };
-    } else {
-      // Fallback: link para download se popup bloqueado
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "etiquetas-hp-avocado.html";
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 2000);
-    }
+    const a = document.createElement("a");
+    a.href = url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
   };
 
   const formattedDate = format(new Date(selectedDate + "T12:00:00"), "EEEE, d 'de' MMMM", { locale: ptBR });
