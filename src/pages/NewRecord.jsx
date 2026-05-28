@@ -362,7 +362,7 @@ export default function NewRecord() {
           label={qrLabel}
           operators={operators}
           operations={operations}
-          onSave={async (data) => {
+          onSave={async (data, options = {}) => {
             const today = new Date().toISOString().split("T")[0];
             await base44.entities.FieldRecord.create({
               ...data,
@@ -372,8 +372,15 @@ export default function NewRecord() {
             });
             queryClient.invalidateQueries({ queryKey: ["field-records"] });
             queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
-            setQrLabel(null);
-            setSubmitted(true);
+            if (options.keepPending) {
+              // Reabre o modal com campos zerados para novo registro na mesma atividade
+              const current = qrLabel;
+              setQrLabel(null);
+              setTimeout(() => setQrLabel(current), 100);
+            } else {
+              setQrLabel(null);
+              setSubmitted(true);
+            }
           }}
           onClose={() => setQrLabel(null)}
         />

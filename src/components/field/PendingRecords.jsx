@@ -35,7 +35,6 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
       queryClient.invalidateQueries({ queryKey: ["field-records"] });
-      setOpenLabel(null);
     },
   });
 
@@ -57,13 +56,19 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     } catch { return false; }
   });
 
-  const handleSave = (data) => {
+  const handleSave = (data, options = {}) => {
+    const labelToReopen = options.keepPending ? openLabel : null;
     createMutation.mutate({
       ...data,
       date: selectedDate,
       qr_scanned: false,
       created_by_user_id: currentUser?.id,
     });
+    setOpenLabel(null);
+    // Se keepPending, reabre o modal logo após (com campos zerados via remount por key)
+    if (labelToReopen) {
+      setTimeout(() => setOpenLabel(labelToReopen), 100);
+    }
   };
 
   const isToday = selectedDate === todayStr();

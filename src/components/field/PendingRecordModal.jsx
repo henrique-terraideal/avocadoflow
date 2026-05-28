@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock, Pencil, ChevronDown } from "lucide-react";
+import { Check, X, Clock, Pencil, ChevronDown, RefreshCw, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import OperationFilter from "./OperationFilter";
@@ -33,6 +33,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const [endTime, setEndTime] = useState("");
   const [observations, setObservations] = useState("");
   const [showDetails, setShowDetails] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
 
   const { data: orchardList = [] } = useQuery({
     queryKey: ["orchards"],
@@ -43,18 +44,25 @@ export default function PendingRecordModal({ label, operators, operations, onSav
 
   const canSave = selectedOperator && selectedOperation && selectedOrchard && startTime && endTime;
 
-  const handleSave = () => {
-    if (!canSave) return;
-    onSave({
-      operator_name: selectedOperator.name,
-      operator_id: selectedOperator.id,
-      operation: `${selectedOperation.code}. ${selectedOperation.name}`,
-      orchard_number: selectedOrchard,
-      start_time: startTime,
-      end_time: endTime,
-      observations,
-      planned_date: label.date,
-    });
+  const buildData = () => ({
+    operator_name: selectedOperator.name,
+    operator_id: selectedOperator.id,
+    operation: `${selectedOperation.code}. ${selectedOperation.name}`,
+    orchard_number: selectedOrchard,
+    start_time: startTime,
+    end_time: endTime,
+    observations,
+    planned_date: label.date,
+  });
+
+  // Fecha a atividade (some dos pendentes)
+  const handleClose = () => {
+    onSave(buildData(), { keepPending: false });
+  };
+
+  // Mantém a atividade pendente (registra mas não fecha)
+  const handleKeepPending = () => {
+    onSave(buildData(), { keepPending: true });
   };
 
   return (
@@ -217,15 +225,52 @@ export default function PendingRecordModal({ label, operators, operations, onSav
           />
         </div>
 
-        <div className="flex gap-2 pt-1 pb-2">
-          <Button variant="outline" size="lg" onClick={onClose} className="flex-1 rounded-xl h-12">
-            Cancelar
-          </Button>
-          <Button size="lg" disabled={!canSave} onClick={handleSave} className="flex-1 rounded-xl h-12 gap-1">
-            <Check className="w-4 h-4" />
-            Registrar
-          </Button>
-        </div>
+        {/* Opções de registro */}
+        <AnimatePresence mode="wait">
+          {!showOptions ? (
+            <motion.div key="btns" className="flex gap-2 pt-1 pb-2">
+              <Button variant="outline" size="lg" onClick={onClose} className="flex-1 rounded-xl h-12">
+                Cancelar
+              </Button>
+              <Button size="lg" disabled={!canSave} onClick={() => setShowOptions(true)} className="flex-1 rounded-xl h-12 gap-1">
+                <Check className="w-4 h-4" />
+                Registrar
+              </Button>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="options"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-2 pt-1 pb-2"
+            >
+              <p className="text-sm font-semibold text-center text-muted-foreground">O que fazer com esta atividade?</p>
+              <button
+                onClick={handleClose}
+                className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-primary bg-primary/5 hover:bg-primary/10 transition-colors text-left"
+              >
+                <CheckCircle2 className="w-6 h-6 text-primary shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm">Encerrar atividade</p>
+                  <p className="text-xs text-muted-foreground">Registra e remove dos pendentes</p>
+                </div>
+              </button>
+              <button
+                onClick={handleKeepPending}
+                className="w-full flex items-center gap-3 p-4 rounded-2xl border-2 border-accent bg-accent/5 hover:bg-accent/10 transition-colors text-left"
+              >
+                <RefreshCw className="w-6 h-6 text-accent-foreground shrink-0" />
+                <div>
+                  <p className="font-semibold text-sm">Continuar depois</p>
+                  <p className="text-xs text-muted-foreground">Registra este período e mantém pendente</p>
+                </div>
+              </button>
+              <Button variant="ghost" size="sm" onClick={() => setShowOptions(false)} className="w-full rounded-xl text-muted-foreground">
+                Voltar
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
