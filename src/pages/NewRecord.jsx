@@ -15,6 +15,7 @@ import ReviewCard from "../components/field/ReviewCard";
 import QRScanner from "../components/field/QRScanner";
 import BottomNav from "../components/field/BottomNav";
 import PendingRecords from "../components/field/PendingRecords";
+import PendingRecordModal from "../components/field/PendingRecordModal";
 
 export default function NewRecord() {
   const { toast } = useToast();
@@ -24,6 +25,7 @@ export default function NewRecord() {
   const [showScanner, setShowScanner] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [qrLabel, setQrLabel] = useState(null);
 
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedOperator, setSelectedOperator] = useState(null);
@@ -97,40 +99,24 @@ export default function NewRecord() {
   const handleQRScan = (rawValue) => {
     setShowScanner(false);
     try {
-      // Suporte a URL (novo formato) ou JSON (formato legado)
-      let op_id, act_id, act_code, act_name, orchard;
+      // Monta um objeto "label" simulado para abrir o PendingRecordModal
+      let qr_data = rawValue;
+      let date = new Date().toISOString().split("T")[0];
 
-      if (rawValue.startsWith("http")) {
-        const url = new URL(rawValue);
-        op_id = url.searchParams.get("op_id");
-        act_id = url.searchParams.get("act_id");
-        act_code = url.searchParams.get("act_code");
-        act_name = url.searchParams.get("act_name");
-        orchard = url.searchParams.get("orchard");
-      } else {
+      // Suporte a JSON legado — converte para URL
+      if (!rawValue.startsWith("http")) {
         const data = JSON.parse(rawValue);
-        op_id = data.operator_id;
-        act_id = data.operation;
-        act_name = data.operation_name;
-        orchard = data.orchard;
+        const params = new URLSearchParams({
+          op_id: data.operator_id || "",
+          act_id: data.operation || "",
+          act_code: data.operation || "",
+          act_name: data.operation_name || "",
+          orchard: data.orchard || "",
+        });
+        qr_data = `${window.location.origin}/?${params.toString()}`;
       }
 
-      if (op_id) {
-        const found = operators.find(o => o.id === op_id);
-        if (found) setSelectedOperator(found);
-      }
-      if (act_id) {
-        const foundOp = operations.find(o => o.id === act_id);
-        if (foundOp) {
-          setSelectedOperation({ id: foundOp.code, name: foundOp.name });
-        } else if (act_code && act_name) {
-          setSelectedOperation({ id: act_code, name: act_name });
-        }
-      }
-      if (orchard) setSelectedOrchard(orchard);
-      if (op_id && act_id && orchard) setStep(3);
-
-      toast({ title: "QR Code lido!", description: "Dados preenchidos automaticamente." });
+      setQrLabel({ qr_data, date });
     } catch {
       toast({ title: "QR Code inválido", description: "Formato não reconhecido.", variant: "destructive" });
     }
@@ -369,6 +355,29 @@ export default function NewRecord() {
           <QRScanner onScan={handleQRScan} onClose={() => setShowScanner(false)} />
         )}
       </AnimatePresence>
+
+      {/* Modal QR — mesmo fluxo do pendente */}
+      {qrLabel && (
+        <PendingRecordModal
+          label={qrLabel}
+          operators={operators}
+          operations={operations}
+          onSave={async (data) => {
+            const today = new Date().toISOString().split("T")[0];
+            await base44.entities.FieldRecord.create({
+              ...data,
+              date: today,
+              qr_scanned: true,
+              created_by_user_id: currentUser?.id,
+            });
+            queryClient.invalidateQueries({ queryKey: ["field-records"] });
+            queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
+            setQrLabel(null);
+            setSubmitted(true);
+          }}
+          onClose={() => setQrLabel(null)}
+        />
+      )}
 
       <BottomNav />
     </div>
