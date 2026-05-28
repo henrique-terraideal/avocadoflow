@@ -21,7 +21,13 @@ export default function Records() {
   const queryClient = useQueryClient();
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.FieldRecord.delete(id),
+    mutationFn: async (id) => {
+      // Tenta remover da planilha primeiro (silencioso se falhar)
+      try {
+        await base44.functions.invoke("deleteFromSheet", { record_id: id });
+      } catch (_) {}
+      await base44.entities.FieldRecord.delete(id);
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["field-records"] }),
   });
 

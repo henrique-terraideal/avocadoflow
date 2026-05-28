@@ -28,9 +28,11 @@ Deno.serve(async (req) => {
       record.end_time || "",
       record.observations || "",
       new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+      record.id || "", // coluna I: ID interno para rastrear e deletar depois
     ];
 
-    const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Registros:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`;
+    // OVERWRITE: preenche a próxima linha vazia (funciona mesmo se linhas foram removidas manualmente)
+    const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Registros:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
 
     const response = await fetch(appendUrl, {
       method: "POST",
