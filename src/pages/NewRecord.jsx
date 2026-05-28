@@ -276,6 +276,7 @@ export default function NewRecord() {
                       </div>
                       <PendingRecords
                         operatorId={selectedOperator.id}
+                        isAdmin={false}
                         onSelect={handleSelectPending}
                       />
                     </>
@@ -287,7 +288,14 @@ export default function NewRecord() {
                   )}
                 </div>
               ) : (
-                <OperatorSelector operators={operators} selectedId={selectedOperator?.id} onSelect={(op) => setSelectedOperator(op)} />
+                <>
+                  <OperatorSelector operators={operators} selectedId={selectedOperator?.id} onSelect={(op) => setSelectedOperator(op)} />
+                  <PendingRecords
+                    operatorId={null}
+                    isAdmin={true}
+                    onSelect={handleSelectPending}
+                  />
+                </>
               )}
             </motion.div>
           )}

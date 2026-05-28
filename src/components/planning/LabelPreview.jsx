@@ -13,6 +13,9 @@ function QRImg({ data, size = 120 }) {
   );
 }
 
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+
 export default function LabelPreview({ label, compact, forPrint }) {
   if (forPrint) {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(label.qrData)}`;
@@ -40,6 +43,13 @@ export default function LabelPreview({ label, compact, forPrint }) {
         </div>
 
         <div className="label-divider" />
+
+        {/* Data planejada */}
+        {label.date && (
+          <div style={{ fontSize: "8pt", color: "#555", marginBottom: "3mm" }}>
+            📅 {format(new Date(label.date + "T12:00:00"), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </div>
+        )}
 
         {/* QR centralizado em baixo */}
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1mm", marginTop: "2mm" }}>
@@ -71,6 +81,11 @@ export default function LabelPreview({ label, compact, forPrint }) {
         <div className="inline-block bg-muted rounded-lg px-2 py-0.5 text-xs font-semibold text-muted-foreground">
           🌳 Pomar {label.orchardNumber}
         </div>
+        {label.date && (
+          <div className="text-xs text-muted-foreground/70 mt-1">
+            📅 {format(new Date(label.date + "T12:00:00"), "dd/MM/yyyy")}
+          </div>
+        )}
       </div>
 
       {/* QR grande */}

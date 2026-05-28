@@ -116,6 +116,7 @@ export default function Planning() {
     operationName: l.operation_name,
     orchardNumber: l.orchard_number,
     qrData: l.qr_data,
+    date: l.date,
   });
 
   const handlePrint = () => {
@@ -132,7 +133,8 @@ export default function Planning() {
           </div>
           <div style="font-size:16pt;font-weight:900;color:#111;line-height:1.2;margin-bottom:2mm;">${label.operator_name}</div>
           <div style="font-size:14pt;font-weight:800;color:#1a7a3a;line-height:1.3;margin-bottom:3mm;">${label.operation_code}. ${label.operation_name}</div>
-          <div style="display:inline-block;background:#f0f0f0;border-radius:3mm;padding:1mm 3mm;font-size:9pt;font-weight:600;color:#444;margin-bottom:4mm;">🌳 Pomar ${label.orchard_number}</div>
+          <div style="display:inline-block;background:#f0f0f0;border-radius:3mm;padding:1mm 3mm;font-size:9pt;font-weight:600;color:#444;margin-bottom:2mm;">🌳 Pomar ${label.orchard_number}</div>
+          <div style="font-size:8pt;color:#555;margin-bottom:3mm;">📅 ${new Date(label.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</div>
           <div style="border-top:1px dashed #ccc;margin:2mm 0 3mm;"></div>
           <div style="display:flex;flex-direction:column;align-items:center;gap:1mm;">
             <img src="${qrUrl}" style="width:30mm;height:30mm;" />
