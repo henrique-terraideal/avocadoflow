@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar, User, Wrench, TreePine, Clock, ArrowLeft } from "lucide-react";
+import { Calendar, User, Wrench, TreePine, Clock, ArrowLeft, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,6 +18,12 @@ export default function Records() {
   }, []);
 
   const isAdmin = currentUser?.role === "admin";
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: (id) => base44.entities.FieldRecord.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["field-records"] }),
+  });
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ["field-records", currentUser?.id, isAdmin],
@@ -91,12 +97,24 @@ export default function Records() {
                           <User className="w-4 h-4 text-primary" />
                           <span className="font-semibold text-sm">{record.operator_name}</span>
                         </div>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="w-3 h-3" />
-                          {record.start_time} → {record.end_time}
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            {record.start_time} → {record.end_time}
+                          </div>
+                          {isAdmin && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteMutation.mutate(record.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                         <div className="flex items-center gap-1">
                           <Wrench className="w-3.5 h-3.5" />
                           {record.operation}
@@ -106,6 +124,11 @@ export default function Records() {
                           {record.orchard_number}
                         </div>
                       </div>
+                      {record.planned_date && record.planned_date !== record.date && (
+                        <p className="text-xs text-muted-foreground/70">
+                          📅 Planejado para {format(new Date(record.planned_date + "T12:00:00"), "dd/MM/yyyy")}
+                        </p>
+                      )}
                     </div>
                   ))}
                 </div>

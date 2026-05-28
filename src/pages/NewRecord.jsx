@@ -175,16 +175,6 @@ export default function NewRecord() {
     setSubmitted(false);
   };
 
-  const handleSelectPending = ({ actId, actCode, actName, orchard }) => {
-    const foundOp = operations.find(o => o.id === actId);
-    if (foundOp) {
-      setSelectedOperation({ id: foundOp.code, name: foundOp.name });
-    } else if (actCode && actName) {
-      setSelectedOperation({ id: actCode, name: actName });
-    }
-    if (orchard) setSelectedOrchard(orchard);
-    setStep(3);
-  };
 
   if (submitted) {
     return (
@@ -277,7 +267,9 @@ export default function NewRecord() {
                       <PendingRecords
                         operatorId={selectedOperator.id}
                         isAdmin={false}
-                        onSelect={handleSelectPending}
+                        operators={operators}
+                        operations={operations}
+                        currentUser={currentUser}
                       />
                     </>
                   ) : (
@@ -293,7 +285,9 @@ export default function NewRecord() {
                   <PendingRecords
                     operatorId={null}
                     isAdmin={true}
-                    onSelect={handleSelectPending}
+                    operators={operators}
+                    operations={operations}
+                    currentUser={currentUser}
                   />
                 </>
               )}

@@ -1,16 +1,19 @@
 import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { ClipboardCheck, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import PendingRecordModal from "./PendingRecordModal";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
-export default function PendingRecords({ operatorId, isAdmin, onSelect }) {
+export default function PendingRecords({ operatorId, isAdmin, operators, operations, currentUser }) {
   const [selectedDate, setSelectedDate] = useState(todayStr());
+  const [openLabel, setOpenLabel] = useState(null);
+  const queryClient = useQueryClient();
 
   const { data: pendingLabels = [] } = useQuery({
     queryKey: ["pending-labels", operatorId, isAdmin, selectedDate],
@@ -21,45 +24,53 @@ export default function PendingRecords({ operatorId, isAdmin, onSelect }) {
   const { data: existingRecords = [] } = useQuery({
     queryKey: ["field-records-date", operatorId, isAdmin, selectedDate],
     queryFn: () => {
-      if (isAdmin) {
-        return base44.entities.FieldRecord.filter({ date: selectedDate }, "-created_date", 500);
-      }
+      if (isAdmin) return base44.entities.FieldRecord.filter({ date: selectedDate }, "-created_date", 500);
       return base44.entities.FieldRecord.filter({ date: selectedDate, operator_id: operatorId }, "-created_date", 100);
     },
     enabled: isAdmin ? true : !!operatorId,
   });
 
-  // Filtra etiquetas pendentes
+  const createMutation = useMutation({
+    mutationFn: (data) => base44.entities.FieldRecord.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
+      queryClient.invalidateQueries({ queryKey: ["field-records"] });
+      setOpenLabel(null);
+    },
+  });
+
   const pending = pendingLabels.filter((label) => {
     if (!label.qr_data) return false;
     try {
       const url = new URL(label.qr_data);
       const labelOpId = url.searchParams.get("op_id");
-
-      // Operador normal: só vê as suas
       if (!isAdmin && labelOpId !== operatorId) return false;
-
       const actCode = url.searchParams.get("act_code");
       const alreadyDone = existingRecords.some(
         (r) =>
           r.operator_id === labelOpId &&
           r.orchard_number === label.orchard_number &&
-          r.start_time &&
-          r.end_time &&
+          r.start_time && r.end_time &&
           actCode && r.operation?.includes(actCode)
       );
       return !alreadyDone;
-    } catch {
-      return false;
-    }
+    } catch { return false; }
   });
+
+  const handleSave = (data) => {
+    createMutation.mutate({
+      ...data,
+      date: selectedDate,
+      qr_scanned: false,
+      created_by_user_id: currentUser?.id,
+    });
+  };
 
   const isToday = selectedDate === todayStr();
   const formattedDate = format(new Date(selectedDate + "T12:00:00"), "EEE, d 'de' MMM", { locale: ptBR });
 
   return (
     <div className="mt-5">
-      {/* Cabeçalho com filtro de data */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <ClipboardCheck className="w-4 h-4 text-primary" />
@@ -74,24 +85,16 @@ export default function PendingRecords({ operatorId, isAdmin, onSelect }) {
 
       {/* Seletor de data */}
       <div className="flex items-center justify-between bg-card border border-border rounded-2xl px-3 py-2 shadow-sm mb-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => setSelectedDate(subDays(new Date(selectedDate + "T12:00:00"), 1).toISOString().split("T")[0])}
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7"
+          onClick={() => setSelectedDate(subDays(new Date(selectedDate + "T12:00:00"), 1).toISOString().split("T")[0])}>
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <div className="text-center">
           <p className="text-sm font-semibold capitalize">{formattedDate}</p>
           {isToday && <p className="text-xs text-primary font-medium">Hoje</p>}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7"
-          onClick={() => setSelectedDate(addDays(new Date(selectedDate + "T12:00:00"), 1).toISOString().split("T")[0])}
-        >
+        <Button variant="ghost" size="icon" className="h-7 w-7"
+          onClick={() => setSelectedDate(addDays(new Date(selectedDate + "T12:00:00"), 1).toISOString().split("T")[0])}>
           <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
@@ -101,23 +104,20 @@ export default function PendingRecords({ operatorId, isAdmin, onSelect }) {
       ) : (
         <div className="space-y-2">
           {pending.map((label) => {
-            let actId, actCode, actName, orchard, opName;
+            let actCode, actName, orchard, opName;
             try {
               const url = new URL(label.qr_data);
-              actId = url.searchParams.get("act_id");
               actCode = url.searchParams.get("act_code");
               actName = url.searchParams.get("act_name");
               orchard = url.searchParams.get("orchard");
               opName = url.searchParams.get("op_name");
-            } catch {
-              return null;
-            }
+            } catch { return null; }
 
             return (
               <motion.button
                 key={label.id}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => onSelect({ actId, actCode, actName, orchard })}
+                onClick={() => setOpenLabel(label)}
                 className="w-full text-left bg-card border-2 border-accent/40 hover:border-accent rounded-2xl px-4 py-3 transition-colors shadow-sm"
               >
                 <div className="flex items-center justify-between">
@@ -125,9 +125,7 @@ export default function PendingRecords({ operatorId, isAdmin, onSelect }) {
                     {isAdmin && opName && (
                       <p className="text-xs text-muted-foreground font-semibold mb-0.5">{opName}</p>
                     )}
-                    <p className="font-semibold text-sm text-foreground">
-                      {actCode}. {actName}
-                    </p>
+                    <p className="font-semibold text-sm text-foreground">{actCode}. {actName}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">🌳 Pomar {orchard}</p>
                     <p className="text-xs text-muted-foreground/70 mt-0.5">
                       📅 Planejado para {format(new Date(label.date + "T12:00:00"), "dd/MM/yyyy")}
@@ -142,6 +140,16 @@ export default function PendingRecords({ operatorId, isAdmin, onSelect }) {
             );
           })}
         </div>
+      )}
+
+      {openLabel && (
+        <PendingRecordModal
+          label={openLabel}
+          operators={operators}
+          operations={operations}
+          onSave={handleSave}
+          onClose={() => setOpenLabel(null)}
+        />
       )}
     </div>
   );
