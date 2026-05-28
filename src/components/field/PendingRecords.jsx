@@ -30,11 +30,19 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     enabled: isAdmin ? true : !!operatorId,
   });
 
+  // IDs dos labels que foram parcialmente registrados (continuar depois)
+  const [keepPendingIds, setKeepPendingIds] = useState([]);
+
   const createMutation = useMutation({
-    mutationFn: (data) => base44.entities.FieldRecord.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
+    mutationFn: async ({ data, keepPending }) => {
+      await base44.entities.FieldRecord.create(data);
+      return { keepPending };
+    },
+    onSuccess: ({ keepPending }) => {
       queryClient.invalidateQueries({ queryKey: ["field-records"] });
+      if (!keepPending) {
+        queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
+      }
     },
   });
 
@@ -57,17 +65,21 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
   });
 
   const handleSave = (data, options = {}) => {
-    const labelToReopen = options.keepPending ? openLabel : null;
+    const keepPending = !!options.keepPending;
+    const labelToReopen = keepPending ? openLabel : null;
     createMutation.mutate({
-      ...data,
-      date: selectedDate,
-      qr_scanned: false,
-      created_by_user_id: currentUser?.id,
+      data: {
+        ...data,
+        date: selectedDate,
+        qr_scanned: false,
+        created_by_user_id: currentUser?.id,
+      },
+      keepPending,
     });
     setOpenLabel(null);
-    // Se keepPending, reabre o modal logo após (com campos zerados via remount por key)
     if (labelToReopen) {
-      setTimeout(() => setOpenLabel(labelToReopen), 100);
+      // Reabre o modal com campos zerados (remount via key no modal)
+      setTimeout(() => setOpenLabel({ ...labelToReopen, _reopen: Date.now() }), 100);
     }
   };
 
@@ -149,6 +161,7 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
 
       {openLabel && (
         <PendingRecordModal
+          key={openLabel._reopen ?? openLabel.id}
           label={openLabel}
           operators={operators}
           operations={operations}
