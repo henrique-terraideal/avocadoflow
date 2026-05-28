@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock } from "lucide-react";
+import { Check, X, Clock, Pencil, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import OperationFilter from "./OperationFilter";
+import { AnimatePresence, motion } from "framer-motion";
 
 function nowTime() {
   const d = new Date();
@@ -13,14 +14,11 @@ function nowTime() {
 }
 
 export default function PendingRecordModal({ label, operators, operations, onSave, onClose }) {
-  // Extrair dados do QR
-  let initOpId = "", initActId = "", initActCode = "", initActName = "", initOrchard = "";
+  let initOpId = "", initActCode = "", initOrchard = "";
   try {
     const url = new URL(label.qr_data);
     initOpId = url.searchParams.get("op_id") || "";
-    initActId = url.searchParams.get("act_id") || "";
     initActCode = url.searchParams.get("act_code") || "";
-    initActName = url.searchParams.get("act_name") || "";
     initOrchard = url.searchParams.get("orchard") || "";
   } catch {}
 
@@ -34,6 +32,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [observations, setObservations] = useState("");
+  const [showDetails, setShowDetails] = useState(false);
 
   const { data: orchardList = [] } = useQuery({
     queryKey: ["orchards"],
@@ -64,6 +63,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
         className="bg-card w-full max-w-lg rounded-t-3xl p-5 space-y-4 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold">Registrar Atividade</h2>
@@ -78,61 +78,96 @@ export default function PendingRecordModal({ label, operators, operations, onSav
           </button>
         </div>
 
-        {/* Operador */}
-        <div>
-          <p className="text-sm font-semibold mb-2">Operador</p>
-          <div className="grid grid-cols-3 gap-2">
-            {operators.map((op) => (
-              <button
-                key={op.id}
-                onClick={() => setSelectedOperator(op)}
-                className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all text-center
-                  ${selectedOperator?.id === op.id ? "border-primary bg-primary/10" : "border-border bg-muted/30"}`}
-              >
-                {op.photo_url ? (
-                  <img src={op.photo_url} alt={op.name} className="w-10 h-10 rounded-full object-cover" />
-                ) : (
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
-                    {op.name[0]}
-                  </div>
-                )}
-                <span className="text-xs font-medium leading-tight line-clamp-2">{op.name}</span>
-              </button>
-            ))}
+        {/* Resumo dos campos pré-preenchidos + botão editar */}
+        <div className="bg-muted/50 rounded-2xl px-4 py-3 flex items-center justify-between">
+          <div className="space-y-0.5 min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">
+              {selectedOperator?.name || "—"}
+            </p>
+            <p className="text-xs text-primary font-medium truncate">
+              {selectedOperation ? `${selectedOperation.code}. ${selectedOperation.name}` : "—"}
+            </p>
+            <p className="text-xs text-muted-foreground">🌳 Pomar {selectedOrchard || "—"}</p>
           </div>
+          <button
+            onClick={() => setShowDetails((v) => !v)}
+            className={`ml-3 shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-xl border transition-colors text-xs font-semibold
+              ${showDetails ? "border-primary text-primary bg-primary/10" : "border-border text-muted-foreground hover:bg-muted"}`}
+            title="Editar campos"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            Editar
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showDetails ? "rotate-180" : ""}`} />
+          </button>
         </div>
 
-        {/* Operação */}
-        <div>
-          <p className="text-sm font-semibold mb-2">Atividade</p>
-          <OperationFilter
-            operations={sortedOperations}
-            selectedId={selectedOperation?.code}
-            onSelect={(op) => {
-              const found = operations.find((o) => o.code === op.id);
-              setSelectedOperation(found || null);
-            }}
-          />
-        </div>
+        {/* Campos de edição (colapsáveis) */}
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden space-y-4"
+            >
+              {/* Operador */}
+              <div>
+                <p className="text-sm font-semibold mb-2">Operador</p>
+                <div className="grid grid-cols-3 gap-2">
+                  {operators.map((op) => (
+                    <button
+                      key={op.id}
+                      onClick={() => setSelectedOperator(op)}
+                      className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all text-center
+                        ${selectedOperator?.id === op.id ? "border-primary bg-primary/10" : "border-border bg-muted/30"}`}
+                    >
+                      {op.photo_url ? (
+                        <img src={op.photo_url} alt={op.name} className="w-10 h-10 rounded-full object-cover" />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm">
+                          {op.name[0]}
+                        </div>
+                      )}
+                      <span className="text-xs font-medium leading-tight line-clamp-2">{op.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        {/* Pomar */}
-        <div>
-          <p className="text-sm font-semibold mb-2">Pomar</p>
-          <div className="grid grid-cols-5 gap-1.5">
-            {orchards.map((o) => (
-              <button
-                key={o}
-                onClick={() => setSelectedOrchard(o)}
-                className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                  ${selectedOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}`}
-              >
-                {o}
-              </button>
-            ))}
-          </div>
-        </div>
+              {/* Operação */}
+              <div>
+                <p className="text-sm font-semibold mb-2">Atividade</p>
+                <OperationFilter
+                  operations={sortedOperations}
+                  selectedId={selectedOperation?.code}
+                  onSelect={(op) => {
+                    const found = operations.find((o) => o.code === op.id);
+                    setSelectedOperation(found || null);
+                  }}
+                />
+              </div>
 
-        {/* Horários */}
+              {/* Pomar */}
+              <div>
+                <p className="text-sm font-semibold mb-2">Pomar</p>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {orchards.map((o) => (
+                    <button
+                      key={o}
+                      onClick={() => setSelectedOrchard(o)}
+                      className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
+                        ${selectedOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}`}
+                    >
+                      {o}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Horários — sempre visíveis */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <p className="text-sm font-semibold mb-1.5">Início</p>
