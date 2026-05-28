@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PendingRecordModal from "./PendingRecordModal";
+import { useNavigate } from "react-router-dom";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
@@ -14,6 +15,7 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [openLabel, setOpenLabel] = useState(null);
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const { data: pendingLabels = [] } = useQuery({
     queryKey: ["pending-labels", operatorId, isAdmin, selectedDate],
@@ -77,9 +79,8 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
       keepPending,
     });
     setOpenLabel(null);
-    if (labelToReopen) {
-      // Reabre o modal com campos zerados (remount via key no modal)
-      setTimeout(() => setOpenLabel({ ...labelToReopen, _reopen: Date.now() }), 100);
+    if (keepPending) {
+      navigate("/");
     }
   };
 
