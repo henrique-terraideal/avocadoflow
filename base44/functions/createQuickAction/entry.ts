@@ -74,31 +74,38 @@ Deno.serve(async (req) => {
       observations += `\n\nFoto: ${photo_url}`;
     }
 
-    // Cria o FieldRecord
-    const record = await base44.entities.FieldRecord.create({
-      operator_name: operator.name,
-      operator_id: operator.id,
-      operation: '09 - Manutenções Gerais',
-      orchard_number: orchard ? orchard.code : '',
-      start_time: currentTime,
-      end_time: currentTime,
+    // Gera QR code data (formato usado pelo Planning)
+    const operationCode = '09';
+    const operationName = 'Manutenções Gerais';
+    const qrData = `https://avocadoflow.app/r?op=${operationCode}&orchard=${orchard ? orchard.code : ''}&date=${recordDate}`;
+
+    // Cria a PlanningLabel (etiqueta planejada)
+    const label = await base44.entities.PlanningLabel.create({
       date: recordDate,
-      planned_date: recordDate,
-      observations: observations,
-      qr_scanned: false,
-      created_by_user_id: user.id
+      operator_name: operator.name,
+      operator_photo: operator.photo_url || '',
+      operation_code: operationCode,
+      operation_name: `${operationCode} - ${operationName}`,
+      orchard_number: orchard ? orchard.code : '',
+      qr_data: qrData,
+      auto_rescheduled: false,
+      original_date: recordDate,
+      additional_details: JSON.stringify({
+        descricao: description,
+        foto_manutencao: photo_url || '',
+        origem: 'whatsapp_quick_action'
+      })
     });
 
     return Response.json({
       success: true,
-      message: 'Ação rápida registrada com sucesso!',
-      record: {
-        id: record.id,
+      message: 'Etiqueta planejada criada com sucesso!',
+      label: {
+        id: label.id,
         operator: operator.name,
-        operation: '09 - Manutenções Gerais',
+        operation: operationName,
         orchard: orchard ? orchard.code : 'Não informado',
-        date: recordDate,
-        time: currentTime
+        date: recordDate
       }
     });
 
