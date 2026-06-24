@@ -68,12 +68,6 @@ Deno.serve(async (req) => {
       day: '2-digit'
     }).split('/').reverse().join('-');
 
-    // Monta observações com descrição e foto
-    let observations = description;
-    if (photo_url) {
-      observations += `\n\nFoto: ${photo_url}`;
-    }
-
     // Gera QR code data (formato usado pelo Planning)
     const operationCode = '09';
     const operationName = 'Manutenções Gerais';
@@ -82,7 +76,8 @@ Deno.serve(async (req) => {
     // Cria a PlanningLabel (etiqueta planejada)
     const additionalDetails = {
       "O que precisa ser feito?": description,
-      "Foto": photo_url || ""
+      "Foto": photo_url || "",
+      origem: "whatsapp_quick_action"
     };
 
     const label = await base44.entities.PlanningLabel.create({

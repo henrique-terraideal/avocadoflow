@@ -33,8 +33,8 @@ export default function LabelPreview({ label, compact, forPrint }) {
           .map(f => ({ label: f.field_label, value: details[f.field_label] }));
       }
       // Quick action fields
-      description = details.descricao || details.observacoes || details.description;
-      photoUrl = details.foto_manutencao || details.foto || details.photo_url;
+      description = details["O que precisa ser feito?"] || details.descricao || details.observacoes || details.description;
+      photoUrl = details["Foto"] || details.foto_manutencao || details.foto || details.photo_url;
     }
 
     return (
