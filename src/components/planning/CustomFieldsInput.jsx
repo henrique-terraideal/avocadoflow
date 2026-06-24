@@ -157,17 +157,11 @@ function MediaField({ type, value, onChange, accept }) {
       setUploading(false);
 
       setProcessing(true);
-      // Both audio and video: transcribe the audio track, then summarize
-      const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
-      let description = "";
-      if (transcript && transcript.trim()) {
-        description = await base44.integrations.Core.InvokeLLM({
-          prompt: `O seguinte texto é a transcrição de um ${isAudio ? "áudio" : "vídeo"} de um operador de campo em uma fazenda de abacate descrevendo uma atividade. Crie um resumo claro e objetivo em 1-3 frases do que foi descrito, em português:\n\n"${transcript}"`,
-        });
-      } else {
-        description = "(Não foi possível transcrever o conteúdo)";
-      }
-      onChange(description);
+      const response = await base44.functions.invoke("processMediaField", {
+        file_url,
+        media_type: type,
+      });
+      onChange(response.data.description || "(Sem descrição gerada)");
     } catch (err) {
       onChange("(Erro ao processar o arquivo. Tente novamente.)");
     } finally {
