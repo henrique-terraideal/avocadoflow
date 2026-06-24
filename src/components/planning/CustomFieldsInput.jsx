@@ -150,35 +150,30 @@ function MediaField({ type, value, onChange, accept }) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setFileUrl(file_url);
-    setUploading(false);
+    try {
+      setUploading(true);
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setFileUrl(file_url);
+      setUploading(false);
 
-    // Process with AI
-    setProcessing(true);
-    let description = "";
-    if (isAudio) {
-      // Transcribe audio then summarize
+      setProcessing(true);
+      // Both audio and video: transcribe the audio track, then summarize
       const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+      let description = "";
       if (transcript && transcript.trim()) {
-        const result = await base44.integrations.Core.InvokeLLM({
-          prompt: `O seguinte texto é a transcrição de um áudio de um operador de campo em uma fazenda de abacate descrevendo uma atividade. Crie um resumo claro e objetivo em 1-3 frases do que foi descrito, em português:\n\n"${transcript}"`,
+        description = await base44.integrations.Core.InvokeLLM({
+          prompt: `O seguinte texto é a transcrição de um ${isAudio ? "áudio" : "vídeo"} de um operador de campo em uma fazenda de abacate descrevendo uma atividade. Crie um resumo claro e objetivo em 1-3 frases do que foi descrito, em português:\n\n"${transcript}"`,
         });
-        description = result;
       } else {
-        description = "(Não foi possível transcrever o áudio)";
+        description = "(Não foi possível transcrever o conteúdo)";
       }
-    } else {
-      // For video, analyze directly with vision
-      const result = await base44.integrations.Core.InvokeLLM({
-        prompt: `Este é um vídeo de um operador de campo em uma fazenda de abacate registrando uma atividade. Descreva de forma clara e objetiva em 1-3 frases o que está acontecendo no vídeo, em português.`,
-        file_urls: [file_url],
-      });
-      description = result;
+      onChange(description);
+    } catch (err) {
+      onChange("(Erro ao processar o arquivo. Tente novamente.)");
+    } finally {
+      setUploading(false);
+      setProcessing(false);
     }
-    onChange(description);
-    setProcessing(false);
   };
 
   const handleReset = () => {
