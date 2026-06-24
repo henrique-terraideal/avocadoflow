@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Printer, Plus, Trash2, ClipboardList, ChevronLeft, ChevronRight, CheckSquare, Square, Pencil, Clock } from "lucide-react";
+import { Printer, Plus, Trash2, ClipboardList, ChevronLeft, ChevronRight, CheckSquare, Square, Pencil, Clock, CalendarDays } from "lucide-react";
 import EditLabelModal from "../components/planning/EditLabelModal";
 import FillTimesModal from "../components/planning/FillTimesModal";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +11,7 @@ import { ptBR } from "date-fns/locale";
 import BottomNav from "../components/field/BottomNav";
 import LabelPreview from "../components/planning/LabelPreview";
 import PlanningForm from "../components/planning/PlanningForm";
+import BulkRescheduleModal from "../components/planning/BulkRescheduleModal";
 
 const today = () => new Date().toISOString().split("T")[0];
 
@@ -20,6 +21,7 @@ export default function Planning() {
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [editingLabel, setEditingLabel] = useState(null);
   const [fillingLabel, setFillingLabel] = useState(null);
+  const [showBulkReschedule, setShowBulkReschedule] = useState(false);
   const printRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -56,6 +58,14 @@ export default function Planning() {
   const handleEditSave = (updatedData) => {
     updateMutation.mutate({ id: editingLabel.id, data: updatedData });
     setEditingLabel(null);
+  };
+
+  const handleBulkReschedule = async (newDate) => {
+    const ids = [...selectedIds];
+    await Promise.all(ids.map((id) => base44.entities.PlanningLabel.update(id, { date: newDate })));
+    queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+    setSelectedIds(new Set());
+    setShowBulkReschedule(false);
   };
 
   const handleFillTimes = ({ startTime, endTime, observations }) => {
@@ -191,10 +201,16 @@ export default function Planning() {
             <p className="text-primary-foreground/70 text-sm">Crie etiquetas para impressão</p>
           </div>
           {selectedIds.size > 0 && (
-            <Button variant="secondary" size="sm" onClick={handlePrint} className="rounded-xl gap-2">
-              <Printer className="w-4 h-4" />
-              Imprimir ({selectedIds.size})
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" size="sm" onClick={() => setShowBulkReschedule(true)} className="rounded-xl gap-2">
+                <CalendarDays className="w-4 h-4" />
+                Reagendar ({selectedIds.size})
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handlePrint} className="rounded-xl gap-2">
+                <Printer className="w-4 h-4" />
+                Imprimir
+              </Button>
+            </div>
           )}
         </div>
       </div>
@@ -341,6 +357,14 @@ export default function Planning() {
           label={fillingLabel}
           onSave={handleFillTimes}
           onClose={() => setFillingLabel(null)}
+        />
+      )}
+
+      {showBulkReschedule && (
+        <BulkRescheduleModal
+          count={selectedIds.size}
+          onSave={handleBulkReschedule}
+          onClose={() => setShowBulkReschedule(false)}
         />
       )}
     </div>

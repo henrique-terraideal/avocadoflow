@@ -13,6 +13,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
     operations.find((o) => o.name === label.operation_name) || null
   );
   const [selectedOrchard, setSelectedOrchard] = useState(label.orchard_number || null);
+  const [selectedDate, setSelectedDate] = useState(label.date || "");
 
   const { data: orchardList = [] } = useQuery({
     queryKey: ["orchards"],
@@ -20,7 +21,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
   });
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
-  const canSave = selectedOperator && selectedOperation && selectedOrchard;
+  const canSave = selectedOperator && selectedOperation && selectedOrchard && selectedDate;
 
   const handleSave = () => {
     if (!canSave) return;
@@ -41,6 +42,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
       operation_name: selectedOperation.name,
       orchard_number: selectedOrchard,
       qr_data: qrData,
+      date: selectedDate,
     });
   };
 
@@ -55,6 +57,17 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Data */}
+        <div>
+          <p className="text-sm font-semibold mb-2">Data</p>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-ring"
+          />
         </div>
 
         {/* Operador */}
