@@ -12,11 +12,17 @@ Deno.serve(async (req) => {
 
     if (!file) return Response.json({ error: 'Arquivo não recebido' }, { status: 400 });
 
-    // Faz upload do arquivo para obter uma URL acessível pelo Whisper
-    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });
-    const audio_url = uploadResult.file_url;
+    // Faz upload privado e gera URL assinada (temporária, acessível pelo Whisper)
+    const uploadResult = await base44.asServiceRole.integrations.Core.UploadPrivateFile({ file });
+    const file_uri = uploadResult.file_uri;
 
-    if (!audio_url) return Response.json({ error: 'Falha no upload do arquivo' }, { status: 500 });
+    if (!file_uri) return Response.json({ error: 'Falha no upload do arquivo' }, { status: 500 });
+
+    const signedResult = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
+      file_uri,
+      expires_in: 300,
+    });
+    const audio_url = signedResult.signed_url;
 
     // Transcreve com Whisper
     let transcript = '';
