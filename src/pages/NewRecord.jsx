@@ -366,7 +366,7 @@ export default function NewRecord() {
             const today = new Date().toISOString().split("T")[0];
             await base44.entities.FieldRecord.create({
               ...data,
-              date: data.date || today,
+              date: today,
               qr_scanned: true,
               created_by_user_id: currentUser?.id,
             });
