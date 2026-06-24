@@ -18,23 +18,20 @@ Deno.serve(async (req) => {
 
     if (!audio_url) return Response.json({ error: 'Falha no upload do arquivo' }, { status: 500 });
 
-    // Transcreve com Whisper
+    // Transcreve com Whisper (rápido)
     let transcript = '';
     try {
       transcript = await base44.asServiceRole.integrations.Core.TranscribeAudio({ audio_url });
     } catch (transcribeErr) {
-      return Response.json({ description: `(Não foi possível transcrever: ${transcribeErr.message})` });
+      return Response.json({ description: `(Erro na transcrição: ${transcribeErr.message})` });
     }
 
     if (!transcript || !transcript.trim()) {
-      return Response.json({ description: '(Transcrição vazia — nenhuma fala detectada)' });
+      return Response.json({ description: '(Nenhuma fala detectada)' });
     }
 
-    const description = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `O seguinte texto é a transcrição de um ${media_type === 'video' ? 'vídeo' : 'áudio'} de um operador de campo em uma fazenda de abacate descrevendo uma atividade. Crie um resumo claro e objetivo em 1-3 frases do que foi descrito, em português:\n\n"${transcript}"`,
-    });
-
-    return Response.json({ description, transcript });
+    // Retorna a transcrição direta — mais rápido que usar LLM para resumir
+    return Response.json({ description: transcript.trim() });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

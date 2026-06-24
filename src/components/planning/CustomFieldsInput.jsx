@@ -42,13 +42,7 @@ function FieldInput({ field, value, onChange }) {
     return (
       <div>
         {label}
-        <textarea
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={field.field_label}
-          rows={3}
-          className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-        />
+        <TextareaWithAudio value={value} onChange={onChange} />
       </div>
     );
   }
@@ -90,6 +84,66 @@ function FieldInput({ field, value, onChange }) {
         placeholder={field.field_label}
         className="h-11 rounded-xl"
       />
+    </div>
+  );
+}
+
+function TextareaWithAudio({ value, onChange }) {
+  const [transcribing, setTranscribing] = useState(false);
+  const audioInputRef = useRef();
+
+  const handleAudio = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setTranscribing(true);
+      const response = await base44.functions.invoke("processMediaField", {
+        file,
+        media_type: "audio",
+      });
+      if (response.data?.error) throw new Error(response.data.error);
+      // Adiciona a transcrição ao texto existente (ou substitui se vazio)
+      const transcript = response.data?.description || "";
+      onChange(value ? `${value}\n${transcript}` : transcript);
+    } catch (err) {
+      alert(`Erro ao transcrever: ${err.message}`);
+    } finally {
+      setTranscribing(false);
+      if (audioInputRef.current) audioInputRef.current.value = "";
+    }
+  };
+
+  return (
+    <div className="relative">
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Digite ou use o microfone para gravar..."
+        rows={4}
+        className="w-full rounded-xl border border-input bg-background px-3 py-2 pr-12 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+      />
+      <input
+        ref={audioInputRef}
+        type="file"
+        accept="audio/*"
+        capture="user"
+        className="hidden"
+        onChange={handleAudio}
+      />
+      <button
+        onClick={() => audioInputRef.current?.click()}
+        disabled={transcribing}
+        type="button"
+        className="absolute right-2 bottom-2 p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+        title="Gravar áudio"
+      >
+        {transcribing ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : (
+          <Mic className="w-4 h-4" />
+        )}
+      </button>
     </div>
   );
 }
@@ -140,7 +194,6 @@ function MediaField({ type, value, onChange, accept }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef();
 
-  // value stores the AI-generated description; fileUrl stores the media URL
   const isAudio = type === "audio";
   const Icon = isAudio ? Mic : Video;
 
@@ -150,7 +203,6 @@ function MediaField({ type, value, onChange, accept }) {
 
     try {
       setUploading(true);
-      // Enviar o File diretamente — o SDK usa multipart/form-data automaticamente
       const response = await base44.functions.invoke("processMediaField", {
         file,
         media_type: type,
@@ -173,7 +225,7 @@ function MediaField({ type, value, onChange, accept }) {
     return (
       <div className="w-full h-24 rounded-xl border border-border bg-muted/30 flex flex-col items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        <span className="text-xs font-medium">{isAudio ? "Transcrevendo e resumindo..." : "Analisando vídeo com IA..."}</span>
+        <span className="text-xs font-medium">{isAudio ? "Transcrevendo..." : "Analisando vídeo..."}</span>
       </div>
     );
   }
@@ -206,15 +258,8 @@ function MediaField({ type, value, onChange, accept }) {
       >
         {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Icon className="w-6 h-6" />}
         <span className="text-xs font-medium">
-          {uploading
-            ? "Enviando..."
-            : isAudio
-            ? "Gravar ou escolher áudio"
-            : "Gravar ou escolher vídeo"}
+          {uploading ? "Enviando..." : isAudio ? "Gravar áudio" : "Gravar vídeo"}
         </span>
-        {!uploading && (
-          <span className="text-[10px] text-muted-foreground/60">A IA irá gerar um resumo automaticamente</span>
-        )}
       </button>
     </>
   );
