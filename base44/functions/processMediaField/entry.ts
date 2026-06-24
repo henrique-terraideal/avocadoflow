@@ -12,17 +12,11 @@ Deno.serve(async (req) => {
 
     if (!file) return Response.json({ error: 'Arquivo não recebido' }, { status: 400 });
 
-    // Faz upload privado e gera URL assinada (temporária, acessível pelo Whisper)
-    const uploadResult = await base44.asServiceRole.integrations.Core.UploadPrivateFile({ file });
-    const file_uri = uploadResult.file_uri;
+    // Upload público — retorna URL acessível
+    const uploadResult = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+    const audio_url = uploadResult.file_url;
 
-    if (!file_uri) return Response.json({ error: 'Falha no upload do arquivo' }, { status: 500 });
-
-    const signedResult = await base44.asServiceRole.integrations.Core.CreateFileSignedUrl({
-      file_uri,
-      expires_in: 300,
-    });
-    const audio_url = signedResult.signed_url;
+    if (!audio_url) return Response.json({ error: 'Falha no upload do arquivo' }, { status: 500 });
 
     // Transcreve com Whisper
     let transcript = '';
@@ -33,7 +27,7 @@ Deno.serve(async (req) => {
     }
 
     if (!transcript || !transcript.trim()) {
-      return Response.json({ description: '(Transcrição vazia — nenhuma fala detectada no arquivo)' });
+      return Response.json({ description: '(Transcrição vazia — nenhuma fala detectada)' });
     }
 
     const description = await base44.asServiceRole.integrations.Core.InvokeLLM({
