@@ -22,13 +22,12 @@ export default function Records() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
-      // Tenta remover da planilha primeiro (silencioso se falhar)
-      try {
-        await base44.functions.invoke("deleteFromSheet", { record_id: id });
-      } catch (_) {}
+      const sheetRes = await base44.functions.invoke("deleteFromSheet", { record_id: id });
+      if (sheetRes.data?.error) throw new Error("Erro ao remover da planilha: " + sheetRes.data.error);
       await base44.entities.FieldRecord.delete(id);
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["field-records"] }),
+    onError: (err) => alert(err.message),
   });
 
   const { data: records = [], isLoading } = useQuery({
