@@ -331,14 +331,19 @@ export default function Planning() {
           )}
         </AnimatePresence>
 
-        {/* Add button */}
-        {!showForm && (
-          <Button size="lg" onClick={() => setShowForm(true)} className="w-full rounded-xl h-14 text-base gap-2">
-            <Plus className="w-5 h-5" />
-            Nova Etiqueta
-          </Button>
-        )}
+        {/* Spacer so last label isn't hidden behind FAB */}
+        <div className="h-4" />
       </div>
+
+      {/* Floating Action Button */}
+      {!showForm && (
+        <button
+          onClick={() => setShowForm(true)}
+          className="fixed bottom-24 right-4 z-50 bg-primary text-primary-foreground rounded-full shadow-lg w-14 h-14 flex items-center justify-center hover:bg-primary/90 transition-colors"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+      )}
 
       <BottomNav />
 
