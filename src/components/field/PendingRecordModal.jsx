@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Check, X, Clock, Pencil, ChevronDown, RefreshCw, CheckCircle2, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
@@ -35,8 +35,19 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const todayStr = new Date().toISOString().split("T")[0];
   const [showDetails, setShowDetails] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [editingDate, setEditingDate] = useState(false);
+  const [newDateValue, setNewDateValue] = useState(label.date);
   // Para atividades reprogramadas: null = não escolheu ainda, "today" ou "original"
   const [recordDateChoice, setRecordDateChoice] = useState(label.auto_rescheduled ? null : "today");
+  const queryClient = useQueryClient();
+
+  const handleSaveDate = async () => {
+    if (!newDateValue || newDateValue === label.date) { setEditingDate(false); return; }
+    await base44.entities.PlanningLabel.update(label.id, { date: newDateValue });
+    queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
+    label.date = newDateValue; // atualiza local para refletir no modal
+    setEditingDate(false);
+  };
 
   const { data: orchardList = [] } = useQuery({
     queryKey: ["orchards"],
@@ -83,10 +94,28 @@ export default function PendingRecordModal({ label, operators, operations, onSav
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold">Registrar Atividade</h2>
-            {label.date && (
-              <p className="text-xs text-muted-foreground mt-0.5">
+            {label.date && !editingDate && (
+              <button
+                onClick={() => { setNewDateValue(label.date); setEditingDate(true); }}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors mt-0.5"
+              >
+                <CalendarDays className="w-3.5 h-3.5" />
                 📅 Planejado para {format(new Date(label.date + "T12:00:00"), "dd/MM/yyyy")}
-              </p>
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+            {editingDate && (
+              <div className="flex items-center gap-2 mt-1">
+                <input
+                  type="date"
+                  value={newDateValue}
+                  onChange={(e) => setNewDateValue(e.target.value)}
+                  className="h-7 rounded-lg border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                  autoFocus
+                />
+                <button onClick={handleSaveDate} className="text-xs font-semibold text-primary hover:underline">Salvar</button>
+                <button onClick={() => setEditingDate(false)} className="text-xs text-muted-foreground hover:underline">Cancelar</button>
+              </div>
             )}
           </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
