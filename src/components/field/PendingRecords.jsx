@@ -143,10 +143,17 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
                     {isAdmin && opName && (
                       <p className="text-xs text-muted-foreground font-semibold mb-0.5">{opName}</p>
                     )}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-semibold text-sm text-foreground">{actCode}. {actName}</p>
                       {label.auto_rescheduled && (
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" title="Reprogramada automaticamente" />
+                        <span className="flex items-center gap-1">
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
+                          {label.original_date && (
+                            <span className="text-xs text-red-500 font-medium">
+                              {format(new Date(label.original_date + "T12:00:00"), "dd/MM", { locale: ptBR })}
+                            </span>
+                          )}
+                        </span>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">🌳 Pomar {orchard}</p>

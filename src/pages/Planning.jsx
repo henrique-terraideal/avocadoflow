@@ -259,7 +259,14 @@ export default function Planning() {
                       {label.operator_name} · {label.orchard_number}
                     </span>
                     {label.auto_rescheduled && (
-                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" title="Reprogramada automaticamente" />
+                      <span className="flex items-center gap-1">
+                        <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
+                        {label.original_date && (
+                          <span className="text-xs text-red-500 font-medium">
+                            {format(new Date(label.original_date + "T12:00:00"), "dd/MM", { locale: ptBR })}
+                          </span>
+                        )}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
