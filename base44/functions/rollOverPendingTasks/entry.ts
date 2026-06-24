@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
 
       if (!finalized) {
         // Atividade ainda pendente — move para hoje
-        await base44.asServiceRole.entities.PlanningLabel.update(label.id, { date: todayStr });
+        await base44.asServiceRole.entities.PlanningLabel.update(label.id, { date: todayStr, auto_rescheduled: true });
         moved.push(label.id);
       }
     }
