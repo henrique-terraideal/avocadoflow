@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import BottomNav from "../components/field/BottomNav";
+import QuickActionFAB from "../components/QuickActionFAB";
 import LabelPreview from "../components/planning/LabelPreview";
 import PlanningForm from "../components/planning/PlanningForm";
 import BulkRescheduleModal from "../components/planning/BulkRescheduleModal";
@@ -377,6 +378,7 @@ export default function Planning() {
         </button>
       )}
 
+      <QuickActionFAB />
       <BottomNav />
 
       {editingLabel && (

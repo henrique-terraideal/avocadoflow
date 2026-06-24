@@ -16,6 +16,7 @@ import QRScanner from "../components/field/QRScanner";
 import BottomNav from "../components/field/BottomNav";
 import PendingRecords from "../components/field/PendingRecords";
 import PendingRecordModal from "../components/field/PendingRecordModal";
+import QuickActionFAB from "../components/QuickActionFAB";
 
 export default function NewRecord() {
   const { toast } = useToast();
@@ -386,6 +387,7 @@ export default function NewRecord() {
         />
       )}
 
+      <QuickActionFAB />
       <BottomNav />
     </div>
   );

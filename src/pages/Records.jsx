@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import BottomNav from "../components/field/BottomNav";
+import QuickActionFAB from "../components/QuickActionFAB";
 
 export default function Records() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -142,6 +143,7 @@ export default function Records() {
         )}
       </div>
 
+      <QuickActionFAB />
       <BottomNav />
     </div>
   );

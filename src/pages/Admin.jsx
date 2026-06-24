@@ -10,6 +10,7 @@ import UsersPanel from "../components/admin/UsersPanel";
 import OrchardsPanel from "../components/admin/OrchardsPanel";
 import OperationTemplatePanel from "../components/admin/OperationTemplatePanel";
 import BottomNav from "../components/field/BottomNav";
+import QuickActionFAB from "../components/QuickActionFAB";
 
 const TABS = [
   { id: "operators", label: "Operadores", icon: Users, description: "Adicione e gerencie os operadores de campo" },
@@ -49,6 +50,7 @@ export default function Admin() {
           {activeTab === "templates" && <OperationTemplatePanel />}
           {activeTab === "config" && <SheetsConfig />}
         </div>
+        <QuickActionFAB />
         <BottomNav />
       </div>
     );
@@ -94,6 +96,7 @@ export default function Admin() {
         })}
       </div>
 
+      <QuickActionFAB />
       <BottomNav />
     </div>
   );
