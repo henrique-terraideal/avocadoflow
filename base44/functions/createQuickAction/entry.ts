@@ -80,6 +80,11 @@ Deno.serve(async (req) => {
     const qrData = `https://avocadoflow.app/r?op=${operationCode}&orchard=${orchard ? orchard.code : ''}&date=${recordDate}`;
 
     // Cria a PlanningLabel (etiqueta planejada)
+    const additionalDetails = {
+      "O que precisa ser feito?": description,
+      "Foto": photo_url || ""
+    };
+
     const label = await base44.entities.PlanningLabel.create({
       date: recordDate,
       operator_name: operator.name,
@@ -90,11 +95,7 @@ Deno.serve(async (req) => {
       qr_data: qrData,
       auto_rescheduled: false,
       original_date: recordDate,
-      additional_details: JSON.stringify({
-        descricao: description,
-        foto_manutencao: photo_url || '',
-        origem: 'whatsapp_quick_action'
-      })
+      additional_details: JSON.stringify(additionalDetails)
     });
 
     return Response.json({

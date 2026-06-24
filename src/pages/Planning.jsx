@@ -141,6 +141,7 @@ export default function Planning() {
     orchardNumber: l.orchard_number,
     qrData: l.qr_data,
     date: l.date,
+    additionalDetails: l.additional_details,
   });
 
   const handlePrint = () => {
@@ -154,24 +155,36 @@ export default function Planning() {
 
       // Build extra fields for this label
       let extraFieldsHtml = "";
-      const op = operations.find(o => o.name === label.operation_name);
-      if (op) {
-        const tmpl = templateByOpId[op.id];
-        if (tmpl && label.additional_details) {
-          let details = {};
-          try { details = JSON.parse(label.additional_details); } catch {}
-          const labelFields = allCustomFields
-            .filter(f => f.template_id === tmpl.id && f.show_on_label)
-            .filter(f => details[f.field_label] !== undefined && details[f.field_label] !== "");
-          if (labelFields.length > 0) {
-            const rows = labelFields.map(f => {
-              const val = details[f.field_label];
-              if (f.field_type === "photo" && val) {
-                return `<div style="font-size:8pt;margin-bottom:2mm;"><div style="font-weight:700;color:#333;margin-bottom:1mm;">${f.field_label}:</div><img src="${val}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;" /></div>`;
-              }
-              return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${val}</span></div>`;
-            }).join("");
-            extraFieldsHtml = `<div style="border-top:1px dashed #ccc;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;">${rows}</div>`;
+      let description = null;
+      let photoUrl = null;
+      
+      // Parse additional details
+      if (label.additional_details) {
+        let details = {};
+        try { details = JSON.parse(label.additional_details); } catch {}
+        
+        // WhatsApp Quick Action fields
+        description = details["O que precisa ser feito?"] || details.descricao;
+        photoUrl = details["Foto"] || details.foto_manutencao;
+        
+        // Custom fields from templates
+        const op = operations.find(o => o.name === label.operation_name);
+        if (op) {
+          const tmpl = templateByOpId[op.id];
+          if (tmpl) {
+            const labelFields = allCustomFields
+              .filter(f => f.template_id === tmpl.id && f.show_on_label)
+              .filter(f => details[f.field_label] !== undefined && details[f.field_label] !== "");
+            if (labelFields.length > 0) {
+              const rows = labelFields.map(f => {
+                const val = details[f.field_label];
+                if (f.field_type === "photo" && val) {
+                  return `<div style="font-size:8pt;margin-bottom:2mm;"><div style="font-weight:700;color:#333;margin-bottom:1mm;">${f.field_label}:</div><img src="${val}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;" /></div>`;
+                }
+                return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${val}</span></div>`;
+              }).join("");
+              extraFieldsHtml = `<div style="border-top:1px dashed #ccc;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;">${rows}</div>`;
+            }
           }
         }
       }
@@ -187,6 +200,8 @@ export default function Planning() {
           <div style="display:inline-block;background:#f0f0f0;border-radius:3mm;padding:1mm 3mm;font-size:9pt;font-weight:600;color:#444;margin-bottom:2mm;">🌳 Pomar ${label.orchard_number}</div>
           <div style="font-size:8pt;color:#555;margin-bottom:3mm;">📅 ${new Date(label.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</div>
           <div style="border-top:1px dashed #ccc;margin:2mm 0 3mm;"></div>
+          ${description ? `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">Descrição: </span><span style="color:#555;">${description}</span></div>` : ""}
+          ${photoUrl ? `<div style="font-size:8pt;margin-bottom:1mm;font-weight:700;color:#333;">Foto:</div><img src="${photoUrl}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;margin-bottom:2mm;" />` : ""}
           ${extraFieldsHtml}
           <div style="display:flex;flex-direction:column;align-items:center;gap:1mm;">
             <img src="${qrUrl}" style="width:30mm;height:30mm;" />
