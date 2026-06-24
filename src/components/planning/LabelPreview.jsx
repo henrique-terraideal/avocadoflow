@@ -19,6 +19,16 @@ import { ptBR } from "date-fns/locale";
 export default function LabelPreview({ label, compact, forPrint }) {
   if (forPrint) {
     const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(label.qrData)}`;
+    // Parse extra fields to show on label
+    let extraFields = [];
+    if (label.additionalDetails && label.labelFields && label.labelFields.length > 0) {
+      let details = {};
+      try { details = JSON.parse(label.additionalDetails); } catch {}
+      extraFields = label.labelFields
+        .filter(f => f.show_on_label && details[f.field_label] !== undefined && details[f.field_label] !== "")
+        .map(f => ({ label: f.field_label, value: details[f.field_label] }));
+    }
+
     return (
       <div className="label-page" style={{ width: "80mm", maxWidth: "80mm" }}>
         {/* Header */}
@@ -48,6 +58,18 @@ export default function LabelPreview({ label, compact, forPrint }) {
         {label.date && (
           <div style={{ fontSize: "8pt", color: "#555", marginBottom: "3mm" }}>
             📅 {format(new Date(label.date + "T12:00:00"), "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </div>
+        )}
+
+        {/* Campos extras na etiqueta */}
+        {extraFields.length > 0 && (
+          <div style={{ borderTop: "1px dashed #ccc", marginTop: "2mm", paddingTop: "2mm", marginBottom: "2mm" }}>
+            {extraFields.map((ef, i) => (
+              <div key={i} style={{ fontSize: "8pt", marginBottom: "1.5mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>{ef.label}: </span>
+                <span style={{ color: "#555" }}>{ef.value}</span>
+              </div>
+            ))}
           </div>
         )}
 

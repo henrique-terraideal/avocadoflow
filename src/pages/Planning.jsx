@@ -36,6 +36,17 @@ export default function Planning() {
     queryFn: () => base44.entities.Operation.filter({ active: true }),
   });
 
+  const { data: templates = [] } = useQuery({
+    queryKey: ["operation-templates"],
+    queryFn: () => base44.entities.OperationTemplate.list(),
+  });
+
+  const { data: allCustomFields = [] } = useQuery({
+    queryKey: ["all-custom-fields"],
+    queryFn: () => base44.entities.CustomField.list(),
+    enabled: templates.length > 0,
+  });
+
   const { data: labels = [] } = useQuery({
     queryKey: ["planning-labels", selectedDate],
     queryFn: () => base44.entities.PlanningLabel.filter({ date: selectedDate }, "-created_date", 200),
@@ -135,8 +146,31 @@ export default function Planning() {
     const toPrint = labels.filter((l) => selectedIds.has(l.id));
     if (toPrint.length === 0) return;
 
+    const templateByOpId = Object.fromEntries(templates.map((t) => [t.operation_id, t]));
+
     const items = toPrint.map((label) => {
       const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(label.qr_data)}`;
+
+      // Build extra fields for this label
+      let extraFieldsHtml = "";
+      const op = operations.find(o => o.name === label.operation_name);
+      if (op) {
+        const tmpl = templateByOpId[op.id];
+        if (tmpl && label.additional_details) {
+          let details = {};
+          try { details = JSON.parse(label.additional_details); } catch {}
+          const labelFields = allCustomFields
+            .filter(f => f.template_id === tmpl.id && f.show_on_label)
+            .filter(f => details[f.field_label] !== undefined && details[f.field_label] !== "");
+          if (labelFields.length > 0) {
+            const rows = labelFields.map(f =>
+              `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${details[f.field_label]}</span></div>`
+            ).join("");
+            extraFieldsHtml = `<div style="border-top:1px dashed #ccc;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;">${rows}</div>`;
+          }
+        }
+      }
+
       return `
         <div class="label-page">
           <div style="border-bottom:2px solid #1a7a3a;padding-bottom:2mm;margin-bottom:3mm;display:flex;justify-content:space-between;align-items:center;">
@@ -148,6 +182,7 @@ export default function Planning() {
           <div style="display:inline-block;background:#f0f0f0;border-radius:3mm;padding:1mm 3mm;font-size:9pt;font-weight:600;color:#444;margin-bottom:2mm;">🌳 Pomar ${label.orchard_number}</div>
           <div style="font-size:8pt;color:#555;margin-bottom:3mm;">📅 ${new Date(label.date + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</div>
           <div style="border-top:1px dashed #ccc;margin:2mm 0 3mm;"></div>
+          ${extraFieldsHtml}
           <div style="display:flex;flex-direction:column;align-items:center;gap:1mm;">
             <img src="${qrUrl}" style="width:30mm;height:30mm;" />
             <div style="font-size:7pt;color:#999;">Escaneie para registrar</div>

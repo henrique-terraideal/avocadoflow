@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Check, X, GripVertical } from "lucide-react";
+import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Check, X, GripVertical, Pencil, Tag } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const FIELD_TYPES = [
@@ -15,17 +15,72 @@ const FIELD_TYPES = [
   { value: "video", label: "🎬 Vídeo (resumo automático)" },
 ];
 
-function CustomFieldRow({ field, onDelete }) {
+function CustomFieldRow({ field, onDelete, onUpdate }) {
+  const [editing, setEditing] = useState(false);
+  const [label, setLabel] = useState(field.field_label);
+  const [type, setType] = useState(field.field_type);
+  const [required, setRequired] = useState(field.is_required || false);
+  const [showOnLabel, setShowOnLabel] = useState(field.show_on_label || false);
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    await onUpdate(field.id, { field_label: label, field_type: type, is_required: required, show_on_label: showOnLabel });
+    setSaving(false);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="bg-muted/40 rounded-xl px-3 py-3 space-y-2">
+        <Input value={label} onChange={(e) => setLabel(e.target.value)} className="h-8 text-sm rounded-lg" placeholder="Nome do campo" />
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          className="w-full h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none"
+        >
+          {FIELD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} className="w-4 h-4 accent-primary" />
+            Obrigatório
+          </label>
+          <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+            <input type="checkbox" checked={showOnLabel} onChange={(e) => setShowOnLabel(e.target.checked)} className="w-4 h-4 accent-primary" />
+            <Tag className="w-3 h-3 text-primary" />
+            Mostrar na etiqueta
+          </label>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" className="h-8 rounded-lg flex-1 text-xs" onClick={handleSave} disabled={!label.trim() || saving}>
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            Salvar
+          </Button>
+          <Button size="sm" variant="ghost" className="h-8 rounded-lg text-xs" onClick={() => setEditing(false)}>
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2">
       <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{field.field_label}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-sm font-medium truncate">{field.field_label}</p>
+          {field.show_on_label && <Tag className="w-3 h-3 text-primary shrink-0" title="Aparece na etiqueta" />}
+        </div>
         <p className="text-xs text-muted-foreground">
           {FIELD_TYPES.find(t => t.value === field.field_type)?.label || "Texto curto"}
           {field.is_required && " · Obrigatório"}
         </p>
       </div>
+      <button onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground p-1">
+        <Pencil className="w-4 h-4" />
+      </button>
       <button onClick={() => onDelete(field.id)} className="text-destructive hover:text-destructive/80 p-1">
         <Trash2 className="w-4 h-4" />
       </button>
@@ -39,6 +94,7 @@ function TemplateEditor({ template, operation, onClose }) {
   const [newFieldLabel, setNewFieldLabel] = useState("");
   const [newFieldType, setNewFieldType] = useState("text");
   const [newFieldRequired, setNewFieldRequired] = useState(false);
+  const [newFieldShowOnLabel, setNewFieldShowOnLabel] = useState(false);
   const [skipOrchard, setSkipOrchard] = useState(template.skip_orchard || false);
   const [defaultOrchard, setDefaultOrchard] = useState(template.default_orchard || "");
 
@@ -66,6 +122,7 @@ function TemplateEditor({ template, operation, onClose }) {
       field_label: newFieldLabel.trim(),
       field_type: newFieldType,
       is_required: newFieldRequired,
+      show_on_label: newFieldShowOnLabel,
       sort_order: fields.length + 1,
     }),
     onSuccess: () => {
@@ -73,11 +130,17 @@ function TemplateEditor({ template, operation, onClose }) {
       setNewFieldLabel("");
       setNewFieldType("text");
       setNewFieldRequired(false);
+      setNewFieldShowOnLabel(false);
     },
   });
 
   const deleteFieldMutation = useMutation({
     mutationFn: (id) => base44.entities.CustomField.delete(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["custom-fields", template.id] }),
+  });
+
+  const updateFieldMutation = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.CustomField.update(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["custom-fields", template.id] }),
   });
 
@@ -142,7 +205,12 @@ function TemplateEditor({ template, operation, onClose }) {
         ) : (
           <div className="space-y-1.5">
             {fields.map((f) => (
-              <CustomFieldRow key={f.id} field={f} onDelete={(id) => deleteFieldMutation.mutate(id)} />
+              <CustomFieldRow
+                key={f.id}
+                field={f}
+                onDelete={(id) => deleteFieldMutation.mutate(id)}
+                onUpdate={(id, data) => updateFieldMutation.mutateAsync({ id, data })}
+              />
             ))}
           </div>
         )}
@@ -173,6 +241,16 @@ function TemplateEditor({ template, operation, onClose }) {
                 className="w-4 h-4 accent-primary"
               />
               Obrigatório
+            </label>
+            <label className="flex items-center gap-1.5 text-xs whitespace-nowrap cursor-pointer">
+              <input
+                type="checkbox"
+                checked={newFieldShowOnLabel}
+                onChange={(e) => setNewFieldShowOnLabel(e.target.checked)}
+                className="w-4 h-4 accent-primary"
+              />
+              <Tag className="w-3 h-3 text-primary" />
+              Na etiqueta
             </label>
           </div>
           <Button
