@@ -10,6 +10,9 @@ const FIELD_TYPES = [
   { value: "text", label: "Texto curto" },
   { value: "textarea", label: "Texto longo" },
   { value: "number", label: "Número" },
+  { value: "photo", label: "📷 Foto" },
+  { value: "audio", label: "🎤 Áudio (transcrição automática)" },
+  { value: "video", label: "🎬 Vídeo (resumo automático)" },
 ];
 
 function CustomFieldRow({ field, onDelete }) {

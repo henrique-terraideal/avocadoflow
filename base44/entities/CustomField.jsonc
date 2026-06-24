@@ -15,7 +15,10 @@
       "enum": [
         "text",
         "number",
-        "textarea"
+        "textarea",
+        "photo",
+        "video",
+        "audio"
       ],
       "default": "text",
       "description": "Tipo do input"

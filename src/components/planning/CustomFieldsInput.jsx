@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
+import { base44 } from "@/api/base44Client";
+import { Camera, Mic, Video, Loader2, CheckCircle, RotateCcw } from "lucide-react";
 
 /**
  * Renderiza os campos customizados de um template.
@@ -17,30 +19,221 @@ export default function CustomFieldsInput({ fields, values, onChange }) {
     <div className="space-y-3">
       <p className="text-sm font-semibold text-foreground">Detalhes da Atividade</p>
       {fields.map((field) => (
-        <div key={field.id}>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            {field.field_label}
-            {field.is_required && <span className="text-destructive ml-1">*</span>}
-          </label>
-          {field.field_type === "textarea" ? (
-            <textarea
-              value={values[field.field_label] || ""}
-              onChange={(e) => handleChange(field.field_label, e.target.value)}
-              placeholder={field.field_label}
-              rows={3}
-              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-            />
-          ) : (
-            <Input
-              type={field.field_type === "number" ? "number" : "text"}
-              value={values[field.field_label] || ""}
-              onChange={(e) => handleChange(field.field_label, e.target.value)}
-              placeholder={field.field_label}
-              className="h-11 rounded-xl"
-            />
-          )}
-        </div>
+        <FieldInput
+          key={field.id}
+          field={field}
+          value={values[field.field_label] || ""}
+          onChange={(val) => handleChange(field.field_label, val)}
+        />
       ))}
     </div>
+  );
+}
+
+function FieldInput({ field, value, onChange }) {
+  const label = (
+    <label className="text-xs font-medium text-muted-foreground mb-1 block">
+      {field.field_label}
+      {field.is_required && <span className="text-destructive ml-1">*</span>}
+    </label>
+  );
+
+  if (field.field_type === "textarea") {
+    return (
+      <div>
+        {label}
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={field.field_label}
+          rows={3}
+          className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+        />
+      </div>
+    );
+  }
+
+  if (field.field_type === "photo") {
+    return (
+      <div>
+        {label}
+        <PhotoField value={value} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (field.field_type === "audio") {
+    return (
+      <div>
+        {label}
+        <MediaField type="audio" value={value} onChange={onChange} accept="audio/*" />
+      </div>
+    );
+  }
+
+  if (field.field_type === "video") {
+    return (
+      <div>
+        {label}
+        <MediaField type="video" value={value} onChange={onChange} accept="video/*" />
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {label}
+      <Input
+        type={field.field_type === "number" ? "number" : "text"}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={field.field_label}
+        className="h-11 rounded-xl"
+      />
+    </div>
+  );
+}
+
+function PhotoField({ value, onChange }) {
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef();
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    onChange(file_url);
+    setUploading(false);
+  };
+
+  if (value) {
+    return (
+      <div className="relative rounded-xl overflow-hidden border border-border">
+        <img src={value} alt="Foto" className="w-full max-h-48 object-cover" />
+        <button
+          onClick={() => { onChange(""); if (inputRef.current) inputRef.current.value = ""; }}
+          className="absolute top-2 right-2 bg-black/60 text-white rounded-full p-1 hover:bg-black/80 transition-colors"
+        >
+          <RotateCcw className="w-4 h-4" />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFile} />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="w-full h-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-60"
+      >
+        {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Camera className="w-6 h-6" />}
+        <span className="text-xs font-medium">{uploading ? "Enviando..." : "Tirar foto ou escolher arquivo"}</span>
+      </button>
+    </>
+  );
+}
+
+function MediaField({ type, value, onChange, accept }) {
+  const [uploading, setUploading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [fileUrl, setFileUrl] = useState("");
+  const inputRef = useRef();
+
+  // value stores the AI-generated description; fileUrl stores the media URL
+  const isAudio = type === "audio";
+  const Icon = isAudio ? Mic : Video;
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setFileUrl(file_url);
+    setUploading(false);
+
+    // Process with AI
+    setProcessing(true);
+    let description = "";
+    if (isAudio) {
+      // Transcribe audio then summarize
+      const transcript = await base44.integrations.Core.TranscribeAudio({ audio_url: file_url });
+      if (transcript && transcript.trim()) {
+        const result = await base44.integrations.Core.InvokeLLM({
+          prompt: `O seguinte texto é a transcrição de um áudio de um operador de campo em uma fazenda de abacate descrevendo uma atividade. Crie um resumo claro e objetivo em 1-3 frases do que foi descrito, em português:\n\n"${transcript}"`,
+        });
+        description = result;
+      } else {
+        description = "(Não foi possível transcrever o áudio)";
+      }
+    } else {
+      // For video, analyze directly with vision
+      const result = await base44.integrations.Core.InvokeLLM({
+        prompt: `Este é um vídeo de um operador de campo em uma fazenda de abacate registrando uma atividade. Descreva de forma clara e objetiva em 1-3 frases o que está acontecendo no vídeo, em português.`,
+        file_urls: [file_url],
+      });
+      description = result;
+    }
+    onChange(description);
+    setProcessing(false);
+  };
+
+  const handleReset = () => {
+    onChange("");
+    setFileUrl("");
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  if (processing) {
+    return (
+      <div className="w-full h-24 rounded-xl border border-border bg-muted/30 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+        <span className="text-xs font-medium">{isAudio ? "Transcrevendo e resumindo..." : "Analisando vídeo com IA..."}</span>
+      </div>
+    );
+  }
+
+  if (value) {
+    return (
+      <div className="rounded-xl border border-primary/30 bg-primary/5 p-3 space-y-2">
+        <div className="flex items-start gap-2">
+          <CheckCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+          <p className="text-sm text-foreground leading-relaxed">{value}</p>
+        </div>
+        <button
+          onClick={handleReset}
+          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors"
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Gravar novamente
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <input ref={inputRef} type="file" accept={accept} capture={isAudio ? "user" : "environment"} className="hidden" onChange={handleFile} />
+      <button
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+        className="w-full h-24 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 text-muted-foreground hover:border-primary hover:text-primary transition-colors disabled:opacity-60"
+      >
+        {uploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Icon className="w-6 h-6" />}
+        <span className="text-xs font-medium">
+          {uploading
+            ? "Enviando..."
+            : isAudio
+            ? "Gravar ou escolher áudio"
+            : "Gravar ou escolher vídeo"}
+        </span>
+        {!uploading && (
+          <span className="text-[10px] text-muted-foreground/60">A IA irá gerar um resumo automaticamente</span>
+        )}
+      </button>
+    </>
   );
 }
