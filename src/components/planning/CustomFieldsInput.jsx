@@ -138,8 +138,6 @@ function PhotoField({ value, onChange }) {
 
 function MediaField({ type, value, onChange, accept }) {
   const [uploading, setUploading] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [fileUrl, setFileUrl] = useState("");
   const inputRef = useRef();
 
   // value stores the AI-generated description; fileUrl stores the media URL
@@ -152,31 +150,26 @@ function MediaField({ type, value, onChange, accept }) {
 
     try {
       setUploading(true);
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      setFileUrl(file_url);
-      setUploading(false);
-
-      setProcessing(true);
+      // Enviar o File diretamente — o SDK usa multipart/form-data automaticamente
       const response = await base44.functions.invoke("processMediaField", {
-        file_url,
+        file,
         media_type: type,
       });
-      onChange(response.data.description || "(Sem descrição gerada)");
+      if (response.data?.error) throw new Error(response.data.error);
+      onChange(response.data?.description || "(Sem descrição gerada)");
     } catch (err) {
-      onChange("(Erro ao processar o arquivo. Tente novamente.)");
+      onChange(`(Erro ao processar: ${err.message || "tente novamente"})`);
     } finally {
       setUploading(false);
-      setProcessing(false);
     }
   };
 
   const handleReset = () => {
     onChange("");
-    setFileUrl("");
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  if (processing) {
+  if (uploading) {
     return (
       <div className="w-full h-24 rounded-xl border border-border bg-muted/30 flex flex-col items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="w-6 h-6 animate-spin text-primary" />
