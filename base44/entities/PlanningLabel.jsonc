@@ -40,6 +40,10 @@
       "type": "string",
       "format": "date",
       "description": "Data original em que a atividade estava planejada antes da reprograma\u00e7\u00e3o"
+    },
+    "additional_details": {
+      "type": "string",
+      "description": "JSON com os valores dos campos customizados do template (ex: {\"campo\": \"valor\"})"
     }
   },
   "required": [

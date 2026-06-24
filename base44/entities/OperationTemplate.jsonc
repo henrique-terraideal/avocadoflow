@@ -1,0 +1,27 @@
+{
+  "name": "OperationTemplate",
+  "type": "object",
+  "properties": {
+    "operation_id": {
+      "type": "string",
+      "description": "ID da opera\u00e7\u00e3o vinculada"
+    },
+    "operation_code": {
+      "type": "string",
+      "description": "C\u00f3digo da opera\u00e7\u00e3o (para refer\u00eancia r\u00e1pida)"
+    },
+    "skip_orchard": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se true, n\u00e3o exige sele\u00e7\u00e3o de pomar no planejamento"
+    },
+    "default_orchard": {
+      "type": "string",
+      "description": "Pomar padr\u00e3o quando skip_orchard \u00e9 true (opcional)"
+    }
+  },
+  "required": [
+    "operation_id",
+    "operation_code"
+  ]
+}

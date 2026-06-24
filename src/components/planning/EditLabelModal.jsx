@@ -4,6 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import OperationFilter from "../field/OperationFilter";
+import CustomFieldsInput from "./CustomFieldsInput";
+import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 
 export default function EditLabelModal({ label, operators, operations, onSave, onClose }) {
   const [selectedOperator, setSelectedOperator] = useState(
@@ -14,6 +16,12 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
   );
   const [selectedOrchard, setSelectedOrchard] = useState(label.orchard_number || null);
   const [selectedDate, setSelectedDate] = useState(label.date || "");
+  const [customValues, setCustomValues] = useState(() => {
+    try { return label.additional_details ? JSON.parse(label.additional_details) : {}; }
+    catch { return {}; }
+  });
+
+  const { template, customFields } = useOperationTemplate(selectedOperation?.id);
 
   const { data: orchardList = [] } = useQuery({
     queryKey: ["orchards"],
@@ -21,7 +29,15 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
   });
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
-  const canSave = selectedOperator && selectedOperation && selectedOrchard && selectedDate;
+
+  const skipOrchard = template?.skip_orchard || false;
+  const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
+
+  const requiredFieldsFilled = customFields
+    .filter((f) => f.is_required)
+    .every((f) => customValues[f.field_label]?.trim());
+
+  const canSave = selectedOperator && selectedOperation && effectiveOrchard && selectedDate && requiredFieldsFilled;
 
   const handleSave = () => {
     if (!canSave) return;
@@ -32,7 +48,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
       act_id: selectedOperation.id,
       act_code: selectedOperation.code,
       act_name: selectedOperation.name,
-      orchard: selectedOrchard,
+      orchard: effectiveOrchard,
     });
     const qrData = `${base}/?${params.toString()}`;
     onSave({
@@ -40,9 +56,10 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
       operator_photo: selectedOperator.photo_url || "",
       operation_code: selectedOperation.code,
       operation_name: selectedOperation.name,
-      orchard_number: selectedOrchard,
+      orchard_number: effectiveOrchard,
       qr_data: qrData,
       date: selectedDate,
+      additional_details: Object.keys(customValues).length > 0 ? JSON.stringify(customValues) : null,
     });
   };
 
@@ -103,26 +120,43 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
             onSelect={(op) => {
               const found = operations.find((o) => o.code === op.id);
               setSelectedOperation(found || null);
+              setCustomValues({});
             }}
           />
         </div>
 
+        {/* Campos customizados */}
+        {customFields.length > 0 && (
+          <CustomFieldsInput
+            fields={customFields}
+            values={customValues}
+            onChange={setCustomValues}
+          />
+        )}
+
         {/* Pomar */}
-        <div>
-          <p className="text-sm font-semibold mb-2">Pomar</p>
-          <div className="grid grid-cols-5 gap-1.5">
-            {orchards.map((o) => (
-              <button
-                key={o}
-                onClick={() => setSelectedOrchard(o)}
-                className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                  ${selectedOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}`}
-              >
-                {o}
-              </button>
-            ))}
+        {!skipOrchard ? (
+          <div>
+            <p className="text-sm font-semibold mb-2">Pomar</p>
+            <div className="grid grid-cols-5 gap-1.5">
+              {orchards.map((o) => (
+                <button
+                  key={o}
+                  onClick={() => setSelectedOrchard(o)}
+                  className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
+                    ${selectedOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}`}
+                >
+                  {o}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        ) : template?.default_orchard ? (
+          <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">
+            <span className="text-sm text-muted-foreground">Pomar fixo:</span>
+            <span className="text-sm font-bold text-foreground">{template.default_orchard}</span>
+          </div>
+        ) : null}
 
         <div className="flex gap-2 pt-1">
           <Button variant="outline" size="lg" onClick={onClose} className="flex-1 rounded-xl h-12">

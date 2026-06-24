@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ListChecks, Settings2, UserCog, TreePine } from "lucide-react";
+import { ArrowLeft, Users, ListChecks, Settings2, UserCog, TreePine, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import OperatorsPanel from "../components/admin/OperatorsPanel";
@@ -8,12 +8,14 @@ import OperationsPanel from "../components/admin/OperationsPanel";
 import SheetsConfig from "../components/admin/SheetsConfig";
 import UsersPanel from "../components/admin/UsersPanel";
 import OrchardsPanel from "../components/admin/OrchardsPanel";
+import OperationTemplatePanel from "../components/admin/OperationTemplatePanel";
 import BottomNav from "../components/field/BottomNav";
 
 const TABS = [
   { id: "operators", label: "Operadores", icon: Users, description: "Adicione e gerencie os operadores de campo" },
   { id: "operations", label: "Operações", icon: ListChecks, description: "Configure as operações disponíveis" },
   { id: "orchards", label: "Pomares", icon: TreePine, description: "Gerencie os pomares cadastrados" },
+  { id: "templates", label: "Templates de Operação", icon: Layers, description: "Campos customizados e configurações especiais" },
   { id: "users", label: "Usuários", icon: UserCog, description: "Controle de acesso e permissões" },
   { id: "config", label: "Configurações", icon: Settings2, description: "Integração com Google Sheets" },
 ];
@@ -44,6 +46,7 @@ export default function Admin() {
           {activeTab === "operations" && <OperationsPanel />}
           {activeTab === "orchards" && <OrchardsPanel />}
           {activeTab === "users" && <UsersPanel />}
+          {activeTab === "templates" && <OperationTemplatePanel />}
           {activeTab === "config" && <SheetsConfig />}
         </div>
         <BottomNav />

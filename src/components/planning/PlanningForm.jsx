@@ -3,13 +3,17 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
-import { motion } from "framer-motion";
 import OperationFilter from "../field/OperationFilter";
+import CustomFieldsInput from "./CustomFieldsInput";
+import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 
 export default function PlanningForm({ operators, operations, onAdd, onCancel }) {
   const [selectedOperator, setSelectedOperator] = useState(null);
   const [selectedOperation, setSelectedOperation] = useState(null);
   const [selectedOrchard, setSelectedOrchard] = useState(null);
+  const [customValues, setCustomValues] = useState({});
+
+  const { template, customFields } = useOperationTemplate(selectedOperation?.id);
 
   const { data: orchardList = [] } = useQuery({
     queryKey: ["orchards"],
@@ -17,11 +21,26 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
   });
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
-  const canAdd = selectedOperator && selectedOperation && selectedOrchard;
+
+  // Determina se precisa mostrar seleção de pomar
+  const skipOrchard = template?.skip_orchard || false;
+  const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
+
+  // Verifica se campos obrigatórios foram preenchidos
+  const requiredFieldsFilled = customFields
+    .filter((f) => f.is_required)
+    .every((f) => customValues[f.field_label]?.trim());
+
+  const canAdd = selectedOperator && selectedOperation && effectiveOrchard && requiredFieldsFilled;
+
+  const handleOperationChange = (op) => {
+    setSelectedOperation(op || null);
+    setCustomValues({});
+    if (!skipOrchard) setSelectedOrchard(null);
+  };
 
   const handleAdd = () => {
     if (!canAdd) return;
-    // URL para funcionar tanto pelo app nativo (câmera do celular) quanto pelo scanner interno
     const base = window.location.origin;
     const params = new URLSearchParams({
       op_id: selectedOperator.id,
@@ -29,7 +48,7 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
       act_id: selectedOperation.id,
       act_code: selectedOperation.code,
       act_name: selectedOperation.name,
-      orchard: selectedOrchard,
+      orchard: effectiveOrchard,
     });
     const qrData = `${base}/?${params.toString()}`;
     onAdd({
@@ -37,8 +56,9 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
       operatorPhoto: selectedOperator.photo_url || null,
       operationCode: selectedOperation.code,
       operationName: selectedOperation.name,
-      orchardNumber: selectedOrchard,
+      orchardNumber: effectiveOrchard,
       qrData,
+      additionalDetails: Object.keys(customValues).length > 0 ? JSON.stringify(customValues) : null,
     });
   };
 
@@ -78,29 +98,45 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
           selectedId={selectedOperation?.code}
           onSelect={(op) => {
             const found = operations.find(o => o.code === op.id);
-            setSelectedOperation(found || null);
+            handleOperationChange(found || null);
           }}
         />
       </div>
 
-      {/* Pomar */}
-      <div>
-        <p className="text-sm font-semibold mb-2 text-foreground">Pomar</p>
-        <div className="grid grid-cols-5 gap-1.5">
-          {orchards.map((o) => (
-            <button
-              key={o}
-              onClick={() => setSelectedOrchard(o)}
-              className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                ${selectedOrchard === o
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-muted/30 hover:border-primary/40"}`}
-            >
-              {o}
-            </button>
-          ))}
+      {/* Campos customizados do template */}
+      {customFields.length > 0 && (
+        <CustomFieldsInput
+          fields={customFields}
+          values={customValues}
+          onChange={setCustomValues}
+        />
+      )}
+
+      {/* Pomar — só mostra se não for pulado */}
+      {!skipOrchard ? (
+        <div>
+          <p className="text-sm font-semibold mb-2 text-foreground">Pomar</p>
+          <div className="grid grid-cols-5 gap-1.5">
+            {orchards.map((o) => (
+              <button
+                key={o}
+                onClick={() => setSelectedOrchard(o)}
+                className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
+                  ${selectedOrchard === o
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-border bg-muted/30 hover:border-primary/40"}`}
+              >
+                {o}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : template?.default_orchard ? (
+        <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">
+          <span className="text-sm text-muted-foreground">Pomar fixo:</span>
+          <span className="text-sm font-bold text-foreground">{template.default_orchard}</span>
+        </div>
+      ) : null}
 
       {/* Actions */}
       <div className="flex gap-2 pt-1">

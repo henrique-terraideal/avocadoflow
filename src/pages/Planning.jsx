@@ -95,6 +95,7 @@ export default function Planning() {
       operation_name: label.operationName,
       orchard_number: label.orchardNumber,
       qr_data: label.qrData,
+      additional_details: label.additionalDetails || null,
     });
     setShowForm(false);
   };
