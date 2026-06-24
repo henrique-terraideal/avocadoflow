@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock, Pencil, ChevronDown, RefreshCw, CheckCircle2 } from "lucide-react";
+import { Check, X, Clock, Pencil, ChevronDown, RefreshCw, CheckCircle2, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import OperationFilter from "./OperationFilter";
@@ -32,8 +32,11 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [observations, setObservations] = useState("");
+  const todayStr = new Date().toISOString().split("T")[0];
   const [showDetails, setShowDetails] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  // Para atividades reprogramadas: null = não escolheu ainda, "today" ou "original"
+  const [recordDateChoice, setRecordDateChoice] = useState(label.auto_rescheduled ? null : "today");
 
   const { data: orchardList = [] } = useQuery({
     queryKey: ["orchards"],
@@ -42,18 +45,23 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
-  const canSave = selectedOperator && selectedOperation && selectedOrchard && startTime && endTime;
+  const canSave = selectedOperator && selectedOperation && selectedOrchard && startTime && endTime && recordDateChoice !== null;
 
-  const buildData = () => ({
-    operator_name: selectedOperator.name,
-    operator_id: selectedOperator.id,
-    operation: `${selectedOperation.code}. ${selectedOperation.name}`,
-    orchard_number: selectedOrchard,
-    start_time: startTime,
-    end_time: endTime,
-    observations,
-    planned_date: label.date,
-  });
+  const buildData = () => {
+    const useOriginal = recordDateChoice === "original";
+    return {
+      operator_name: selectedOperator.name,
+      operator_id: selectedOperator.id,
+      operation: `${selectedOperation.code}. ${selectedOperation.name}`,
+      orchard_number: selectedOrchard,
+      start_time: startTime,
+      end_time: endTime,
+      observations,
+      planned_date: label.date,
+      // Se escolheu data original, sobrepõe o `date` para a data original
+      ...(useOriginal && label.original_date ? { date: label.original_date } : {}),
+    };
+  };
 
   // Fecha a atividade (some dos pendentes)
   const handleClose = () => {
@@ -85,6 +93,36 @@ export default function PendingRecordModal({ label, operators, operations, onSav
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Seletor de data — apenas para atividades reprogramadas */}
+        {label.auto_rescheduled && label.original_date && (
+          <div className="bg-red-50 border border-red-200 rounded-2xl p-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="w-4 h-4 text-red-500 shrink-0" />
+              <p className="text-sm font-semibold text-red-700">Atividade reprogramada — em qual data registrar?</p>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => setRecordDateChoice("today")}
+                className={`p-3 rounded-xl border-2 text-left transition-colors
+                  ${recordDateChoice === "today" ? "border-primary bg-primary/10" : "border-border bg-white hover:bg-muted/50"}`}
+              >
+                <p className="text-xs font-bold text-foreground">Hoje</p>
+                <p className="text-xs text-muted-foreground">{format(new Date(todayStr + "T12:00:00"), "dd/MM/yyyy")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Fiz hoje</p>
+              </button>
+              <button
+                onClick={() => setRecordDateChoice("original")}
+                className={`p-3 rounded-xl border-2 text-left transition-colors
+                  ${recordDateChoice === "original" ? "border-red-500 bg-red-50" : "border-border bg-white hover:bg-muted/50"}`}
+              >
+                <p className="text-xs font-bold text-foreground">Data original</p>
+                <p className="text-xs text-muted-foreground">{format(new Date(label.original_date + "T12:00:00"), "dd/MM/yyyy")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Esqueci de registrar</p>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Resumo dos campos pré-preenchidos + botão editar */}
         <div className="bg-muted/50 rounded-2xl px-4 py-3 flex items-center justify-between">
