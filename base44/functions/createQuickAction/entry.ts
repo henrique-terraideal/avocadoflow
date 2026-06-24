@@ -10,13 +10,12 @@ Deno.serve(async (req) => {
 
     const { operator_name, orchard_number, description, photo_url, date } = await req.json();
 
-    // Validações
-    if (!operator_name || !orchard_number || !description) {
+    // Validações - pomar é opcional para Ação Rápida
+    if (!operator_name || !description) {
       return Response.json({ 
-        error: 'Dados incompletos. Necessário: operator_name, orchard_number, description',
+        error: 'Dados incompletos. Necessário: operator_name e description',
         missing: {
           operator_name: !operator_name,
-          orchard_number: !orchard_number,
           description: !description
         }
       }, { status: 400 });
@@ -36,18 +35,21 @@ Deno.serve(async (req) => {
       }, { status: 404 });
     }
 
-    // Valida se pomar existe
-    const orchards = await base44.entities.Orchard.filter({ active: true });
-    const orchard = orchards.find(orc => 
-      orc.code.toLowerCase() === orchard_number.toLowerCase() ||
-      orchard_number.toLowerCase().includes(orc.code.toLowerCase())
-    );
+    // Valida pomar se foi informado (opcional)
+    let orchard = null;
+    if (orchard_number) {
+      const orchards = await base44.entities.Orchard.filter({ active: true });
+      orchard = orchards.find(orc => 
+        orc.code.toLowerCase() === orchard_number.toLowerCase() ||
+        orchard_number.toLowerCase().includes(orc.code.toLowerCase())
+      );
 
-    if (!orchard) {
-      return Response.json({ 
-        error: 'Pomar não encontrado',
-        available_orchards: orchards.map(o => `${o.code} - ${o.name}`)
-      }, { status: 404 });
+      if (!orchard) {
+        return Response.json({ 
+          error: 'Pomar não encontrado',
+          available_orchards: orchards.map(o => `${o.code} - ${o.name}`)
+        }, { status: 404 });
+      }
     }
 
     // Hora atual para start_time e end_time (ação rápida)
@@ -77,7 +79,7 @@ Deno.serve(async (req) => {
       operator_name: operator.name,
       operator_id: operator.id,
       operation: '09 - Manutenções Gerais',
-      orchard_number: orchard.code,
+      orchard_number: orchard ? orchard.code : '',
       start_time: currentTime,
       end_time: currentTime,
       date: recordDate,
@@ -94,7 +96,7 @@ Deno.serve(async (req) => {
         id: record.id,
         operator: operator.name,
         operation: '09 - Manutenções Gerais',
-        orchard: orchard.code,
+        orchard: orchard ? orchard.code : 'Não informado',
         date: recordDate,
         time: currentTime
       }
