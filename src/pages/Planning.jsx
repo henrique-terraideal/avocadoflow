@@ -163,9 +163,13 @@ export default function Planning() {
             .filter(f => f.template_id === tmpl.id && f.show_on_label)
             .filter(f => details[f.field_label] !== undefined && details[f.field_label] !== "");
           if (labelFields.length > 0) {
-            const rows = labelFields.map(f =>
-              `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${details[f.field_label]}</span></div>`
-            ).join("");
+            const rows = labelFields.map(f => {
+              const val = details[f.field_label];
+              if (f.field_type === "photo" && val) {
+                return `<div style="font-size:8pt;margin-bottom:2mm;"><div style="font-weight:700;color:#333;margin-bottom:1mm;">${f.field_label}:</div><img src="${val}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;" /></div>`;
+              }
+              return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${val}</span></div>`;
+            }).join("");
             extraFieldsHtml = `<div style="border-top:1px dashed #ccc;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;">${rows}</div>`;
           }
         }
