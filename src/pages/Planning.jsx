@@ -12,6 +12,7 @@ import BottomNav from "../components/field/BottomNav";
 import LabelPreview from "../components/planning/LabelPreview";
 import PlanningForm from "../components/planning/PlanningForm";
 import BulkRescheduleModal from "../components/planning/BulkRescheduleModal";
+import NewLabelModal from "../components/planning/NewLabelModal";
 
 const today = () => new Date().toISOString().split("T")[0];
 
@@ -322,15 +323,6 @@ export default function Planning() {
           })}
         </AnimatePresence>
 
-        {/* Form */}
-        <AnimatePresence>
-          {showForm && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-card rounded-2xl border border-border p-5 shadow-sm">
-              <PlanningForm operators={operators} operations={operations} onAdd={handleAddLabel} onCancel={() => setShowForm(false)} />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Spacer so last label isn't hidden behind FAB */}
         <div className="h-4" />
       </div>
@@ -370,6 +362,15 @@ export default function Planning() {
           count={selectedIds.size}
           onSave={handleBulkReschedule}
           onClose={() => setShowBulkReschedule(false)}
+        />
+      )}
+
+      {showForm && (
+        <NewLabelModal
+          operators={operators}
+          operations={operations}
+          onAdd={handleAddLabel}
+          onClose={() => setShowForm(false)}
         />
       )}
     </div>
