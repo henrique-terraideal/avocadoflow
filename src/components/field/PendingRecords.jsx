@@ -82,7 +82,7 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     createMutation.mutate({
       data: {
         ...data,
-        date: data.date || selectedDate,
+        date: selectedDate,
         qr_scanned: false,
         created_by_user_id: currentUser?.id,
       },
