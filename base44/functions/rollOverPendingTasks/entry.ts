@@ -36,9 +36,10 @@ Deno.serve(async (req) => {
         continue; // label sem qr_data válido — ignora
       }
 
-      // Busca registros fechados para este label na data original
+      // Busca registros fechados para este label na data planejada (campo date do label)
+      // Considera também FieldRecords com planned_date igual à data do label
       const records = await base44.asServiceRole.entities.FieldRecord.filter({
-        date: label.date,
+        planned_date: label.date,
         operator_id: labelOpId,
         orchard_number: orchard,
       }, '-created_date', 50);

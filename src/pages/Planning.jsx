@@ -258,6 +258,9 @@ export default function Planning() {
                     <span className="font-semibold text-sm text-foreground">
                       {label.operator_name} · {label.orchard_number}
                     </span>
+                    {label.auto_rescheduled && (
+                      <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" title="Reprogramada automaticamente" />
+                    )}
                   </div>
                   <div className="flex items-center gap-1">
                     <Button
