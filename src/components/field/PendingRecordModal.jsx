@@ -35,6 +35,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const todayStr = new Date().toISOString().split("T")[0];
   const [showDetails, setShowDetails] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [customDate, setCustomDate] = useState(label.date || todayStr);
   // Para atividades reprogramadas: null = não escolheu ainda, "today" ou "original"
   const [recordDateChoice, setRecordDateChoice] = useState(label.auto_rescheduled ? null : "today");
 
@@ -58,8 +59,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
       end_time: endTime,
       observations,
       planned_date: label.date,
-      // Se escolheu data original, sobrepõe o `date` para a data original
-      ...(useOriginal && label.original_date ? { date: label.original_date } : {}),
+      date: useOriginal && label.original_date ? label.original_date : customDate,
     };
   };
 
@@ -190,6 +190,17 @@ export default function PendingRecordModal({ label, operators, operations, onSav
                     const found = operations.find((o) => o.code === op.id);
                     setSelectedOperation(found || null);
                   }}
+                />
+              </div>
+
+              {/* Data */}
+              <div>
+                <p className="text-sm font-semibold mb-2">Data do registro</p>
+                <input
+                  type="date"
+                  value={customDate}
+                  onChange={(e) => setCustomDate(e.target.value)}
+                  className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
