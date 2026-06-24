@@ -78,11 +78,11 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
 
   const handleSave = (data, options = {}) => {
     const keepPending = !!options.keepPending;
-    const labelToReopen = keepPending ? openLabel : null;
     createMutation.mutate({
       data: {
         ...data,
-        date: selectedDate,
+        // usa o date do buildData() (pode ser data original), só aplica selectedDate como fallback
+        date: data.date || selectedDate,
         qr_scanned: false,
         created_by_user_id: currentUser?.id,
       },
