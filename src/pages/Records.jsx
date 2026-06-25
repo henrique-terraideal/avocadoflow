@@ -41,8 +41,28 @@ export default function Records() {
     enabled: userLoaded,
   });
 
+  // Fetch PlanningLabels to enrich old records that lack additional_details
+  const { data: planningLabels = [] } = useQuery({
+    queryKey: ["planning-labels-enrich"],
+    queryFn: () => base44.entities.PlanningLabel.list("-created_date", 500),
+    enabled: userLoaded,
+  });
+
+  // Enrich records: if a FieldRecord has no additional_details, try to find it on the matching PlanningLabel
+  const enrichedRecords = records.map((r) => {
+    if (r.additional_details) return r;
+    const opCode = r.operation?.split(".")[0]?.trim();
+    const match = planningLabels.find((l) =>
+      l.operator_name === r.operator_name &&
+      l.operation_code === opCode &&
+      l.orchard_number === r.orchard_number &&
+      l.additional_details
+    );
+    return match ? { ...r, additional_details: match.additional_details } : r;
+  });
+
   // Group by date
-  const grouped = records.reduce((acc, r) => {
+  const grouped = enrichedRecords.reduce((acc, r) => {
     const date = r.date || "Sem data";
     if (!acc[date]) acc[date] = [];
     acc[date].push(r);
