@@ -133,9 +133,15 @@ export default function LabelPreview({ label, compact, forPrint }) {
                 <span style={{ color: "#555" }}>{raData.machine_config}</span>
               </div>
             )}
-            {raData.implement_config && (
+            {raData.implement_name && (
               <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
                 <span style={{ fontWeight: "700", color: "#333" }}>Implemento: </span>
+                <span style={{ color: "#555" }}>{raData.implement_name}</span>
+              </div>
+            )}
+            {raData.implement_config && (
+              <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>Regulagem implemento: </span>
                 <span style={{ color: "#555" }}>{raData.implement_config}</span>
               </div>
             )}
@@ -249,7 +255,8 @@ export default function LabelPreview({ label, compact, forPrint }) {
           {raData.type && <p className="text-xs"><span className="font-medium">Tipo:</span> {raData.type}</p>}
           {raData.climate_conditions && <p className="text-xs"><span className="font-medium">Clima:</span> {raData.climate_conditions}</p>}
           {raData.machine_config && <p className="text-xs"><span className="font-medium">Maquinário:</span> {raData.machine_config}</p>}
-          {raData.implement_config && <p className="text-xs"><span className="font-medium">Implemento:</span> {raData.implement_config}</p>}
+          {raData.implement_name && <p className="text-xs"><span className="font-medium">Implemento:</span> {raData.implement_name}</p>}
+          {raData.implement_config && <p className="text-xs"><span className="font-medium">Regulagem implemento:</span> {raData.implement_config}</p>}
           {(raData.products || []).map((p, i) => {
             const qpt = resolveQtyPerTank(p, raData);
             return (
