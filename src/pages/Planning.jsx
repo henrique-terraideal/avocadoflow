@@ -196,16 +196,24 @@ export default function Planning() {
           try {
             const parsed = typeof val === "string" ? JSON.parse(val) : val;
             if (parsed && typeof parsed === "object" && parsed.ra_id) {
-              let raHtml = `<div style="border-top:1px dashed #1a7a3a;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;background:#f0f7f1;border-radius:2mm;padding:2mm;">`;
-              raHtml += `<div style="font-size:9pt;font-weight:800;color:#1a7a3a;margin-bottom:1mm;">🌿 RA: ${parsed.code}</div>`;
-              if (parsed.product) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Produto: </span><span style="color:#555;">${parsed.product}</span></div>`;
-              if (parsed.application_mode) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Aplicação: </span><span style="color:#555;">${parsed.application_mode}${parsed.dose != null ? ` · Dose: ${parsed.dose}` : ""}${parsed.total_quantity != null ? ` · Total: ${parsed.total_quantity}` : ""}</span></div>`;
-              if (parsed.climate_conditions) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Clima: </span><span style="color:#555;">${parsed.climate_conditions}</span></div>`;
-              if (parsed.machine_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Maquinário: </span><span style="color:#555;">${parsed.machine_config}</span></div>`;
-              if (parsed.implement_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Implemento: </span><span style="color:#555;">${parsed.implement_config}</span></div>`;
-              raHtml += `</div>`;
-              extraFieldsHtml = raHtml + extraFieldsHtml;
-              break;
+            let raHtml = `<div style="border-top:1px dashed #1a7a3a;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;background:#f0f7f1;border-radius:2mm;padding:2mm;">`;
+            raHtml += `<div style="font-size:9pt;font-weight:800;color:#1a7a3a;margin-bottom:1mm;">🌿 RA: ${parsed.code}</div>`;
+            if (parsed.type) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Tipo: </span><span style="color:#555;">${parsed.type}</span></div>`;
+            if (parsed.climate_conditions) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Clima: </span><span style="color:#555;">${parsed.climate_conditions}</span></div>`;
+            if (parsed.machine_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Maquinário: </span><span style="color:#555;">${parsed.machine_config}</span></div>`;
+            if (parsed.implement_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Implemento: </span><span style="color:#555;">${parsed.implement_config}</span></div>`;
+            if (parsed.products && parsed.products.length > 0) {
+              for (const p of parsed.products) {
+                raHtml += `<div style="background:white;border-radius:1.5mm;padding:1.5mm;margin-top:1mm;">`;
+                raHtml += `<div style="font-size:8pt;font-weight:700;color:#1a7a3a;">${p.product_name}</div>`;
+                raHtml += `<div style="font-size:7pt;color:#555;">${p.application_mode || ""}${p.dose != null ? ` · Dose: ${p.dose}` : ""}${p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}</div>`;
+                if (p.obs) raHtml += `<div style="font-size:7pt;color:#777;">${p.obs}</div>`;
+                raHtml += `</div>`;
+              }
+            }
+            raHtml += `</div>`;
+            extraFieldsHtml = raHtml + extraFieldsHtml;
+            break;
             }
           } catch {}
         }

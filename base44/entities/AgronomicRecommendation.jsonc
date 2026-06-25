@@ -23,30 +23,6 @@
       "type": "string",
       "description": "Status (ex: PRODU\u00c7\u00c3O)"
     },
-    "product_name": {
-      "type": "string",
-      "description": "Nome do produto"
-    },
-    "application_mode": {
-      "type": "string",
-      "enum": [
-        "\u00c1REA",
-        "PLANTA"
-      ],
-      "description": "Modo de aplica\u00e7\u00e3o: por \u00e1rea (ha) ou por planta"
-    },
-    "dose": {
-      "type": "number",
-      "description": "Dose aplicada (por ha ou por planta, conforme application_mode)"
-    },
-    "total_quantity": {
-      "type": "number",
-      "description": "Quantidade total calculada"
-    },
-    "obs": {
-      "type": "string",
-      "description": "Observa\u00e7\u00f5es"
-    },
     "machine_config": {
       "type": "string",
       "description": "Configura\u00e7\u00e3o/regulagem do maquin\u00e1rio"
@@ -59,19 +35,6 @@
       "type": "string",
       "description": "Condi\u00e7\u00f5es clim\u00e1ticas ideais formatadas"
     },
-    "value": {
-      "type": "number",
-      "description": "Valor estimado (R$)"
-    },
-    "cost_per_ha": {
-      "type": "number",
-      "description": "Custo por hectare (R$)"
-    },
-    "purchase_date": {
-      "type": "string",
-      "format": "date",
-      "description": "Data prevista de compra"
-    },
     "active": {
       "type": "boolean",
       "default": true,
@@ -79,8 +42,6 @@
     }
   },
   "required": [
-    "code",
-    "product_name",
-    "application_mode"
+    "code"
   ]
 }

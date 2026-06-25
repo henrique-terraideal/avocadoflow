@@ -30,10 +30,7 @@ Deno.serve(async (req) => {
                 aplicacao: { type: "string" },
                 dose: { type: "string" },
                 obs: { type: "string" },
-                quant_total: { type: "string" },
-                valor: { type: "string" },
-                compra: { type: "string" },
-                custo_ha: { type: "string" }
+                quant_total: { type: "string" }
               }
             }
           }
@@ -74,24 +71,41 @@ Deno.serve(async (req) => {
       return null;
     };
 
-    const raRecords = rows.map(row => ({
-      code: (row.ra || '').trim(),
-      date: parseDate(row.data),
-      type: (row.tipo || '').trim(),
-      orchard_code: (row.pomar || '').trim(),
-      status: (row.status || '').trim(),
-      product_name: (row.produto || '').trim(),
-      application_mode: (row.aplicacao || '').toUpperCase().includes('ÁREA') ? 'ÁREA' : 'PLANTA',
-      dose: parseNumber(row.dose),
-      total_quantity: parseNumber(row.quant_total),
-      obs: (row.obs || '').trim(),
-      value: parseNumber(row.valor),
-      cost_per_ha: parseNumber(row.custo_ha),
-      purchase_date: parseDate(row.compra),
-      active: true,
-    })).filter(r => r.code && r.product_name);
+    // Group rows by RA code — one parent RA per code, multiple products inside
+    const groupedByCode = {};
+    for (const row of rows) {
+      const code = (row.ra || '').trim();
+      if (!code) continue;
+      if (!groupedByCode[code]) {
+        groupedByCode[code] = {
+          code,
+          date: parseDate(row.data),
+          type: (row.tipo || '').trim(),
+          orchard_code: (row.pomar || '').trim(),
+          status: (row.status || '').trim(),
+          machine_config: '',
+          implement_config: '',
+          climate_conditions: '',
+          active: true,
+          products: []
+        };
+      }
+      const productName = (row.produto || '').trim();
+      if (productName) {
+        groupedByCode[code].products.push({
+          product_name: productName,
+          application_mode: (row.aplicacao || '').toUpperCase().includes('ÁREA') ? 'ÁREA' : 'PLANTA',
+          dose: parseNumber(row.dose),
+          total_quantity: parseNumber(row.quant_total),
+          obs: (row.obs || '').trim(),
+          sort_order: groupedByCode[code].products.length
+        });
+      }
+    }
 
-    if (raRecords.length === 0) {
+    const raEntries = Object.values(groupedByCode).filter(r => r.code && r.products.length > 0);
+
+    if (raEntries.length === 0) {
       return Response.json({ error: 'Nenhuma linha válida encontrada. Verifique se as colunas RA e PRODUTO estão preenchidas.' }, { status: 400 });
     }
 
@@ -110,13 +124,50 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Product.bulkCreate(newProducts);
     }
 
-    await base44.asServiceRole.entities.AgronomicRecommendation.bulkCreate(raRecords);
+    // Fetch existing RAs to check for duplicates by code
+    const existingRAs = await base44.asServiceRole.entities.AgronomicRecommendation.list("-created_date", 500);
+    const existingRAByCode = {};
+    for (const ra of existingRAs) {
+      if (ra.code) existingRAByCode[ra.code] = ra;
+    }
+
+    let createdCount = 0;
+    let updatedCount = 0;
+    const allProductRecords = [];
+
+    for (const entry of raEntries) {
+      const { products, ...raFields } = entry;
+      const existing = existingRAByCode[entry.code];
+      let raId;
+
+      if (existing) {
+        await base44.asServiceRole.entities.AgronomicRecommendation.update(existing.id, raFields);
+        await base44.asServiceRole.entities.RecommendationProduct.deleteMany({ recommendation_id: existing.id });
+        raId = existing.id;
+        updatedCount++;
+      } else {
+        const newRA = await base44.asServiceRole.entities.AgronomicRecommendation.create(raFields);
+        raId = newRA.id;
+        createdCount++;
+      }
+
+      for (const p of products) {
+        allProductRecords.push({ ...p, recommendation_id: raId });
+      }
+    }
+
+    if (allProductRecords.length > 0) {
+      await base44.asServiceRole.entities.RecommendationProduct.bulkCreate(allProductRecords);
+    }
 
     return Response.json({
       success: true,
-      imported: raRecords.length,
+      imported: createdCount + updatedCount,
+      created: createdCount,
+      updated: updatedCount,
       products_created: newProducts.length,
-      total_products: existingProducts.length + newProducts.length
+      total_products: existingProducts.length + newProducts.length,
+      product_records: allProductRecords.length
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

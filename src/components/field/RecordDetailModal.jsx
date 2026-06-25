@@ -154,29 +154,11 @@ export default function RecordDetailModal({ record, onClose }) {
                           <span className="text-sm font-bold text-primary">{field.raData.code}</span>
                           {field.raData.orchard && <span className="text-xs text-muted-foreground">· {field.raData.orchard}</span>}
                         </div>
-                        {field.raData.product && (
-                          <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
-                            <Package className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground font-medium">Produto: </span>
-                            <span className="text-xs font-semibold">{field.raData.product}</span>
-                          </div>
-                        )}
                         {field.raData.type && (
                           <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
                             <Beaker className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                             <span className="text-xs text-muted-foreground font-medium">Tipo: </span>
                             <span className="text-xs font-semibold">{field.raData.type}</span>
-                          </div>
-                        )}
-                        {field.raData.application_mode && (
-                          <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
-                            <Beaker className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground font-medium">Aplicação: </span>
-                            <span className="text-xs font-semibold">
-                              {field.raData.application_mode}
-                              {field.raData.dose != null ? ` · Dose: ${field.raData.dose}` : ""}
-                              {field.raData.total_quantity != null ? ` · Total: ${field.raData.total_quantity}` : ""}
-                            </span>
                           </div>
                         )}
                         {field.raData.climate_conditions && (
@@ -200,6 +182,20 @@ export default function RecordDetailModal({ record, onClose }) {
                             <span className="text-xs font-semibold">{field.raData.implement_config}</span>
                           </div>
                         )}
+                        {(field.raData.products || []).map((p, pi) => (
+                          <div key={pi} className="bg-background rounded-lg px-3 py-1.5 space-y-0.5">
+                            <div className="flex items-center gap-2">
+                              <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+                              <span className="text-xs font-bold">{p.product_name}</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground pl-5">
+                              {p.application_mode}
+                              {p.dose != null ? ` · Dose: ${p.dose}` : ""}
+                              {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
+                            </p>
+                            {p.obs && <p className="text-[10px] text-muted-foreground pl-5">{p.obs}</p>}
+                          </div>
+                        ))}
                       </div>
                     ) : field.isMedia && typeof field.value === "string" && field.value.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
                       <img src={field.value} alt={field.label} className="w-full rounded-lg" />

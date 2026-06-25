@@ -20,25 +20,32 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
     const s = search.toLowerCase();
     return recommendations.filter(ra =>
       ra.code?.toLowerCase().includes(s) ||
-      ra.product_name?.toLowerCase().includes(s) ||
       ra.type?.toLowerCase().includes(s) ||
       ra.orchard_code?.toLowerCase().includes(s)
     );
   }, [recommendations, search]);
 
-  const handleSelect = (ra) => {
+  const handleSelect = async (ra) => {
+    const prods = await base44.entities.RecommendationProduct.filter(
+      { recommendation_id: ra.id },
+      "sort_order",
+      100
+    );
     const raData = {
       ra_id: ra.id,
       code: ra.code || "",
-      product: ra.product_name || "",
       type: ra.type || "",
       orchard: ra.orchard_code || "",
-      application_mode: ra.application_mode || "",
-      dose: ra.dose ?? null,
-      total_quantity: ra.total_quantity ?? null,
       climate_conditions: ra.climate_conditions || "",
       machine_config: ra.machine_config || "",
       implement_config: ra.implement_config || "",
+      products: prods.map(p => ({
+        product_name: p.product_name || "",
+        application_mode: p.application_mode || "",
+        dose: p.dose ?? null,
+        total_quantity: p.total_quantity ?? null,
+        obs: p.obs || "",
+      })),
     };
     onChange(JSON.stringify(raData));
     if (onRASelected) onRASelected(ra);
@@ -57,7 +64,6 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
           <Leaf className="w-4 h-4 text-primary shrink-0" />
           <div className="flex-1 min-w-0">
             <span className="text-sm font-bold text-primary">{selectedRA.code}</span>
-            <span className="text-xs text-muted-foreground ml-2">{selectedRA.product}</span>
           </div>
           <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
         </div>
@@ -81,11 +87,8 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
         <div className="space-y-2">
           <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-xl px-3 py-2.5">
             <Leaf className="w-4 h-4 text-primary shrink-0" />
-            <div className="flex-1 min-w-0">
-              <span className="text-sm font-bold text-primary">{selectedRA.code}</span>
-              <span className="text-xs text-muted-foreground ml-2">{selectedRA.product}</span>
-            </div>
-            <button onClick={handleClear} className="text-xs text-destructive hover:underline font-medium shrink-0">
+            <span className="text-sm font-bold text-primary">{selectedRA.code}</span>
+            <button onClick={handleClear} className="text-xs text-destructive hover:underline font-medium shrink-0 ml-auto">
               Trocar
             </button>
           </div>
@@ -97,7 +100,7 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar RA por código, produto, tipo..."
+            placeholder="Buscar RA por código, tipo, pomar..."
             className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
           {isLoading ? (
@@ -124,7 +127,6 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
                         <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded font-medium">{ra.orchard_code}</span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">{ra.product_name}</p>
                     {ra.type && <p className="text-[10px] text-muted-foreground/70">{ra.type}</p>}
                   </div>
                 </button>
@@ -137,39 +139,57 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
   );
 }
 
-export function RADetails({ ra }) {
-  if (!ra) return null;
+export function RADetails({ ra, products = [] }) {
+  if (!ra && products.length === 0) return null;
 
-  const details = [
-    ra.product && { icon: Package, label: "Produto", value: ra.product },
-    ra.type && { icon: Beaker, label: "Tipo", value: ra.type },
-    ra.orchard && { icon: Leaf, label: "Pomar", value: ra.orchard },
-    ra.application_mode && {
-      icon: Beaker,
-      label: "Aplicação",
-      value: `${ra.application_mode}${ra.dose != null ? ` · Dose: ${ra.dose}` : ""}${ra.total_quantity != null ? ` · Total: ${ra.total_quantity}` : ""}`,
-    },
-    ra.climate_conditions && { icon: Thermometer, label: "Clima ideal", value: ra.climate_conditions },
-    ra.machine_config && { icon: Tractor, label: "Maquinário", value: ra.machine_config },
-    ra.implement_config && { icon: Wrench, label: "Implemento", value: ra.implement_config },
+  const generalDetails = [
+    ra?.type && { icon: Beaker, label: "Tipo", value: ra.type },
+    ra?.orchard && { icon: Leaf, label: "Pomar", value: ra.orchard },
+    ra?.climate_conditions && { icon: Thermometer, label: "Clima ideal", value: ra.climate_conditions },
+    ra?.machine_config && { icon: Tractor, label: "Maquinário", value: ra.machine_config },
+    ra?.implement_config && { icon: Wrench, label: "Implemento", value: ra.implement_config },
   ].filter(Boolean);
 
-  if (details.length === 0) return null;
+  const productList = ra?.products || products;
+
+  if (generalDetails.length === 0 && productList.length === 0) return null;
 
   return (
-    <div className="bg-muted/30 rounded-xl p-3 space-y-1.5">
-      {details.map((d, i) => {
-        const Icon = d.icon;
-        return (
-          <div key={i} className="flex items-start gap-2">
-            <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <span className="text-[10px] text-muted-foreground font-medium uppercase">{d.label}: </span>
-              <span className="text-xs text-foreground font-medium">{d.value}</span>
+    <div className="bg-muted/30 rounded-xl p-3 space-y-2">
+      {generalDetails.length > 0 && (
+        <div className="space-y-1.5">
+          {generalDetails.map((d, i) => {
+            const Icon = d.icon;
+            return (
+              <div key={i} className="flex items-start gap-2">
+                <Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] text-muted-foreground font-medium uppercase">{d.label}: </span>
+                  <span className="text-xs text-foreground font-medium">{d.value}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      {productList.length > 0 && (
+        <div className="space-y-1.5">
+          {productList.map((p, i) => (
+            <div key={i} className="flex items-start gap-2 bg-background/50 rounded-lg p-1.5">
+              <Package className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <span className="text-xs text-foreground font-bold">{p.product_name}</span>
+                <div className="text-[10px] text-muted-foreground">
+                  {p.application_mode}
+                  {p.dose != null ? ` · Dose: ${p.dose}` : ""}
+                  {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
+                </div>
+                {p.obs && <div className="text-[10px] text-muted-foreground">{p.obs}</div>}
+              </div>
             </div>
-          </div>
-        );
-      })}
+          ))}
+        </div>
+      )}
     </div>
   );
 }

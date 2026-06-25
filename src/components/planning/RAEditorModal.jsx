@@ -3,8 +3,9 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { X, Check, Loader2, Calculator } from "lucide-react";
+import { X, Check, Loader2, Plus } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import RAProductRow from "./RAProductRow";
 
 export default function RAEditorModal({ ra, onClose }) {
   const { toast } = useToast();
@@ -17,18 +18,16 @@ export default function RAEditorModal({ ra, onClose }) {
     type: ra?.type || "",
     orchard_code: ra?.orchard_code || "",
     status: ra?.status || "PRODUÇÃO",
-    product_name: ra?.product_name || "",
-    application_mode: ra?.application_mode || "ÁREA",
-    dose: ra?.dose ?? "",
-    total_quantity: ra?.total_quantity ?? "",
-    obs: ra?.obs || "",
     machine_config: ra?.machine_config || "",
     implement_config: ra?.implement_config || "",
     climate_conditions: ra?.climate_conditions || "",
     active: ra?.active ?? true,
   });
 
-  const { data: products = [] } = useQuery({
+  const [products, setProducts] = useState([]);
+  const [loadingProducts, setLoadingProducts] = useState(isEdit);
+
+  const { data: productList = [] } = useQuery({
     queryKey: ["products"],
     queryFn: () => base44.entities.Product.filter({ active: true }, "name", 500),
   });
@@ -38,53 +37,73 @@ export default function RAEditorModal({ ra, onClose }) {
     queryFn: () => base44.entities.Orchard.filter({ active: true }, "sort_order", 200),
   });
 
-  const selectedProduct = products.find(p => p.name === form.product_name);
+  // Fetch existing products when editing
+  useEffect(() => {
+    if (!isEdit) return;
+    base44.entities.RecommendationProduct.filter({ recommendation_id: ra.id }, "sort_order", 100)
+      .then((prods) => {
+        setProducts(prods.map(p => ({
+          id: p.id,
+          product_name: p.product_name || "",
+          application_mode: p.application_mode || "ÁREA",
+          dose: p.dose ?? "",
+          total_quantity: p.total_quantity ?? "",
+          obs: p.obs || "",
+        })));
+      })
+      .finally(() => setLoadingProducts(false));
+  }, [ra, isEdit]);
+
   const selectedOrchard = orchards.find(o => o.code === form.orchard_code);
 
-  // Auto-fill dose and climate from product
-  const handleProductChange = (productName) => {
-    const product = products.find(p => p.name === productName);
-    setForm(prev => ({
-      ...prev,
-      product_name: productName,
-      dose: product
-        ? (prev.application_mode === "ÁREA" ? product.recommended_dose_area : product.recommended_dose_plant) || prev.dose
-        : prev.dose,
-      climate_conditions: product
-        ? buildClimateString(product)
-        : prev.climate_conditions,
-    }));
+  const handleProductChange = (index, updated) => {
+    setProducts(prev => prev.map((p, i) => i === index ? updated : p));
   };
 
-  const buildClimateString = (p) => {
-    const parts = [];
-    if (p.ideal_temp_min != null && p.ideal_temp_max != null)
-      parts.push(`Temp: ${p.ideal_temp_min}–${p.ideal_temp_max}°C`);
-    if (p.ideal_wind_min != null && p.ideal_wind_max != null)
-      parts.push(`Vento: ${p.ideal_wind_min}–${p.ideal_wind_max} km/h`);
-    if (p.ideal_humidity_min != null && p.ideal_humidity_max != null)
-      parts.push(`Umidade: ${p.ideal_humidity_min}–${p.ideal_humidity_max}%`);
-    return parts.join(" | ");
+  const handleAddProduct = () => {
+    setProducts(prev => [...prev, {
+      product_name: "",
+      application_mode: "ÁREA",
+      dose: "",
+      total_quantity: "",
+      obs: "",
+    }]);
   };
 
-  // Auto-calculate total_quantity
-  const handleCalculate = () => {
-    const dose = parseFloat(form.dose);
-    if (isNaN(dose) || !selectedOrchard) return;
-    if (form.application_mode === "ÁREA" && selectedOrchard.area_ha) {
-      setForm(prev => ({ ...prev, total_quantity: (dose * selectedOrchard.area_ha).toFixed(2) }));
-    } else if (form.application_mode === "PLANTA" && selectedOrchard.plant_count) {
-      setForm(prev => ({ ...prev, total_quantity: (dose * selectedOrchard.plant_count).toFixed(2) }));
-    }
+  const handleRemoveProduct = (index) => {
+    setProducts(prev => prev.filter((_, i) => i !== index));
   };
 
   const mutation = useMutation({
-    mutationFn: (data) => isEdit
-      ? base44.entities.AgronomicRecommendation.update(ra.id, data)
-      : base44.entities.AgronomicRecommendation.create(data),
+    mutationFn: async (data) => {
+      const { products: prods, ...raFields } = data;
+      let raId;
+      if (isEdit) {
+        await base44.entities.AgronomicRecommendation.update(ra.id, raFields);
+        await base44.entities.RecommendationProduct.deleteMany({ recommendation_id: ra.id });
+        raId = ra.id;
+      } else {
+        const newRA = await base44.entities.AgronomicRecommendation.create(raFields);
+        raId = newRA.id;
+      }
+      if (prods.length > 0) {
+        await base44.entities.RecommendationProduct.bulkCreate(
+          prods.map((p, i) => ({
+            recommendation_id: raId,
+            product_name: p.product_name,
+            application_mode: p.application_mode,
+            dose: p.dose === "" ? null : Number(p.dose),
+            total_quantity: p.total_quantity === "" ? null : Number(p.total_quantity),
+            obs: p.obs,
+            sort_order: i,
+          }))
+        );
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendation-products"] });
       toast({ title: isEdit ? "RA atualizada!" : "RA criada!" });
       onClose();
     },
@@ -92,15 +111,10 @@ export default function RAEditorModal({ ra, onClose }) {
   });
 
   const handleSubmit = () => {
-    const data = {
-      ...form,
-      dose: form.dose === "" ? null : Number(form.dose),
-      total_quantity: form.total_quantity === "" ? null : Number(form.total_quantity),
-    };
-    mutation.mutate(data);
+    mutation.mutate({ ...form, products });
   };
 
-  const canSubmit = form.code.trim() && form.product_name.trim() && form.application_mode;
+  const canSubmit = form.code.trim() && products.length > 0 && products.every(p => p.product_name.trim() && p.application_mode);
 
   const inputClass = "w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
   const labelClass = "text-xs font-medium text-muted-foreground mb-1 block";
@@ -117,6 +131,7 @@ export default function RAEditorModal({ ra, onClose }) {
         </div>
 
         <div className="px-5 py-4 space-y-3">
+          {/* General fields */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Código RA *</label>
@@ -147,43 +162,6 @@ export default function RAEditorModal({ ra, onClose }) {
             </div>
           </div>
 
-          <div>
-            <label className={labelClass}>Produto *</label>
-            <select value={form.product_name} onChange={(e) => handleProductChange(e.target.value)} className={inputClass}>
-              <option value="">Selecione...</option>
-              {products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
-            </select>
-            {selectedProduct && (
-              <p className="text-[10px] text-muted-foreground mt-1">
-                {selectedProduct.active_ingredient ? `Princípio: ${selectedProduct.active_ingredient}` : ""}
-                {selectedProduct.target ? ` · Alvo: ${selectedProduct.target}` : ""}
-              </p>
-            )}
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={labelClass}>Aplicação *</label>
-              <select value={form.application_mode} onChange={(e) => setForm(p => ({ ...p, application_mode: e.target.value }))} className={inputClass}>
-                <option value="ÁREA">Por Área (ha)</option>
-                <option value="PLANTA">Por Planta</option>
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>Dose</label>
-              <Input type="number" step="0.01" value={form.dose} onChange={(e) => setForm(p => ({ ...p, dose: e.target.value }))} className="rounded-xl" placeholder="0.0" />
-            </div>
-            <div>
-              <label className={labelClass}>Qtd. Total</label>
-              <div className="flex gap-1">
-                <Input type="number" step="0.01" value={form.total_quantity} onChange={(e) => setForm(p => ({ ...p, total_quantity: e.target.value }))} className="rounded-xl" placeholder="0.0" />
-                <Button type="button" variant="outline" size="icon" className="shrink-0" onClick={handleCalculate} title="Calcular automaticamente">
-                  <Calculator className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
           {selectedOrchard && (
             <p className="text-[10px] text-muted-foreground">
               Pomar: {selectedOrchard.area_ha ? `${selectedOrchard.area_ha} ha` : "sem área"} {selectedOrchard.plant_count ? `· ${selectedOrchard.plant_count} plantas` : ""}
@@ -205,9 +183,36 @@ export default function RAEditorModal({ ra, onClose }) {
             <Input value={form.implement_config} onChange={(e) => setForm(p => ({ ...p, implement_config: e.target.value }))} className="rounded-xl" placeholder="Ex: Largura 12m, 48 bicos" />
           </div>
 
-          <div>
-            <label className={labelClass}>Observações</label>
-            <textarea value={form.obs} onChange={(e) => setForm(p => ({ ...p, obs: e.target.value }))} rows={2} className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Observações adicionais..." />
+          {/* Products section */}
+          <div className="border-t border-border pt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold">Produtos</span>
+              <Button type="button" variant="outline" size="sm" className="rounded-lg h-8" onClick={handleAddProduct}>
+                <Plus className="w-3.5 h-3.5" /> Adicionar
+              </Button>
+            </div>
+
+            {loadingProducts ? (
+              <div className="flex justify-center py-4">
+                <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : products.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-3">Nenhum produto adicionado. Clique em "Adicionar".</p>
+            ) : (
+              <div className="space-y-2">
+                {products.map((p, i) => (
+                  <RAProductRow
+                    key={i}
+                    product={p}
+                    index={i}
+                    products={productList}
+                    orchard={selectedOrchard}
+                    onChange={(updated) => handleProductChange(i, updated)}
+                    onRemove={() => handleRemoveProduct(i)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2 pt-2 pb-2">

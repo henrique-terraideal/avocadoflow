@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -25,11 +25,34 @@ export default function Recommendations() {
     queryFn: () => base44.entities.AgronomicRecommendation.list("-created_date", 500),
   });
 
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ["recommendation-products"],
+    queryFn: () => base44.entities.RecommendationProduct.list("-created_date", 1000),
+    enabled: recommendations.length > 0,
+  });
+
+  // Group products by recommendation_id
+  const productsByRA = useMemo(() => {
+    const map = {};
+    for (const p of allProducts) {
+      if (!map[p.recommendation_id]) map[p.recommendation_id] = [];
+      map[p.recommendation_id].push(p);
+    }
+    for (const id in map) {
+      map[id].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    }
+    return map;
+  }, [allProducts]);
+
   const deleteMutation = useMutation({
-    mutationFn: (id) => base44.entities.AgronomicRecommendation.delete(id),
+    mutationFn: async (id) => {
+      await base44.entities.RecommendationProduct.deleteMany({ recommendation_id: id });
+      await base44.entities.AgronomicRecommendation.delete(id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendation-products"] });
       toast({ title: "RA removida!" });
     },
   });
@@ -37,19 +60,12 @@ export default function Recommendations() {
   const filtered = recommendations.filter(ra => {
     if (!search) return true;
     const s = search.toLowerCase();
+    const prods = productsByRA[ra.id] || [];
     return ra.code?.toLowerCase().includes(s) ||
-      ra.product_name?.toLowerCase().includes(s) ||
       ra.type?.toLowerCase().includes(s) ||
-      ra.orchard_code?.toLowerCase().includes(s);
+      ra.orchard_code?.toLowerCase().includes(s) ||
+      prods.some(p => p.product_name?.toLowerCase().includes(s));
   });
-
-  // Group by code
-  const grouped = filtered.reduce((acc, ra) => {
-    const key = ra.code || "Sem código";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(ra);
-    return acc;
-  }, {});
 
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
@@ -61,10 +77,11 @@ export default function Recommendations() {
       if (res.data?.error) throw new Error(res.data.error);
       toast({
         title: "Importação concluída!",
-        description: `${res.data.imported} RAs importadas${res.data.products_created ? ` · ${res.data.products_created} produtos criados` : ""}`,
+        description: `${res.data.imported} RAs (${res.data.created} novas, ${res.data.updated} atualizadas)${res.data.products_created ? ` · ${res.data.products_created} produtos criados` : ""}`,
       });
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendation-products"] });
       queryClient.invalidateQueries({ queryKey: ["products"] });
     } catch (err) {
       toast({ title: "Erro na importação", description: err.message, variant: "destructive" });
@@ -119,7 +136,7 @@ export default function Recommendations() {
         <div className="bg-muted/30 rounded-xl border border-border p-3 flex items-center gap-2">
           <FileSpreadsheet className="w-4 h-4 text-muted-foreground shrink-0" />
           <p className="text-xs text-muted-foreground">
-            Importe planilhas .xlsx com colunas: RA, DATA, TIPO, POMAR, STATUS, PRODUTO, APLICAÇÃO, DOSE, QUANT. TOTAL, VALOR, COMPRA, CUSTO/HA
+            Importe planilhas .xlsx com colunas: RA, DATA, TIPO, POMAR, STATUS, PRODUTO, APLICAÇÃO, DOSE, QUANT. TOTAL, OBS — linhas com o mesmo código de RA são agrupadas automaticamente.
           </p>
         </div>
 
@@ -128,7 +145,7 @@ export default function Recommendations() {
           <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
-        ) : Object.keys(grouped).length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center">
             <Leaf className="w-16 h-16 text-muted-foreground/30 mb-4" />
             <p className="text-muted-foreground font-medium">Nenhuma recomendação cadastrada</p>
@@ -136,37 +153,35 @@ export default function Recommendations() {
           </div>
         ) : (
           <div className="space-y-3">
-            {Object.entries(grouped).map(([code, ras]) => (
-              <div key={code} className="space-y-2">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">{code} ({ras.length})</p>
-                {ras.map((ra) => (
-                  <div key={ra.id} className="bg-card rounded-2xl border border-border p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <Leaf className="w-4 h-4 text-primary" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-sm truncate">{ra.product_name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {ra.application_mode} · Dose: {ra.dose ?? "—"} {ra.total_quantity != null ? `· Total: ${ra.total_quantity}` : ""}
-                          </p>
-                        </div>
+            {filtered.map((ra) => {
+              const raProducts = productsByRA[ra.id] || [];
+              return (
+                <div key={ra.id} className="bg-card rounded-2xl border border-border p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                        <Leaf className="w-4 h-4 text-primary" />
                       </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button onClick={() => { setEditingRA(ra); setShowEditor(true); }} className="text-muted-foreground hover:text-foreground p-1">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => deleteMutation.mutate(ra.id)} className="text-destructive hover:text-destructive/80 p-1">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate">{ra.code}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {raProducts.length} produto{raProducts.length !== 1 ? "s" : ""}
+                        </p>
                       </div>
                     </div>
-                    <RADetails ra={ra} />
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button onClick={() => { setEditingRA(ra); setShowEditor(true); }} className="text-muted-foreground hover:text-foreground p-1">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => deleteMutation.mutate(ra.id)} className="text-destructive hover:text-destructive/80 p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                ))}
-              </div>
-            ))}
+                  <RADetails ra={ra} products={raProducts} />
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
