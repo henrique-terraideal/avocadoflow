@@ -2,12 +2,30 @@ import React, { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
-const CATEGORIES = ["Todos", "Irrigação", "Poda", "Colheita", "Adubação", "Fitossanidade", "Mecanização", "Outros"];
+const DEFAULT_CATEGORIES = ["Irrigação", "Poda", "Colheita", "Adubação", "Fitossanidade", "Mecanização", "Outros"];
 
 export default function OperationFilter({ operations, selectedId, onSelect }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("Todos");
+
+  const { data: categoryConfig } = useQuery({
+    queryKey: ["appconfig-categories"],
+    queryFn: async () => {
+      const results = await base44.entities.AppConfig.filter({ key: "operation_categories" });
+      return results[0] || null;
+    },
+  });
+
+  const categories = useMemo(() => {
+    let configured = DEFAULT_CATEGORIES;
+    try {
+      configured = categoryConfig ? JSON.parse(categoryConfig.value) : DEFAULT_CATEGORIES;
+    } catch {}
+    return ["Todos", ...configured];
+  }, [categoryConfig]);
 
   const filtered = useMemo(() => {
     return operations.filter((op) => {
@@ -34,7 +52,7 @@ export default function OperationFilter({ operations, selectedId, onSelect }) {
 
       {/* Filtro por categoria */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-        {CATEGORIES.map((cat) => (
+        {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
