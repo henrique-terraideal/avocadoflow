@@ -24,13 +24,21 @@ export default function LabelPreview({ label, compact, forPrint }) {
     let extraFields = [];
     let description = null;
     let photoUrl = null;
+    let raData = null;
     if (label.additionalDetails) {
       let details = {};
       try { details = JSON.parse(label.additionalDetails); } catch {}
-      // Custom fields from templates
+      // Detect RA data in any custom field value
+      for (const val of Object.values(details)) {
+        try {
+          const parsed = typeof val === "string" ? JSON.parse(val) : val;
+          if (parsed && parsed.ra_id) { raData = parsed; break; }
+        } catch {}
+      }
+      // Custom fields from templates (exclude RA fields — they're rendered separately)
       if (label.labelFields && label.labelFields.length > 0) {
         extraFields = label.labelFields
-          .filter(f => f.show_on_label && details[f.field_label] !== undefined && details[f.field_label] !== "")
+          .filter(f => f.show_on_label && f.field_type !== "ra_selector" && details[f.field_label] !== undefined && details[f.field_label] !== "")
           .map(f => ({ label: f.field_label, value: details[f.field_label] }));
       }
       // Quick action fields
@@ -97,6 +105,53 @@ export default function LabelPreview({ label, compact, forPrint }) {
                 <span style={{ color: "#555" }}>{ef.value}</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* RA formatada */}
+        {raData && (
+          <div style={{ borderTop: "1px dashed #1a7a3a", marginTop: "2mm", paddingTop: "2mm", marginBottom: "2mm", background: "#f0f7f1", borderRadius: "2mm", padding: "2mm" }}>
+            <div style={{ fontSize: "9pt", fontWeight: "800", color: "#1a7a3a", marginBottom: "1.5mm" }}>🌿 RA: {raData.code}</div>
+            {raData.product && (
+              <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>Produto: </span>
+                <span style={{ color: "#555" }}>{raData.product}</span>
+              </div>
+            )}
+            {raData.type && (
+              <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>Tipo: </span>
+                <span style={{ color: "#555" }}>{raData.type}</span>
+              </div>
+            )}
+            {raData.application_mode && (
+              <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>Aplicação: </span>
+                <span style={{ color: "#555" }}>
+                  {raData.application_mode}
+                  {raData.dose != null ? ` · Dose: ${raData.dose}` : ""}
+                  {raData.total_quantity != null ? ` · Total: ${raData.total_quantity}` : ""}
+                </span>
+              </div>
+            )}
+            {raData.climate_conditions && (
+              <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>Clima: </span>
+                <span style={{ color: "#555" }}>{raData.climate_conditions}</span>
+              </div>
+            )}
+            {raData.machine_config && (
+              <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>Maquinário: </span>
+                <span style={{ color: "#555" }}>{raData.machine_config}</span>
+              </div>
+            )}
+            {raData.implement_config && (
+              <div style={{ fontSize: "8pt", marginBottom: "1mm" }}>
+                <span style={{ fontWeight: "700", color: "#333" }}>Implemento: </span>
+                <span style={{ color: "#555" }}>{raData.implement_config}</span>
+              </div>
+            )}
           </div>
         )}
 
