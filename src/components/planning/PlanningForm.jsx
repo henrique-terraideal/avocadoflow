@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Check, X, Lock } from "lucide-react";
 import OperationFilter from "../field/OperationFilter";
 import CustomFieldsInput from "./CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
+import { useMemo } from "react";
 
 export default function PlanningForm({ operators, operations, onAdd, onCancel }) {
   const [selectedOperator, setSelectedOperator] = useState(null);
@@ -22,9 +23,20 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
+  // Detecta se uma RA está selecionada nos customValues — se sim, o pomar da RA prevalece
+  const selectedRA = useMemo(() => {
+    for (const val of Object.values(customValues)) {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && parsed.ra_id) return parsed;
+      } catch {}
+    }
+    return null;
+  }, [customValues]);
+
   // Determina se precisa mostrar seleção de pomar
   const skipOrchard = template?.skip_orchard || false;
-  const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
+  const effectiveOrchard = selectedRA?.orchard || (skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard);
 
   // Filtra campos que devem aparecer no planejamento
   const planningFields = customFields.filter(
@@ -114,22 +126,34 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
           fields={planningFields}
           values={customValues}
           onChange={setCustomValues}
+          onRASelected={(ra) => {
+            if (ra?.orchard_code) setSelectedOrchard(ra.orchard_code);
+          }}
         />
       )}
 
-      {/* Pomar — só mostra se não for pulado */}
+      {/* Pomar — só mostra se não for pulado. Se RA selecionada, pomar é travado */}
       {!skipOrchard ? (
         <div>
-          <p className="text-sm font-semibold mb-2 text-foreground">Pomar</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-semibold text-foreground">Pomar</p>
+            {selectedRA?.orchard && (
+              <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                <Lock className="w-3 h-3" /> Definido pela RA
+              </span>
+            )}
+          </div>
           <div className="grid grid-cols-5 gap-1.5">
             {orchards.map((o) => (
               <button
                 key={o}
-                onClick={() => setSelectedOrchard(o)}
+                onClick={() => !selectedRA && setSelectedOrchard(o)}
+                disabled={!!selectedRA}
                 className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                  ${selectedOrchard === o
+                  ${effectiveOrchard === o
                     ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-muted/30 hover:border-primary/40"}`}
+                    : "border-border bg-muted/30 hover:border-primary/40"}
+                  ${selectedRA ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {o}
               </button>

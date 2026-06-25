@@ -1,4 +1,5 @@
 import React from "react";
+import { Leaf } from "lucide-react";
 
 function QRImg({ data, size = 120 }) {
   const encoded = encodeURIComponent(data);
@@ -113,6 +114,7 @@ export default function LabelPreview({ label, compact, forPrint }) {
   let description = null;
   let photoUrl = null;
   let origin = null;
+  let raData = null;
   if (label.additionalDetails) {
     try {
       const details = JSON.parse(label.additionalDetails);
@@ -120,6 +122,13 @@ export default function LabelPreview({ label, compact, forPrint }) {
       description = details["O que precisa ser feito?"] || details.descricao || details.observacoes || details.description;
       photoUrl = details["Foto"] || details.foto_manutencao || details.foto || details.photo_url;
       origin = details.origem || details.criado_via;
+      // Detect RA data in any custom field value
+      for (const val of Object.values(details)) {
+        try {
+          const parsed = JSON.parse(val);
+          if (parsed && parsed.ra_id) { raData = parsed; break; }
+        } catch {}
+      }
     } catch {}
   }
 
@@ -172,6 +181,27 @@ export default function LabelPreview({ label, compact, forPrint }) {
       {photoUrl && (
         <div className="rounded-xl overflow-hidden border border-border">
           <img src={photoUrl} alt="Foto da manutenção" className="w-full h-48 object-cover" />
+        </div>
+      )}
+
+      {/* RA details */}
+      {raData && (
+        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 space-y-1">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Leaf className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary">RA: {raData.code}</span>
+            {raData.orchard && <span className="text-[10px] text-muted-foreground">· {raData.orchard}</span>}
+          </div>
+          {raData.product && <p className="text-xs"><span className="font-medium">Produto:</span> {raData.product}</p>}
+          {raData.application_mode && (
+            <p className="text-xs"><span className="font-medium">Aplicação:</span> {raData.application_mode}
+              {raData.dose != null ? ` · Dose: ${raData.dose}` : ""}
+              {raData.total_quantity != null ? ` · Total: ${raData.total_quantity}` : ""}
+            </p>
+          )}
+          {raData.climate_conditions && <p className="text-xs"><span className="font-medium">Clima:</span> {raData.climate_conditions}</p>}
+          {raData.machine_config && <p className="text-xs"><span className="font-medium">Maquinário:</span> {raData.machine_config}</p>}
+          {raData.implement_config && <p className="text-xs"><span className="font-medium">Implemento:</span> {raData.implement_config}</p>}
         </div>
       )}
     </div>

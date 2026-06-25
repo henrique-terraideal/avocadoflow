@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ListChecks, Settings2, UserCog, TreePine, Layers, MessageCircle, Tractor } from "lucide-react";
+import { ArrowLeft, Users, ListChecks, Settings2, UserCog, TreePine, Layers, MessageCircle, Tractor, FlaskConical } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import OperatorsPanel from "../components/admin/OperatorsPanel";
@@ -13,6 +13,7 @@ import MachineryPanel from "../components/admin/MachineryPanel";
 import BottomNav from "../components/field/BottomNav";
 import QuickActionFAB from "../components/QuickActionFAB";
 import WhatsAppAgentPanel from "../components/admin/WhatsAppAgentPanel";
+import ProductsPanel from "../components/admin/ProductsPanel";
 
 const TABS = [
   { id: "operators", label: "Operadores", icon: Users, description: "Adicione e gerencie os operadores de campo" },
@@ -20,6 +21,7 @@ const TABS = [
   { id: "orchards", label: "Pomares", icon: TreePine, description: "Gerencie os pomares cadastrados" },
   { id: "templates", label: "Templates de Operação", icon: Layers, description: "Campos customizados e configurações especiais" },
   { id: "machinery", label: "Máquinas e Implementos", icon: Tractor, description: "Cadastro de tratores, implementos e especificações técnicas" },
+  { id: "products", label: "Produtos", icon: FlaskConical, description: "Cadastro de produtos, princípios ativos e condições climáticas" },
   { id: "users", label: "Usuários", icon: UserCog, description: "Controle de acesso e permissões" },
   { id: "whatsapp", label: "WhatsApp Agente", icon: MessageCircle, description: "Conecte o WhatsApp para Ação Rápida" },
   { id: "config", label: "Configurações", icon: Settings2, description: "Integração com Google Sheets" },
@@ -53,6 +55,7 @@ export default function Admin() {
           {activeTab === "users" && <UsersPanel />}
           {activeTab === "templates" && <OperationTemplatePanel />}
           {activeTab === "machinery" && <MachineryPanel />}
+          {activeTab === "products" && <ProductsPanel />}
           {activeTab === "whatsapp" && <WhatsAppAgentPanel />}
           {activeTab === "config" && <SheetsConfig />}
         </div>

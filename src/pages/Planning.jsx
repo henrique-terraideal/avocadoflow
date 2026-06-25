@@ -190,6 +190,25 @@ export default function Planning() {
         // WhatsApp Quick Action fields
         description = details["O que precisa ser feito?"] || details.descricao;
         photoUrl = details["Foto"] || details.foto_manutencao;
+
+        // Detect RA data
+        for (const val of Object.values(details)) {
+          try {
+            const parsed = JSON.parse(val);
+            if (parsed && parsed.ra_id) {
+              let raHtml = `<div style="border-top:1px dashed #1a7a3a;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;background:#f0f7f1;border-radius:2mm;padding:2mm;">`;
+              raHtml += `<div style="font-size:9pt;font-weight:800;color:#1a7a3a;margin-bottom:1mm;">🌿 RA: ${parsed.code}</div>`;
+              if (parsed.product) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Produto: </span><span style="color:#555;">${parsed.product}</span></div>`;
+              if (parsed.application_mode) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Aplicação: </span><span style="color:#555;">${parsed.application_mode}${parsed.dose != null ? ` · Dose: ${parsed.dose}` : ""}${parsed.total_quantity != null ? ` · Total: ${parsed.total_quantity}` : ""}</span></div>`;
+              if (parsed.climate_conditions) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Clima: </span><span style="color:#555;">${parsed.climate_conditions}</span></div>`;
+              if (parsed.machine_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Maquinário: </span><span style="color:#555;">${parsed.machine_config}</span></div>`;
+              if (parsed.implement_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Implemento: </span><span style="color:#555;">${parsed.implement_config}</span></div>`;
+              raHtml += `</div>`;
+              extraFieldsHtml = raHtml + extraFieldsHtml;
+              break;
+            }
+          } catch {}
+        }
         
         // Custom fields from templates
         const op = operations.find(o => o.name === label.operation_name);

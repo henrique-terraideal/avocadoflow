@@ -10,6 +10,7 @@ import Records from './pages/Records';
 import Admin from './pages/Admin';
 import AdminGuard from './components/admin/AdminGuard';
 import Planning from './pages/Planning';
+import Recommendations from './pages/Recommendations';
 import Profile from './pages/Profile';
 
 const AuthenticatedApp = () => {
@@ -41,6 +42,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<NewRecord />} />
       <Route path="/registros" element={<Records />} />
       <Route path="/planejamento" element={<Planning />} />
+      <Route path="/recomendacoes" element={<Recommendations />} />
       <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
       <Route path="/perfil" element={<Profile />} />
       <Route path="*" element={<PageNotFound />} />

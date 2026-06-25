@@ -1,0 +1,58 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do produto"
+    },
+    "active_ingredient": {
+      "type": "string",
+      "description": "Princ\u00edpio ativo"
+    },
+    "target": {
+      "type": "string",
+      "description": "Alvo/praga controlado"
+    },
+    "recommended_dose_area": {
+      "type": "number",
+      "description": "Dosagem recomendada por hectare"
+    },
+    "recommended_dose_plant": {
+      "type": "number",
+      "description": "Dosagem recomendada por planta"
+    },
+    "ideal_temp_min": {
+      "type": "number",
+      "description": "Temperatura m\u00ednima ideal (\u00b0C)"
+    },
+    "ideal_temp_max": {
+      "type": "number",
+      "description": "Temperatura m\u00e1xima ideal (\u00b0C)"
+    },
+    "ideal_wind_min": {
+      "type": "number",
+      "description": "Vento m\u00ednimo ideal (km/h)"
+    },
+    "ideal_wind_max": {
+      "type": "number",
+      "description": "Vento m\u00e1ximo ideal (km/h)"
+    },
+    "ideal_humidity_min": {
+      "type": "number",
+      "description": "Umidade m\u00ednima ideal (%)"
+    },
+    "ideal_humidity_max": {
+      "type": "number",
+      "description": "Umidade m\u00e1xima ideal (%)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o produto est\u00e1 ativo"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

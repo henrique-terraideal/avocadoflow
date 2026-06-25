@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, X, Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { AlertTriangle, X, Check, ChevronLeft, ChevronRight, Loader2, Lock } from "lucide-react";
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 import CustomFieldsInput from "./planning/CustomFieldsInput";
@@ -21,7 +22,19 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
   const { template, customFields } = useOperationTemplate(operation?.id);
 
   const skipOrchard = template?.skip_orchard || false;
-  const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
+
+  // Detect RA from customValues — orchard from RA prevails
+  const selectedRA = useMemo(() => {
+    for (const val of Object.values(customValues)) {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && parsed.ra_id) return parsed;
+      } catch {}
+    }
+    return null;
+  }, [customValues]);
+
+  const effectiveOrchard = selectedRA?.orchard || (skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard);
 
   // Filter fields to show in planning stage
   const planningFields = customFields.filter(
@@ -141,22 +154,34 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
               fields={planningFields}
               values={customValues}
               onChange={setCustomValues}
+              onRASelected={(ra) => {
+                if (ra?.orchard_code) setSelectedOrchard(ra.orchard_code);
+              }}
             />
           )}
 
           {/* Pomar */}
           {!skipOrchard ? (
             <div>
-              <p className="text-sm font-semibold mb-2 text-foreground">Pomar</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold text-foreground">Pomar</p>
+                {selectedRA?.orchard && (
+                  <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                    <Lock className="w-3 h-3" /> Definido pela RA
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-5 gap-1.5">
                 {orchards.map((o) => (
                   <button
                     key={o}
-                    onClick={() => setSelectedOrchard(o)}
+                    onClick={() => !selectedRA && setSelectedOrchard(o)}
+                    disabled={!!selectedRA}
                     className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                      ${selectedOrchard === o
+                      ${effectiveOrchard === o
                         ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border bg-muted/30 hover:border-primary/40"}`}
+                        : "border-border bg-muted/30 hover:border-primary/40"}
+                      ${selectedRA ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     {o}
                   </button>

@@ -11,9 +11,13 @@ export default function OrchardsPanel() {
   const queryClient = useQueryClient();
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
+  const [newArea, setNewArea] = useState("");
+  const [newPlants, setNewPlants] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editCode, setEditCode] = useState("");
   const [editName, setEditName] = useState("");
+  const [editArea, setEditArea] = useState("");
+  const [editPlants, setEditPlants] = useState("");
 
   const { data: orchards = [], isLoading } = useQuery({
     queryKey: ["orchards-admin"],
@@ -27,6 +31,8 @@ export default function OrchardsPanel() {
       queryClient.invalidateQueries({ queryKey: ["orchards"] });
       setNewCode("");
       setNewName("");
+      setNewArea("");
+      setNewPlants("");
       toast({ title: "Pomar adicionado!" });
     },
   });
@@ -62,11 +68,18 @@ export default function OrchardsPanel() {
     setEditingId(orchard.id);
     setEditCode(orchard.code);
     setEditName(orchard.name || "");
+    setEditArea(orchard.area_ha?.toString() || "");
+    setEditPlants(orchard.plant_count?.toString() || "");
   };
 
   const handleSaveEdit = (id) => {
     if (!editCode.trim()) return;
-    updateMutation.mutate({ id, data: { code: editCode.trim().toUpperCase(), name: editName.trim() } });
+    updateMutation.mutate({ id, data: {
+      code: editCode.trim().toUpperCase(),
+      name: editName.trim(),
+      area_ha: editArea === "" ? null : Number(editArea),
+      plant_count: editPlants === "" ? null : Number(editPlants),
+    }});
   };
 
   const handleAdd = () => {
@@ -74,6 +87,8 @@ export default function OrchardsPanel() {
     createMutation.mutate({
       code: newCode.trim().toUpperCase(),
       name: newName.trim(),
+      area_ha: newArea === "" ? null : Number(newArea),
+      plant_count: newPlants === "" ? null : Number(newPlants),
       active: true,
       sort_order: orchards.length + 1,
     });
@@ -84,24 +99,44 @@ export default function OrchardsPanel() {
       {/* Add Form */}
       <div className="bg-card rounded-2xl border border-border p-4 space-y-3">
         <h3 className="font-semibold text-sm">Novo Pomar</h3>
-        <div className="flex gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <Input
             placeholder="Código (ex: P21)"
             value={newCode}
             onChange={(e) => setNewCode(e.target.value)}
-            className="w-28"
+            className="rounded-xl"
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           />
           <Input
-            placeholder="Nome/descrição (opcional)"
+            placeholder="Nome/descrição"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
+            className="rounded-xl"
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           />
-          <Button onClick={handleAdd} disabled={!newCode.trim() || createMutation.isPending} className="rounded-xl shrink-0">
-            <Plus className="w-4 h-4" />
-          </Button>
         </div>
+        <div className="grid grid-cols-2 gap-2">
+          <Input
+            type="number"
+            step="0.01"
+            placeholder="Área (ha)"
+            value={newArea}
+            onChange={(e) => setNewArea(e.target.value)}
+            className="rounded-xl"
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          />
+          <Input
+            type="number"
+            placeholder="Nº de plantas"
+            value={newPlants}
+            onChange={(e) => setNewPlants(e.target.value)}
+            className="rounded-xl"
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+          />
+        </div>
+        <Button onClick={handleAdd} disabled={!newCode.trim() || createMutation.isPending} className="w-full rounded-xl">
+          <Plus className="w-4 h-4" /> Adicionar Pomar
+        </Button>
       </div>
 
       {/* List */}
@@ -117,19 +152,38 @@ export default function OrchardsPanel() {
 
               {editingId === orchard.id ? (
                 <>
-                  <Input
-                    value={editCode}
-                    onChange={(e) => setEditCode(e.target.value)}
-                    className="w-24 h-8 text-sm font-bold"
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(orchard.id)}
-                  />
-                  <Input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Nome/descrição"
-                    className="flex-1 h-8 text-sm"
-                    onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(orchard.id)}
-                  />
+                  <div className="flex-1 grid grid-cols-2 gap-2">
+                    <Input
+                      value={editCode}
+                      onChange={(e) => setEditCode(e.target.value)}
+                      className="h-8 text-sm font-bold rounded-lg"
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(orchard.id)}
+                    />
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Nome/descrição"
+                      className="h-8 text-sm rounded-lg"
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(orchard.id)}
+                    />
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={editArea}
+                      onChange={(e) => setEditArea(e.target.value)}
+                      placeholder="Área (ha)"
+                      className="h-8 text-sm rounded-lg"
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(orchard.id)}
+                    />
+                    <Input
+                      type="number"
+                      value={editPlants}
+                      onChange={(e) => setEditPlants(e.target.value)}
+                      placeholder="Nº de plantas"
+                      className="h-8 text-sm rounded-lg"
+                      onKeyDown={(e) => e.key === "Enter" && handleSaveEdit(orchard.id)}
+                    />
+                  </div>
                   <Button size="icon" variant="ghost" className="text-primary hover:bg-primary/10 shrink-0 h-8 w-8" onClick={() => handleSaveEdit(orchard.id)} disabled={updateMutation.isPending}>
                     <Check className="w-4 h-4" />
                   </Button>
@@ -146,6 +200,11 @@ export default function OrchardsPanel() {
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm">{orchard.code}</p>
                     {orchard.name && <p className="text-xs text-muted-foreground truncate">{orchard.name}</p>}
+                    <p className="text-[10px] text-muted-foreground/70">
+                      {orchard.area_ha ? `${orchard.area_ha} ha` : ""}
+                      {orchard.area_ha && orchard.plant_count ? " · " : ""}
+                      {orchard.plant_count ? `${orchard.plant_count} plantas` : ""}
+                    </p>
                   </div>
                   <button
                     onClick={() => toggleMutation.mutate({ id: orchard.id, active: !orchard.active })}

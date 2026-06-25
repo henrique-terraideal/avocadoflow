@@ -18,6 +18,7 @@ const FIELD_TYPES = [
   { value: "hour_meter", label: "⏱️ Horímetro (inicial/final)" },
   { value: "machine_selector", label: "🚜 Seleção de Trator" },
   { value: "implement_selector", label: "🔧 Seleção de Implemento" },
+  { value: "ra_selector", label: "🌿 Recomendação Agronômica (RA)" },
 ];
 
 const TYPES_WITH_OPTIONS = ["select_list", "multiple_choice"];

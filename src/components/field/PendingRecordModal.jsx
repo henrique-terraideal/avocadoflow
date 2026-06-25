@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock, Pencil, ChevronDown, RefreshCw, CheckCircle2, CalendarDays } from "lucide-react";
+import { Check, X, Clock, Pencil, ChevronDown, RefreshCw, CheckCircle2, CalendarDays, Lock } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import OperationFilter from "./OperationFilter";
 import { AnimatePresence, motion } from "framer-motion";
 import CustomFieldsInput from "../planning/CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
+import { useMemo } from "react";
 
 function nowTime() {
   const d = new Date();
@@ -49,6 +50,19 @@ export default function PendingRecordModal({ label, operators, operations, onSav
     catch { return {}; }
   });
 
+  // Detecta se uma RA está selecionada nos customValues — se sim, o pomar da RA prevalece
+  const selectedRA = useMemo(() => {
+    for (const val of Object.values(customValues)) {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && parsed.ra_id) return parsed;
+      } catch {}
+    }
+    return null;
+  }, [customValues]);
+
+  const effectiveOrchard = selectedRA?.orchard || selectedOrchard;
+
   const { template, customFields } = useOperationTemplate(selectedOperation?.id);
 
   // Filter fields to show in registration (registration or both)
@@ -75,7 +89,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
-  const canSave = selectedOperator && selectedOperation && selectedOrchard && startTime && endTime && recordDateChoice !== null && requiredRegistrationFilled;
+  const canSave = selectedOperator && selectedOperation && effectiveOrchard && startTime && endTime && recordDateChoice !== null && requiredRegistrationFilled;
 
   const buildData = () => {
     const useOriginal = recordDateChoice === "original";
@@ -83,7 +97,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
       operator_name: selectedOperator.name,
       operator_id: selectedOperator.id,
       operation: `${selectedOperation.code}. ${selectedOperation.name}`,
-      orchard_number: selectedOrchard,
+      orchard_number: effectiveOrchard,
       start_time: startTime,
       end_time: endTime,
       observations,
@@ -182,7 +196,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
             <p className="text-xs text-primary font-medium truncate">
               {selectedOperation ? `${selectedOperation.code}. ${selectedOperation.name}` : "—"}
             </p>
-            <p className="text-xs text-muted-foreground">🌳 Pomar {selectedOrchard || "—"}</p>
+            <p className="text-xs text-muted-foreground">🌳 Pomar {effectiveOrchard || "—"}</p>
           </div>
           <button
             onClick={() => setShowDetails((v) => !v)}
@@ -244,14 +258,23 @@ export default function PendingRecordModal({ label, operators, operations, onSav
 
               {/* Pomar */}
               <div>
-                <p className="text-sm font-semibold mb-2">Pomar</p>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-semibold">Pomar</p>
+                  {selectedRA?.orchard && (
+                    <span className="flex items-center gap-1 text-xs text-primary font-medium">
+                      <Lock className="w-3 h-3" /> Definido pela RA
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-5 gap-1.5">
                   {orchards.map((o) => (
                     <button
                       key={o}
-                      onClick={() => setSelectedOrchard(o)}
+                      onClick={() => !selectedRA && setSelectedOrchard(o)}
+                      disabled={!!selectedRA}
                       className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                        ${selectedOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}`}
+                        ${effectiveOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}
+                        ${selectedRA ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       {o}
                     </button>
@@ -306,6 +329,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
             fields={registrationFields}
             values={customValues}
             onChange={setCustomValues}
+            readOnlyRA={true}
           />
         )}
 

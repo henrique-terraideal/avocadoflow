@@ -10,6 +10,14 @@
       "type": "string",
       "description": "Nome ou descri\u00e7\u00e3o do pomar"
     },
+    "area_ha": {
+      "type": "number",
+      "description": "\u00c1rea do pomar em hectares"
+    },
+    "plant_count": {
+      "type": "number",
+      "description": "N\u00famero de plantas do pomar"
+    },
     "active": {
       "type": "boolean",
       "default": true,

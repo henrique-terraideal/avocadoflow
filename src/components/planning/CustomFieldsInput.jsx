@@ -3,13 +3,14 @@ import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, Mic, Video, Loader2, CheckCircle, RotateCcw, Square } from "lucide-react";
+import RASelectorField from "./RASelectorField";
 
 /**
  * Renderiza os campos customizados de um template.
  * values: { [field_label]: string }
  * onChange: (newValues) => void
  */
-export default function CustomFieldsInput({ fields, values, onChange }) {
+export default function CustomFieldsInput({ fields, values, onChange, onRASelected, readOnlyRA }) {
   if (!fields || fields.length === 0) return null;
 
   const handleChange = (label, value) => {
@@ -25,13 +26,15 @@ export default function CustomFieldsInput({ fields, values, onChange }) {
           field={field}
           value={values[field.field_label] || ""}
           onChange={(val) => handleChange(field.field_label, val)}
+          onRASelected={onRASelected}
+          readOnlyRA={readOnlyRA}
         />
       ))}
     </div>
   );
 }
 
-function FieldInput({ field, value, onChange }) {
+function FieldInput({ field, value, onChange, onRASelected, readOnlyRA }) {
   const label = (
     <label className="text-xs font-medium text-muted-foreground mb-1 block">
       {field.field_label}
@@ -116,6 +119,15 @@ function FieldInput({ field, value, onChange }) {
       <div>
         {label}
         <ImplementSelectorField value={value} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (field.field_type === "ra_selector") {
+    return (
+      <div>
+        {label}
+        <RASelectorField value={value} onChange={onChange} onRASelected={onRASelected} readOnly={readOnlyRA} />
       </div>
     );
   }

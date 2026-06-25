@@ -23,7 +23,8 @@
         "multiple_choice",
         "hour_meter",
         "machine_selector",
-        "implement_selector"
+        "implement_selector",
+        "ra_selector"
       ],
       "default": "text",
       "description": "Tipo do input"

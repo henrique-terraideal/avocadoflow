@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Wrench, TreePine, Clock, X, Calendar, MapPin, ScanLine, FileText, Tag, History, Hash } from "lucide-react";
+import { User, Wrench, TreePine, Clock, X, Calendar, MapPin, ScanLine, FileText, Tag, History, Hash, Leaf, Package, Beaker, Thermometer, Tractor } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -27,7 +27,9 @@ export default function RecordDetailModal({ record, onClose }) {
           let displayValue = value;
           let isHourMeter = false;
           let hourMeterData = null;
-          // Try to parse JSON values (hour_meter, multiple_choice, etc.)
+          let isRA = false;
+          let raData = null;
+          // Try to parse JSON values (hour_meter, multiple_choice, RA, etc.)
           try {
             const parsedVal = JSON.parse(value);
             if (Array.isArray(parsedVal)) {
@@ -40,14 +42,18 @@ export default function RecordDetailModal({ record, onClose }) {
                 const e = parseFloat(parsedVal.end);
                 const d = parsedVal.delta || (!isNaN(s) && !isNaN(e) ? (e - s).toFixed(1) : null);
                 hourMeterData = { start: parsedVal.start || "—", end: parsedVal.end || "—", delta: d };
+              } else if ("ra_id" in parsedVal) {
+                // Detect RA: has ra_id key
+                isRA = true;
+                raData = parsedVal;
               } else {
                 displayValue = Object.entries(parsedVal).map(([k, v]) => `${k}: ${v}`).join(" · ");
               }
             }
           } catch {}
           // Check if it's a URL (photo/media)
-          const isMedia = !isHourMeter && typeof displayValue === "string" && displayValue.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|mp4|webm|mp3|wav|ogg|m4a)/i);
-          return { label, value: displayValue, isMedia, isHourMeter, hourMeterData };
+          const isMedia = !isHourMeter && !isRA && typeof displayValue === "string" && displayValue.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|mp4|webm|mp3|wav|ogg|m4a)/i);
+          return { label, value: displayValue, isMedia, isHourMeter, hourMeterData, isRA, raData };
         });
       }
     } catch {}
@@ -140,6 +146,60 @@ export default function RecordDetailModal({ record, onClose }) {
                           <p className="text-xs text-muted-foreground font-medium">Δ Horas trabalhadas</p>
                           <p className="text-sm font-bold text-primary">{field.hourMeterData.delta != null ? `${field.hourMeterData.delta} h` : "—"}</p>
                         </div>
+                      </div>
+                    ) : field.isRA ? (
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
+                          <Leaf className="w-4 h-4 text-primary shrink-0" />
+                          <span className="text-sm font-bold text-primary">{field.raData.code}</span>
+                          {field.raData.orchard && <span className="text-xs text-muted-foreground">· {field.raData.orchard}</span>}
+                        </div>
+                        {field.raData.product && (
+                          <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
+                            <Package className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-xs text-muted-foreground font-medium">Produto: </span>
+                            <span className="text-xs font-semibold">{field.raData.product}</span>
+                          </div>
+                        )}
+                        {field.raData.type && (
+                          <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
+                            <Beaker className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-xs text-muted-foreground font-medium">Tipo: </span>
+                            <span className="text-xs font-semibold">{field.raData.type}</span>
+                          </div>
+                        )}
+                        {field.raData.application_mode && (
+                          <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
+                            <Beaker className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <span className="text-xs text-muted-foreground font-medium">Aplicação: </span>
+                            <span className="text-xs font-semibold">
+                              {field.raData.application_mode}
+                              {field.raData.dose != null ? ` · Dose: ${field.raData.dose}` : ""}
+                              {field.raData.total_quantity != null ? ` · Total: ${field.raData.total_quantity}` : ""}
+                            </span>
+                          </div>
+                        )}
+                        {field.raData.climate_conditions && (
+                          <div className="flex items-start gap-2 bg-background rounded-lg px-3 py-1.5">
+                            <Thermometer className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="text-xs text-muted-foreground font-medium">Clima ideal: </span>
+                            <span className="text-xs font-semibold">{field.raData.climate_conditions}</span>
+                          </div>
+                        )}
+                        {field.raData.machine_config && (
+                          <div className="flex items-start gap-2 bg-background rounded-lg px-3 py-1.5">
+                            <Tractor className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="text-xs text-muted-foreground font-medium">Maquinário: </span>
+                            <span className="text-xs font-semibold">{field.raData.machine_config}</span>
+                          </div>
+                        )}
+                        {field.raData.implement_config && (
+                          <div className="flex items-start gap-2 bg-background rounded-lg px-3 py-1.5">
+                            <Wrench className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                            <span className="text-xs text-muted-foreground font-medium">Implemento: </span>
+                            <span className="text-xs font-semibold">{field.raData.implement_config}</span>
+                          </div>
+                        )}
                       </div>
                     ) : field.isMedia && typeof field.value === "string" && field.value.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
                       <img src={field.value} alt={field.label} className="w-full rounded-lg" />
