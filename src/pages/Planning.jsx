@@ -201,6 +201,17 @@ export default function Planning() {
                 if (f.field_type === "photo" && val) {
                   return `<div style="font-size:8pt;margin-bottom:2mm;"><div style="font-weight:700;color:#333;margin-bottom:1mm;">${f.field_label}:</div><img src="${val}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;" /></div>`;
                 }
+                if (f.field_type === "hour_meter" && val) {
+                  let hm = {};
+                  try { hm = JSON.parse(val); } catch {}
+                  const hmText = `Inicial: ${hm.start || "-"} / Final: ${hm.end || "-"}`;
+                  return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${hmText}</span></div>`;
+                }
+                if (f.field_type === "multiple_choice" && val) {
+                  let arr = [];
+                  try { arr = JSON.parse(val); } catch { arr = [val]; }
+                  return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${arr.join(", ")}</span></div>`;
+                }
                 return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${val}</span></div>`;
               }).join("");
               extraFieldsHtml = `<div style="border-top:1px dashed #ccc;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;">${rows}</div>`;

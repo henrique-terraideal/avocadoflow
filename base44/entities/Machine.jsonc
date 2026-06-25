@@ -1,0 +1,30 @@
+{
+  "name": "Machine",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome/identifica\u00e7\u00e3o do trator ou autopropelido"
+    },
+    "adjustment_standard": {
+      "type": "string",
+      "description": "Padr\u00e3o de regulagem e calibra\u00e7\u00e3o"
+    },
+    "specs": {
+      "type": "string",
+      "description": "JSON com especifica\u00e7\u00f5es t\u00e9cnicas (ex: [{\"label\":\"Capacidade\",\"value\":\"2000L\"},{\"label\":\"N\u00ba Bicos\",\"value\":\"40\"}])"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o maquin\u00e1rio est\u00e1 dispon\u00edvel para sele\u00e7\u00e3o"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

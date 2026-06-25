@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, ListChecks, Settings2, UserCog, TreePine, Layers, MessageCircle } from "lucide-react";
+import { ArrowLeft, Users, ListChecks, Settings2, UserCog, TreePine, Layers, MessageCircle, Tractor } from "lucide-react";
 import { Link } from "react-router-dom";
 
 import OperatorsPanel from "../components/admin/OperatorsPanel";
@@ -9,6 +9,7 @@ import SheetsConfig from "../components/admin/SheetsConfig";
 import UsersPanel from "../components/admin/UsersPanel";
 import OrchardsPanel from "../components/admin/OrchardsPanel";
 import OperationTemplatePanel from "../components/admin/OperationTemplatePanel";
+import MachineryPanel from "../components/admin/MachineryPanel";
 import BottomNav from "../components/field/BottomNav";
 import QuickActionFAB from "../components/QuickActionFAB";
 import WhatsAppAgentPanel from "../components/admin/WhatsAppAgentPanel";
@@ -18,6 +19,7 @@ const TABS = [
   { id: "operations", label: "Operações", icon: ListChecks, description: "Configure as operações disponíveis" },
   { id: "orchards", label: "Pomares", icon: TreePine, description: "Gerencie os pomares cadastrados" },
   { id: "templates", label: "Templates de Operação", icon: Layers, description: "Campos customizados e configurações especiais" },
+  { id: "machinery", label: "Máquinas e Implementos", icon: Tractor, description: "Cadastro de tratores, implementos e especificações técnicas" },
   { id: "users", label: "Usuários", icon: UserCog, description: "Controle de acesso e permissões" },
   { id: "whatsapp", label: "WhatsApp Agente", icon: MessageCircle, description: "Conecte o WhatsApp para Ação Rápida" },
   { id: "config", label: "Configurações", icon: Settings2, description: "Integração com Google Sheets" },
@@ -50,6 +52,7 @@ export default function Admin() {
           {activeTab === "orchards" && <OrchardsPanel />}
           {activeTab === "users" && <UsersPanel />}
           {activeTab === "templates" && <OperationTemplatePanel />}
+          {activeTab === "machinery" && <MachineryPanel />}
           {activeTab === "whatsapp" && <WhatsAppAgentPanel />}
           {activeTab === "config" && <SheetsConfig />}
         </div>

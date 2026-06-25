@@ -13,7 +13,14 @@ const FIELD_TYPES = [
   { value: "photo", label: "📷 Foto" },
   { value: "audio", label: "🎤 Áudio (transcrição automática)" },
   { value: "video", label: "🎬 Vídeo (resumo automático)" },
+  { value: "select_list", label: "📋 Lista de seleção (1 opção)" },
+  { value: "multiple_choice", label: "☑️ Múltipla escolha" },
+  { value: "hour_meter", label: "⏱️ Horímetro (inicial/final)" },
+  { value: "machine_selector", label: "🚜 Seleção de Trator" },
+  { value: "implement_selector", label: "🔧 Seleção de Implemento" },
 ];
+
+const TYPES_WITH_OPTIONS = ["select_list", "multiple_choice"];
 
 const INPUT_STAGES = [
   { value: "planning", label: "Planejamento", icon: "📋" },
@@ -28,11 +35,24 @@ function CustomFieldRow({ field, onDelete, onUpdate }) {
   const [required, setRequired] = useState(field.is_required || false);
   const [showOnLabel, setShowOnLabel] = useState(field.show_on_label || false);
   const [inputStage, setInputStage] = useState(field.input_stage || "both");
+  const [options, setOptions] = useState(() => {
+    try { return field.options ? JSON.parse(field.options).join("\n") : ""; } catch { return ""; }
+  });
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    await onUpdate(field.id, { field_label: label, field_type: type, is_required: required, show_on_label: showOnLabel, input_stage: inputStage });
+    const optionsArray = TYPES_WITH_OPTIONS.includes(type)
+      ? options.split("\n").map(o => o.trim()).filter(Boolean)
+      : [];
+    await onUpdate(field.id, {
+      field_label: label,
+      field_type: type,
+      is_required: required,
+      show_on_label: showOnLabel,
+      input_stage: inputStage,
+      options: optionsArray.length > 0 ? JSON.stringify(optionsArray) : "",
+    });
     setSaving(false);
     setEditing(false);
   };
@@ -48,6 +68,15 @@ function CustomFieldRow({ field, onDelete, onUpdate }) {
         >
           {FIELD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
+        {TYPES_WITH_OPTIONS.includes(type) && (
+          <textarea
+            value={options}
+            onChange={(e) => setOptions(e.target.value)}
+            placeholder={"Uma opção por linha:\nOpção 1\nOpção 2"}
+            rows={3}
+            className="w-full rounded-lg border border-input bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        )}
         <div>
           <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Preencher em</p>
           <div className="flex gap-1">
@@ -121,6 +150,7 @@ function TemplateEditor({ template, operation, onClose }) {
   const [newFieldRequired, setNewFieldRequired] = useState(false);
   const [newFieldShowOnLabel, setNewFieldShowOnLabel] = useState(false);
   const [newFieldInputStage, setNewFieldInputStage] = useState("both");
+  const [newFieldOptions, setNewFieldOptions] = useState("");
   const [skipOrchard, setSkipOrchard] = useState(template.skip_orchard || false);
   const [defaultOrchard, setDefaultOrchard] = useState(template.default_orchard || "");
 
@@ -143,15 +173,21 @@ function TemplateEditor({ template, operation, onClose }) {
   });
 
   const addFieldMutation = useMutation({
-    mutationFn: () => base44.entities.CustomField.create({
-      template_id: template.id,
-      field_label: newFieldLabel.trim(),
-      field_type: newFieldType,
-      is_required: newFieldRequired,
-      show_on_label: newFieldShowOnLabel,
-      input_stage: newFieldInputStage,
-      sort_order: fields.length + 1,
-    }),
+    mutationFn: () => {
+      const optionsArray = TYPES_WITH_OPTIONS.includes(newFieldType)
+        ? newFieldOptions.split("\n").map(o => o.trim()).filter(Boolean)
+        : [];
+      return base44.entities.CustomField.create({
+        template_id: template.id,
+        field_label: newFieldLabel.trim(),
+        field_type: newFieldType,
+        is_required: newFieldRequired,
+        show_on_label: newFieldShowOnLabel,
+        input_stage: newFieldInputStage,
+        options: optionsArray.length > 0 ? JSON.stringify(optionsArray) : "",
+        sort_order: fields.length + 1,
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["custom-fields", template.id] });
       setNewFieldLabel("");
@@ -159,6 +195,7 @@ function TemplateEditor({ template, operation, onClose }) {
       setNewFieldRequired(false);
       setNewFieldShowOnLabel(false);
       setNewFieldInputStage("both");
+      setNewFieldOptions("");
     },
   });
 
@@ -260,6 +297,15 @@ function TemplateEditor({ template, operation, onClose }) {
               <option key={t.value} value={t.value}>{t.label}</option>
             ))}
           </select>
+          {TYPES_WITH_OPTIONS.includes(newFieldType) && (
+            <textarea
+              value={newFieldOptions}
+              onChange={(e) => setNewFieldOptions(e.target.value)}
+              placeholder={"Uma opção por linha:\nOpção 1\nOpção 2"}
+              rows={3}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            />
+          )}
           <div>
             <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Preencher em</p>
             <div className="flex gap-1">

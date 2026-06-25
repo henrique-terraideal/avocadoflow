@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
+import { useQuery } from "@tanstack/react-query";
 import { Camera, Mic, Video, Loader2, CheckCircle, RotateCcw, Square } from "lucide-react";
 
 /**
@@ -70,6 +71,51 @@ function FieldInput({ field, value, onChange }) {
       <div>
         {label}
         <MediaField type="video" value={value} onChange={onChange} accept="video/*" />
+      </div>
+    );
+  }
+
+  if (field.field_type === "select_list") {
+    return (
+      <div>
+        {label}
+        <SelectListField field={field} value={value} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (field.field_type === "multiple_choice") {
+    return (
+      <div>
+        {label}
+        <MultipleChoiceField field={field} value={value} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (field.field_type === "hour_meter") {
+    return (
+      <div>
+        {label}
+        <HourMeterField value={value} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (field.field_type === "machine_selector") {
+    return (
+      <div>
+        {label}
+        <MachineSelectorField value={value} onChange={onChange} />
+      </div>
+    );
+  }
+
+  if (field.field_type === "implement_selector") {
+    return (
+      <div>
+        {label}
+        <ImplementSelectorField value={value} onChange={onChange} />
       </div>
     );
   }
@@ -400,5 +446,130 @@ function MediaField({ type, value, onChange, accept }) {
         </span>
       </button>
     </>
+  );
+}
+
+function SelectListField({ field, value, onChange }) {
+  let options = [];
+  try { options = field.options ? JSON.parse(field.options) : []; } catch {}
+
+  return (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+    >
+      <option value="">Selecione...</option>
+      {options.map((opt) => (
+        <option key={opt} value={opt}>{opt}</option>
+      ))}
+    </select>
+  );
+}
+
+function MultipleChoiceField({ field, value, onChange }) {
+  let options = [];
+  try { options = field.options ? JSON.parse(field.options) : []; } catch {}
+
+  let selected = [];
+  try { selected = value ? JSON.parse(value) : []; } catch { selected = value ? [value] : []; }
+
+  const toggle = (opt) => {
+    const next = selected.includes(opt) ? selected.filter(s => s !== opt) : [...selected, opt];
+    onChange(next.length > 0 ? JSON.stringify(next) : "");
+  };
+
+  return (
+    <div className="space-y-1.5">
+      {options.map((opt) => (
+        <label key={opt} className="flex items-center gap-2 cursor-pointer p-2 rounded-lg hover:bg-muted/50 transition-colors">
+          <input
+            type="checkbox"
+            checked={selected.includes(opt)}
+            onChange={() => toggle(opt)}
+            className="w-4 h-4 accent-primary"
+          />
+          <span className="text-sm">{opt}</span>
+        </label>
+      ))}
+    </div>
+  );
+}
+
+function HourMeterField({ value, onChange }) {
+  let hm = { start: "", end: "" };
+  try { hm = value ? JSON.parse(value) : { start: "", end: "" }; } catch {}
+
+  const handleChange = (field, val) => {
+    onChange(JSON.stringify({ ...hm, [field]: val }));
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      <div>
+        <p className="text-xs text-muted-foreground mb-1">Inicial</p>
+        <Input
+          type="number"
+          step="0.1"
+          value={hm.start || ""}
+          onChange={(e) => handleChange("start", e.target.value)}
+          placeholder="0.0"
+          className="h-11 rounded-xl"
+        />
+      </div>
+      <div>
+        <p className="text-xs text-muted-foreground mb-1">Final</p>
+        <Input
+          type="number"
+          step="0.1"
+          value={hm.end || ""}
+          onChange={(e) => handleChange("end", e.target.value)}
+          placeholder="0.0"
+          className="h-11 rounded-xl"
+        />
+      </div>
+    </div>
+  );
+}
+
+function MachineSelectorField({ value, onChange }) {
+  const { data: machines = [], isLoading } = useQuery({
+    queryKey: ["machines-active"],
+    queryFn: () => base44.entities.Machine.filter({ active: true }, "sort_order", 200),
+  });
+
+  return (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={isLoading}
+      className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+    >
+      <option value="">{isLoading ? "Carregando..." : "Selecione um trator..."}</option>
+      {machines.map((m) => (
+        <option key={m.id} value={m.name}>{m.name}</option>
+      ))}
+    </select>
+  );
+}
+
+function ImplementSelectorField({ value, onChange }) {
+  const { data: implements_ = [], isLoading } = useQuery({
+    queryKey: ["implements-active"],
+    queryFn: () => base44.entities.Implement.filter({ active: true }, "sort_order", 200),
+  });
+
+  return (
+    <select
+      value={value || ""}
+      onChange={(e) => onChange(e.target.value)}
+      disabled={isLoading}
+      className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
+    >
+      <option value="">{isLoading ? "Carregando..." : "Selecione um implemento..."}</option>
+      {implements_.map((m) => (
+        <option key={m.id} value={m.name}>{m.name}</option>
+      ))}
+    </select>
   );
 }

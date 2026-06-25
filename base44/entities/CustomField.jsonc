@@ -18,7 +18,12 @@
         "textarea",
         "photo",
         "video",
-        "audio"
+        "audio",
+        "select_list",
+        "multiple_choice",
+        "hour_meter",
+        "machine_selector",
+        "implement_selector"
       ],
       "default": "text",
       "description": "Tipo do input"
@@ -42,6 +47,10 @@
       "type": "boolean",
       "default": false,
       "description": "Se o valor deste campo deve aparecer na etiqueta impressa"
+    },
+    "options": {
+      "type": "string",
+      "description": "JSON array de op\u00e7\u00f5es para select_list e multiple_choice (ex: [\"Op\u00e7\u00e3o 1\",\"Op\u00e7\u00e3o 2\"])"
     },
     "sort_order": {
       "type": "number",
