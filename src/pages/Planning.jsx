@@ -216,7 +216,7 @@ export default function Planning() {
           const tmpl = templateByOpId[op.id];
           if (tmpl) {
             const labelFields = allCustomFields
-              .filter(f => f.template_id === tmpl.id && f.show_on_label)
+              .filter(f => f.template_id === tmpl.id && f.show_on_label && f.field_type !== "ra_selector")
               .filter(f => details[f.field_label] !== undefined && details[f.field_label] !== "");
             if (labelFields.length > 0) {
               const rows = labelFields.map(f => {
