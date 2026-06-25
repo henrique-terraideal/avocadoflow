@@ -80,16 +80,17 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     const keepPending = !!options.keepPending;
     const { customValues, ...recordData } = data;
 
-    // Merge customValues into existing additional_details (planning + registration fields)
+    // Start with PlanningLabel's existing additional_details (from planning stage)
     let mergedDetails = {};
     try { mergedDetails = openLabel?.additional_details ? JSON.parse(openLabel.additional_details) : {}; }
     catch { mergedDetails = {}; }
-    if (customValues && Object.keys(customValues).length > 0) {
+    // Merge registration-stage values on top (overwrite if same key)
+    if (customValues && typeof customValues === "object") {
       Object.assign(mergedDetails, customValues);
     }
 
-    // Update PlanningLabel's additional_details with registration values
-    if (openLabel?.id && customValues && Object.keys(customValues).length > 0) {
+    // Always update PlanningLabel with merged details
+    if (openLabel?.id) {
       await base44.entities.PlanningLabel.update(openLabel.id, { additional_details: JSON.stringify(mergedDetails) });
       queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
       queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
@@ -98,7 +99,6 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     createMutation.mutate({
       data: {
         ...recordData,
-        // usa o date do buildData() (pode ser data original), só aplica selectedDate como fallback
         date: recordData.date || selectedDate,
         qr_scanned: false,
         created_by_user_id: currentUser?.id,

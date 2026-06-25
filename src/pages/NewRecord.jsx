@@ -367,27 +367,28 @@ export default function NewRecord() {
             const today = new Date().toISOString().split("T")[0];
             const { customValues, ...recordData } = data;
 
-            // Merge customValues into existing additional_details (planning + registration fields)
+            // Start with PlanningLabel's existing additional_details (from planning stage)
             let mergedDetails = {};
             try { mergedDetails = qrLabel?.additional_details ? JSON.parse(qrLabel.additional_details) : {}; }
             catch { mergedDetails = {}; }
-            if (customValues && Object.keys(customValues).length > 0) {
-             Object.assign(mergedDetails, customValues);
+            // Merge registration-stage values on top
+            if (customValues && typeof customValues === "object") {
+              Object.assign(mergedDetails, customValues);
             }
 
-            // Update PlanningLabel's additional_details if qrLabel has an id
-            if (qrLabel?.id && customValues && Object.keys(customValues).length > 0) {
-             await base44.entities.PlanningLabel.update(qrLabel.id, { additional_details: JSON.stringify(mergedDetails) });
-             queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
-             queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
+            // Always update PlanningLabel with merged details if it has an id
+            if (qrLabel?.id) {
+              await base44.entities.PlanningLabel.update(qrLabel.id, { additional_details: JSON.stringify(mergedDetails) });
+              queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+              queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
             }
 
             await base44.entities.FieldRecord.create({
-             ...recordData,
-             date: recordData.date || today,
-             qr_scanned: true,
-             created_by_user_id: currentUser?.id,
-             additional_details: Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null,
+              ...recordData,
+              date: recordData.date || today,
+              qr_scanned: true,
+              created_by_user_id: currentUser?.id,
+              additional_details: Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null,
             });
             queryClient.invalidateQueries({ queryKey: ["field-records"] });
             queryClient.invalidateQueries({ queryKey: ["field-records-date"] });

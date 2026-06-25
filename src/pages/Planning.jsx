@@ -85,11 +85,14 @@ export default function Planning() {
     const label = fillingLabel;
     const params = new URLSearchParams(new URL(label.qr_data).search);
 
-    // Merge registration values into existing additional_details
+    // Start with PlanningLabel's existing additional_details (from planning stage)
     let mergedDetails = {};
     try { mergedDetails = label.additional_details ? JSON.parse(label.additional_details) : {}; }
     catch { mergedDetails = {}; }
-    Object.assign(mergedDetails, customValues);
+    // Merge registration-stage values on top
+    if (customValues && typeof customValues === "object") {
+      Object.assign(mergedDetails, customValues);
+    }
 
     // Update PlanningLabel with merged details
     updateMutation.mutate({ id: label.id, data: { additional_details: JSON.stringify(mergedDetails) } });
