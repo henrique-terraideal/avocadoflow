@@ -190,6 +190,7 @@ export default function Planning() {
         // WhatsApp Quick Action fields
         description = details["O que precisa ser feito?"] || details.descricao;
         photoUrl = details["Foto"] || details.foto_manutencao;
+        const usedPhotoKeys = new Set(["Foto", "foto_manutencao"]);
 
         // Detect RA data
         for (const val of Object.values(details)) {
@@ -230,6 +231,8 @@ export default function Planning() {
             const rows = labelFields.map(f => {
               const val = details[f.field_label];
               if (f.field_type === "photo" && val) {
+                // Skip if this photo was already rendered as the main photoUrl
+                if (photoUrl && photoUrl === val) return "";
                 return `<div style="font-size:8pt;margin-bottom:2mm;"><div style="font-weight:700;color:#333;margin-bottom:1mm;">${f.field_label}:</div><img src="${val}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;" /></div>`;
               }
               if (f.field_type === "hour_meter" && val) {
