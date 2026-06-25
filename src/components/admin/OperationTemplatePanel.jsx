@@ -15,17 +15,24 @@ const FIELD_TYPES = [
   { value: "video", label: "🎬 Vídeo (resumo automático)" },
 ];
 
+const INPUT_STAGES = [
+  { value: "planning", label: "Planejamento", icon: "📋" },
+  { value: "registration", label: "Registro em campo", icon: "⚙️" },
+  { value: "both", label: "Ambos", icon: "🔄" },
+];
+
 function CustomFieldRow({ field, onDelete, onUpdate }) {
   const [editing, setEditing] = useState(false);
   const [label, setLabel] = useState(field.field_label);
   const [type, setType] = useState(field.field_type);
   const [required, setRequired] = useState(field.is_required || false);
   const [showOnLabel, setShowOnLabel] = useState(field.show_on_label || false);
+  const [inputStage, setInputStage] = useState(field.input_stage || "both");
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
-    await onUpdate(field.id, { field_label: label, field_type: type, is_required: required, show_on_label: showOnLabel });
+    await onUpdate(field.id, { field_label: label, field_type: type, is_required: required, show_on_label: showOnLabel, input_stage: inputStage });
     setSaving(false);
     setEditing(false);
   };
@@ -41,6 +48,21 @@ function CustomFieldRow({ field, onDelete, onUpdate }) {
         >
           {FIELD_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
         </select>
+        <div>
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Preencher em</p>
+          <div className="flex gap-1">
+            {INPUT_STAGES.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setInputStage(s.value)}
+                className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium border-2 transition-all
+                  ${inputStage === s.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-muted-foreground"}`}
+              >
+                {s.icon} {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-1.5 text-xs cursor-pointer">
             <input type="checkbox" checked={required} onChange={(e) => setRequired(e.target.checked)} className="w-4 h-4 accent-primary" />
@@ -65,6 +87,8 @@ function CustomFieldRow({ field, onDelete, onUpdate }) {
     );
   }
 
+  const stageInfo = INPUT_STAGES.find(s => s.value === (field.input_stage || "both")) || INPUT_STAGES[2];
+
   return (
     <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-3 py-2">
       <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
@@ -76,6 +100,7 @@ function CustomFieldRow({ field, onDelete, onUpdate }) {
         <p className="text-xs text-muted-foreground">
           {FIELD_TYPES.find(t => t.value === field.field_type)?.label || "Texto curto"}
           {field.is_required && " · Obrigatório"}
+          <span className="ml-1">· {stageInfo.icon} {stageInfo.label}</span>
         </p>
       </div>
       <button onClick={() => setEditing(true)} className="text-muted-foreground hover:text-foreground p-1">
@@ -95,6 +120,7 @@ function TemplateEditor({ template, operation, onClose }) {
   const [newFieldType, setNewFieldType] = useState("text");
   const [newFieldRequired, setNewFieldRequired] = useState(false);
   const [newFieldShowOnLabel, setNewFieldShowOnLabel] = useState(false);
+  const [newFieldInputStage, setNewFieldInputStage] = useState("both");
   const [skipOrchard, setSkipOrchard] = useState(template.skip_orchard || false);
   const [defaultOrchard, setDefaultOrchard] = useState(template.default_orchard || "");
 
@@ -123,6 +149,7 @@ function TemplateEditor({ template, operation, onClose }) {
       field_type: newFieldType,
       is_required: newFieldRequired,
       show_on_label: newFieldShowOnLabel,
+      input_stage: newFieldInputStage,
       sort_order: fields.length + 1,
     }),
     onSuccess: () => {
@@ -131,6 +158,7 @@ function TemplateEditor({ template, operation, onClose }) {
       setNewFieldType("text");
       setNewFieldRequired(false);
       setNewFieldShowOnLabel(false);
+      setNewFieldInputStage("both");
     },
   });
 
@@ -223,17 +251,32 @@ function TemplateEditor({ template, operation, onClose }) {
             onChange={(e) => setNewFieldLabel(e.target.value)}
             className="h-9 rounded-xl text-sm"
           />
-          <div className="flex items-center gap-2">
-            <select
-              value={newFieldType}
-              onChange={(e) => setNewFieldType(e.target.value)}
-              className="flex-1 h-9 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              {FIELD_TYPES.map((t) => (
-                <option key={t.value} value={t.value}>{t.label}</option>
+          <select
+            value={newFieldType}
+            onChange={(e) => setNewFieldType(e.target.value)}
+            className="w-full h-9 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            {FIELD_TYPES.map((t) => (
+              <option key={t.value} value={t.value}>{t.label}</option>
+            ))}
+          </select>
+          <div>
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Preencher em</p>
+            <div className="flex gap-1">
+              {INPUT_STAGES.map((s) => (
+                <button
+                  key={s.value}
+                  onClick={() => setNewFieldInputStage(s.value)}
+                  className={`flex-1 px-2 py-1.5 rounded-lg text-xs font-medium border-2 transition-all
+                    ${newFieldInputStage === s.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-muted/30 text-muted-foreground"}`}
+                >
+                  {s.icon} {s.label}
+                </button>
               ))}
-            </select>
-            <label className="flex items-center gap-1.5 text-xs whitespace-nowrap cursor-pointer">
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
               <input
                 type="checkbox"
                 checked={newFieldRequired}
@@ -242,7 +285,7 @@ function TemplateEditor({ template, operation, onClose }) {
               />
               Obrigatório
             </label>
-            <label className="flex items-center gap-1.5 text-xs whitespace-nowrap cursor-pointer">
+            <label className="flex items-center gap-1.5 text-xs cursor-pointer">
               <input
                 type="checkbox"
                 checked={newFieldShowOnLabel}

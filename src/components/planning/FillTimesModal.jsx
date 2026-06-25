@@ -1,28 +1,48 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Check, X, Clock } from "lucide-react";
+import CustomFieldsInput from "./CustomFieldsInput";
 
 function nowTime() {
   const d = new Date();
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function FillTimesModal({ label, onSave, onClose }) {
+export default function FillTimesModal({ label, customFields, onSave, onClose }) {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [observations, setObservations] = useState("");
 
-  const canSave = startTime && endTime;
+  // Pre-fill custom values from existing additional_details
+  const [customValues, setCustomValues] = useState(() => {
+    try { return label.additional_details ? JSON.parse(label.additional_details) : {}; }
+    catch { return {}; }
+  });
+
+  // Filter fields to show in registration (registration or both)
+  const registrationFields = useMemo(
+    () => (customFields || []).filter(
+      (f) => !f.input_stage || f.input_stage === "registration" || f.input_stage === "both"
+    ),
+    [customFields]
+  );
+
+  // Validate required registration fields
+  const requiredRegistrationFilled = registrationFields
+    .filter((f) => f.is_required)
+    .every((f) => customValues[f.field_label]?.toString().trim());
+
+  const canSave = startTime && endTime && requiredRegistrationFilled;
 
   const handleSave = () => {
     if (!canSave) return;
-    onSave({ startTime, endTime, observations });
+    onSave({ startTime, endTime, observations, customValues });
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center p-0" onClick={onClose}>
       <div
-        className="bg-card w-full max-w-lg rounded-t-3xl p-5 space-y-5"
+        className="bg-card w-full max-w-lg rounded-t-3xl p-5 space-y-5 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
@@ -78,6 +98,15 @@ export default function FillTimesModal({ label, onSave, onClose }) {
             </div>
           </div>
         </div>
+
+        {/* Campos de registro em campo */}
+        {registrationFields.length > 0 && (
+          <CustomFieldsInput
+            fields={registrationFields}
+            values={customValues}
+            onChange={setCustomValues}
+          />
+        )}
 
         {/* Observações */}
         <div>

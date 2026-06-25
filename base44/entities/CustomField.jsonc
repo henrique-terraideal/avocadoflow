@@ -28,6 +28,16 @@
       "default": false,
       "description": "Se o campo \u00e9 obrigat\u00f3rio"
     },
+    "input_stage": {
+      "type": "string",
+      "enum": [
+        "planning",
+        "registration",
+        "both"
+      ],
+      "default": "both",
+      "description": "Etapa em que o campo deve ser preenchido: planning (planejamento), registration (registro em campo) ou both (ambos)"
+    },
     "show_on_label": {
       "type": "boolean",
       "default": false,

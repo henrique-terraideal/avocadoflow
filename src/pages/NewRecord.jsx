@@ -365,9 +365,22 @@ export default function NewRecord() {
           operations={operations}
           onSave={async (data, options = {}) => {
             const today = new Date().toISOString().split("T")[0];
+            const { customValues, ...recordData } = data;
+
+            // Update PlanningLabel's additional_details if qrLabel has an id
+            if (qrLabel?.id && customValues && Object.keys(customValues).length > 0) {
+              let merged = {};
+              try { merged = qrLabel.additional_details ? JSON.parse(qrLabel.additional_details) : {}; }
+              catch { merged = {}; }
+              Object.assign(merged, customValues);
+              await base44.entities.PlanningLabel.update(qrLabel.id, { additional_details: JSON.stringify(merged) });
+              queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+              queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
+            }
+
             await base44.entities.FieldRecord.create({
-              ...data,
-              date: data.date || today,
+              ...recordData,
+              date: recordData.date || today,
               qr_scanned: true,
               created_by_user_id: currentUser?.id,
             });

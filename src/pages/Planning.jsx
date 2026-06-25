@@ -81,9 +81,19 @@ export default function Planning() {
     setShowBulkReschedule(false);
   };
 
-  const handleFillTimes = ({ startTime, endTime, observations }) => {
+  const handleFillTimes = ({ startTime, endTime, observations, customValues }) => {
     const label = fillingLabel;
     const params = new URLSearchParams(new URL(label.qr_data).search);
+
+    // Merge registration values into existing additional_details
+    let mergedDetails = {};
+    try { mergedDetails = label.additional_details ? JSON.parse(label.additional_details) : {}; }
+    catch { mergedDetails = {}; }
+    Object.assign(mergedDetails, customValues);
+
+    // Update PlanningLabel with merged details
+    updateMutation.mutate({ id: label.id, data: { additional_details: JSON.stringify(mergedDetails) } });
+
     base44.entities.FieldRecord.create({
       operator_name: label.operator_name,
       operator_id: params.get("op_id") || "",
@@ -131,6 +141,16 @@ export default function Planning() {
     } else {
       setSelectedIds(new Set(labels.map((l) => l.id)));
     }
+  };
+
+  // Get registration-stage custom fields for a label's operation
+  const getRegistrationFields = (label) => {
+    if (!label) return [];
+    const op = operations.find(o => o.name === label.operation_name);
+    if (!op) return [];
+    const tmpl = templates.find(t => t.operation_id === op.id);
+    if (!tmpl) return [];
+    return allCustomFields.filter(f => f.template_id === tmpl.id);
   };
 
   const toLabelPreviewProps = (l) => ({
@@ -409,6 +429,7 @@ export default function Planning() {
       {fillingLabel && (
         <FillTimesModal
           label={fillingLabel}
+          customFields={getRegistrationFields(fillingLabel)}
           onSave={handleFillTimes}
           onClose={() => setFillingLabel(null)}
         />

@@ -76,13 +76,26 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     } catch { return false; }
   });
 
-  const handleSave = (data, options = {}) => {
+  const handleSave = async (data, options = {}) => {
     const keepPending = !!options.keepPending;
+    const { customValues, ...recordData } = data;
+
+    // Update PlanningLabel's additional_details with registration values
+    if (openLabel?.id && customValues && Object.keys(customValues).length > 0) {
+      let merged = {};
+      try { merged = openLabel.additional_details ? JSON.parse(openLabel.additional_details) : {}; }
+      catch { merged = {}; }
+      Object.assign(merged, customValues);
+      await base44.entities.PlanningLabel.update(openLabel.id, { additional_details: JSON.stringify(merged) });
+      queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
+      queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+    }
+
     createMutation.mutate({
       data: {
-        ...data,
+        ...recordData,
         // usa o date do buildData() (pode ser data original), só aplica selectedDate como fallback
-        date: data.date || selectedDate,
+        date: recordData.date || selectedDate,
         qr_scanned: false,
         created_by_user_id: currentUser?.id,
       },

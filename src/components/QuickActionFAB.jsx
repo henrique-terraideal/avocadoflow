@@ -23,7 +23,12 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
   const skipOrchard = template?.skip_orchard || false;
   const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
 
-  const requiredFieldsFilled = customFields
+  // Filter fields to show in planning stage
+  const planningFields = customFields.filter(
+    (f) => !f.input_stage || f.input_stage === "planning" || f.input_stage === "both"
+  );
+
+  const requiredFieldsFilled = planningFields
     .filter((f) => f.is_required)
     .every((f) => customValues[f.field_label]?.trim?.());
 
@@ -131,9 +136,9 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
           </div>
 
           {/* Campos customizados */}
-          {customFields.length > 0 && (
+          {planningFields.length > 0 && (
             <CustomFieldsInput
-              fields={customFields}
+              fields={planningFields}
               values={customValues}
               onChange={setCustomValues}
             />

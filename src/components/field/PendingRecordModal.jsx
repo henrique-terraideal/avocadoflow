@@ -7,6 +7,8 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import OperationFilter from "./OperationFilter";
 import { AnimatePresence, motion } from "framer-motion";
+import CustomFieldsInput from "../planning/CustomFieldsInput";
+import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 
 function nowTime() {
   const d = new Date();
@@ -41,6 +43,23 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const [recordDateChoice, setRecordDateChoice] = useState(label.auto_rescheduled ? null : "today");
   const queryClient = useQueryClient();
 
+  // Custom field values — pre-fill from label's additional_details
+  const [customValues, setCustomValues] = useState(() => {
+    try { return label.additional_details ? JSON.parse(label.additional_details) : {}; }
+    catch { return {}; }
+  });
+
+  const { template, customFields } = useOperationTemplate(selectedOperation?.id);
+
+  // Filter fields to show in registration (registration or both)
+  const registrationFields = customFields.filter(
+    (f) => !f.input_stage || f.input_stage === "registration" || f.input_stage === "both"
+  );
+
+  const requiredRegistrationFilled = registrationFields
+    .filter((f) => f.is_required)
+    .every((f) => customValues[f.field_label]?.toString().trim());
+
   const handleSaveDate = async () => {
     if (!newDateValue || newDateValue === label.date) { setEditingDate(false); return; }
     await base44.entities.PlanningLabel.update(label.id, { date: newDateValue });
@@ -56,7 +75,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
-  const canSave = selectedOperator && selectedOperation && selectedOrchard && startTime && endTime && recordDateChoice !== null;
+  const canSave = selectedOperator && selectedOperation && selectedOrchard && startTime && endTime && recordDateChoice !== null && requiredRegistrationFilled;
 
   const buildData = () => {
     const useOriginal = recordDateChoice === "original";
@@ -69,6 +88,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
       end_time: endTime,
       observations,
       planned_date: label.date,
+      customValues,
       // Se escolheu data original, sobrepõe o `date` para a data original
       ...(useOriginal && label.original_date ? { date: label.original_date } : {}),
     };
@@ -279,6 +299,15 @@ export default function PendingRecordModal({ label, operators, operations, onSav
             </div>
           </div>
         </div>
+
+        {/* Campos de registro em campo */}
+        {registrationFields.length > 0 && (
+          <CustomFieldsInput
+            fields={registrationFields}
+            values={customValues}
+            onChange={setCustomValues}
+          />
+        )}
 
         {/* Observações */}
         <div>

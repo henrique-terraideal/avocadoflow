@@ -26,8 +26,13 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
   const skipOrchard = template?.skip_orchard || false;
   const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
 
+  // Filtra campos que devem aparecer no planejamento
+  const planningFields = customFields.filter(
+    (f) => !f.input_stage || f.input_stage === "planning" || f.input_stage === "both"
+  );
+
   // Verifica se campos obrigatórios foram preenchidos
-  const requiredFieldsFilled = customFields
+  const requiredFieldsFilled = planningFields
     .filter((f) => f.is_required)
     .every((f) => customValues[f.field_label]?.trim());
 
@@ -104,9 +109,9 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
       </div>
 
       {/* Campos customizados do template */}
-      {customFields.length > 0 && (
+      {planningFields.length > 0 && (
         <CustomFieldsInput
-          fields={customFields}
+          fields={planningFields}
           values={customValues}
           onChange={setCustomValues}
         />
