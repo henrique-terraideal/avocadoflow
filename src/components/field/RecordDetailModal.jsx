@@ -190,9 +190,12 @@ export default function RecordDetailModal({ record, onClose }) {
                             </div>
                             <p className="text-xs text-muted-foreground pl-5">
                               {p.application_mode}
-                              {p.dose != null ? ` · Dose: ${p.dose}` : ""}
+                              {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
                               {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
                             </p>
+                            {p.qty_per_tank != null && (
+                              <p className="text-xs text-blue-600 font-semibold pl-5">🧴 {p.qty_per_tank} por tanque</p>
+                            )}
                             {p.obs && <p className="text-[10px] text-muted-foreground pl-5">{p.obs}</p>}
                           </div>
                         ))}
