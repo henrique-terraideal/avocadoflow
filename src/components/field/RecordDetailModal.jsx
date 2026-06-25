@@ -1,7 +1,15 @@
 import React from "react";
-import { User, Wrench, TreePine, Clock, X, Calendar, MapPin, ScanLine, FileText, Tag } from "lucide-react";
+import { User, Wrench, TreePine, Clock, X, Calendar, MapPin, ScanLine, FileText, Tag, History, Hash } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+function formatDateTime(dt) {
+  try {
+    return format(new Date(dt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
+  } catch {
+    return dt;
+  }
+}
 
 export default function RecordDetailModal({ record, onClose }) {
   if (!record) return null;
@@ -120,6 +128,58 @@ export default function RecordDetailModal({ record, onClose }) {
               </div>
             </div>
           )}
+
+          {/* Log de Registro */}
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <History className="w-4 h-4 text-primary" />
+              <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Log de Registro</p>
+            </div>
+            <div className="p-3 bg-muted/40 rounded-xl space-y-2">
+              {record.id && (
+                <div className="flex items-center gap-2">
+                  <Hash className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">ID:</span>
+                  <span className="text-xs font-mono text-muted-foreground truncate">{record.id}</span>
+                </div>
+              )}
+              {record.operator_id && (
+                <div className="flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">ID do Operador:</span>
+                  <span className="text-xs font-mono text-muted-foreground truncate">{record.operator_id}</span>
+                </div>
+              )}
+              {record.created_by_user_id && (
+                <div className="flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">Criado por (usuário):</span>
+                  <span className="text-xs font-mono text-muted-foreground truncate">{record.created_by_user_id}</span>
+                </div>
+              )}
+              {record.created_date && (
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">Criado em:</span>
+                  <span className="text-xs font-semibold">{formatDateTime(record.created_date)}</span>
+                </div>
+              )}
+              {record.updated_date && (
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">Atualizado em:</span>
+                  <span className="text-xs font-semibold">{formatDateTime(record.updated_date)}</span>
+                </div>
+              )}
+              {record.qr_scanned !== undefined && (
+                <div className="flex items-center gap-2">
+                  <ScanLine className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">Preenchido via QR Code:</span>
+                  <span className="text-xs font-semibold">{record.qr_scanned ? "Sim" : "Não"}</span>
+                </div>
+              )}
+            </div>
+          </div>
 
           <button
             onClick={onClose}
