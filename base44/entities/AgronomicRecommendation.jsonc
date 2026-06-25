@@ -23,6 +23,15 @@
       "type": "string",
       "description": "Status (ex: PRODU\u00c7\u00c3O)"
     },
+    "implement_id": {
+      "type": "string",
+      "description": "ID do implemento utilizado (para c\u00e1lculo de quantidade por tanque)"
+    },
+    "liters_per_ha": {
+      "type": "number",
+      "default": 1000,
+      "description": "Volume de calda por hectare em litros (padr\u00e3o: 1000 L/ha)"
+    },
     "machine_config": {
       "type": "string",
       "description": "Configura\u00e7\u00e3o/regulagem do maquin\u00e1rio"

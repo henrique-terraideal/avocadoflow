@@ -101,6 +101,9 @@ function MachineryCard({ item, label, onEdit, onDelete }) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-semibold text-sm truncate">{item.name}</p>
+            {item.tank_capacity_liters && (
+              <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium shrink-0">{item.tank_capacity_liters}L</span>
+            )}
             {!item.active && <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium">Inativo</span>}
           </div>
           {specs.length > 0 && (
@@ -150,12 +153,15 @@ function MachineryForm({ entityName, label, queryKey, item, onClose }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [name, setName] = useState(item?.name || "");
+  const [tankCapacity, setTankCapacity] = useState(item?.tank_capacity_liters ?? "");
   const [adjustmentStandard, setAdjustmentStandard] = useState(item?.adjustment_standard || "");
   const [specs, setSpecs] = useState(() => {
     try { return item?.specs ? JSON.parse(item.specs) : []; } catch { return []; }
   });
   const [active, setActive] = useState(item?.active !== false);
   const [saving, setSaving] = useState(false);
+
+  const isImplement = entityName === "Implement";
 
   const handleSave = async () => {
     if (!name.trim()) return;
@@ -167,6 +173,7 @@ function MachineryForm({ entityName, label, queryKey, item, onClose }) {
       specs: cleanSpecs.length > 0 ? JSON.stringify(cleanSpecs) : "",
       active,
       sort_order: item?.sort_order || 0,
+      ...(isImplement && { tank_capacity_liters: tankCapacity === "" ? null : Number(tankCapacity) }),
     };
     try {
       if (item?.id) {
@@ -199,6 +206,14 @@ function MachineryForm({ entityName, label, queryKey, item, onClose }) {
         <label className="text-xs font-semibold text-muted-foreground mb-1 block">Nome *</label>
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={`Ex: ${label === "Trator" ? "Trator John Deere 5078" : "Pulverizador Jacto 2000L"}`} className="h-11 rounded-xl" />
       </div>
+
+      {isImplement && (
+        <div>
+          <label className="text-xs font-semibold text-muted-foreground mb-1 block">Capacidade do Tanque (L)</label>
+          <Input type="number" step="1" value={tankCapacity} onChange={(e) => setTankCapacity(e.target.value)} placeholder="Ex: 4000" className="h-11 rounded-xl" />
+          <p className="text-[10px] text-muted-foreground mt-1">Usado para calcular quantidade de produto por tanque nas RAs.</p>
+        </div>
+      )}
 
       <div>
         <label className="text-xs font-semibold text-muted-foreground mb-1 block">Padrão de Regulagem e Calibração</label>

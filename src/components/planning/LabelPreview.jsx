@@ -136,9 +136,14 @@ export default function LabelPreview({ label, compact, forPrint }) {
                 <div style={{ fontSize: "8pt", fontWeight: "700", color: "#1a7a3a" }}>{p.product_name}</div>
                 <div style={{ fontSize: "7pt", color: "#555" }}>
                   {p.application_mode || ""}
-                  {p.dose != null ? ` · Dose: ${p.dose}` : ""}
+                  {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
                   {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
                 </div>
+                {p.qty_per_tank != null && (
+                  <div style={{ fontSize: "8pt", fontWeight: "700", color: "#1a5599", marginTop: "0.5mm" }}>
+                    🧴 {p.qty_per_tank} por tanque
+                  </div>
+                )}
                 {p.obs && <div style={{ fontSize: "7pt", color: "#777" }}>{p.obs}</div>}
               </div>
             ))}
@@ -238,9 +243,12 @@ export default function LabelPreview({ label, compact, forPrint }) {
               <p className="text-xs font-bold">{p.product_name}</p>
               <p className="text-xs text-muted-foreground">
                 {p.application_mode}
-                {p.dose != null ? ` · Dose: ${p.dose}` : ""}
+                {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
                 {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
               </p>
+              {p.qty_per_tank != null && (
+                <p className="text-xs text-blue-600 font-semibold">🧴 {p.qty_per_tank} por tanque</p>
+              )}
               {p.obs && <p className="text-[10px] text-muted-foreground">{p.obs}</p>}
             </div>
           ))}

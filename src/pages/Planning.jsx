@@ -207,7 +207,8 @@ export default function Planning() {
               for (const p of parsed.products) {
                 raHtml += `<div style="background:white;border-radius:1.5mm;padding:1.5mm;margin-top:1mm;">`;
                 raHtml += `<div style="font-size:8pt;font-weight:700;color:#1a7a3a;">${p.product_name}</div>`;
-                raHtml += `<div style="font-size:7pt;color:#555;">${p.application_mode || ""}${p.dose != null ? ` · Dose: ${p.dose}` : ""}${p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}</div>`;
+                raHtml += `<div style="font-size:7pt;color:#555;">${p.application_mode || ""}${p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}${p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}</div>`;
+                if (p.qty_per_tank != null) raHtml += `<div style="font-size:8pt;font-weight:700;color:#1a5599;">🧴 ${p.qty_per_tank} por tanque</div>`;
                 if (p.obs) raHtml += `<div style="font-size:7pt;color:#777;">${p.obs}</div>`;
                 raHtml += `</div>`;
               }

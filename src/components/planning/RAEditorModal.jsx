@@ -12,15 +12,19 @@ export default function RAEditorModal({ ra, onClose }) {
   const queryClient = useQueryClient();
   const isEdit = !!ra;
 
+  const DEFAULT_CLIMATE = "Temp: 15–30°C | Vento: 0–10 km/h | Umidade: 60–90%";
+
   const [form, setForm] = useState({
     code: ra?.code || "",
     date: ra?.date || "",
     type: ra?.type || "",
     orchard_code: ra?.orchard_code || "",
     status: ra?.status || "PRODUÇÃO",
+    implement_id: ra?.implement_id || "",
+    liters_per_ha: ra?.liters_per_ha ?? 1000,
     machine_config: ra?.machine_config || "",
     implement_config: ra?.implement_config || "",
-    climate_conditions: ra?.climate_conditions || "",
+    climate_conditions: ra?.climate_conditions || DEFAULT_CLIMATE,
     active: ra?.active ?? true,
   });
 
@@ -36,6 +40,21 @@ export default function RAEditorModal({ ra, onClose }) {
     queryKey: ["orchards"],
     queryFn: () => base44.entities.Orchard.filter({ active: true }, "sort_order", 200),
   });
+
+  const { data: implements_ = [] } = useQuery({
+    queryKey: ["implements"],
+    queryFn: () => base44.entities.Implement.filter({ active: true }, "sort_order", 200),
+  });
+
+  const selectedImplement = implements_.find(i => i.id === form.implement_id) || null;
+
+  // ha per tank = tank_capacity / liters_per_ha
+  // qty per tank for a product = dose_per_ha * ha_per_tank
+  const calcQtyPerTank = (dose) => {
+    if (!selectedImplement?.tank_capacity_liters || !form.liters_per_ha || !dose) return null;
+    const haPerTank = selectedImplement.tank_capacity_liters / form.liters_per_ha;
+    return parseFloat((parseFloat(dose) * haPerTank).toFixed(3));
+  };
 
   // Fetch existing products when editing
   useEffect(() => {
@@ -168,9 +187,46 @@ export default function RAEditorModal({ ra, onClose }) {
             </p>
           )}
 
+          {/* Implemento + Litros por ha */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Implemento (pulverizador)</label>
+              <select
+                value={form.implement_id}
+                onChange={(e) => setForm(p => ({ ...p, implement_id: e.target.value }))}
+                className={inputClass}
+              >
+                <option value="">Nenhum</option>
+                {implements_.map(i => (
+                  <option key={i.id} value={i.id}>
+                    {i.name}{i.tank_capacity_liters ? ` (${i.tank_capacity_liters}L)` : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Calda (L/ha)</label>
+              <Input
+                type="number"
+                step="1"
+                value={form.liters_per_ha}
+                onChange={(e) => setForm(p => ({ ...p, liters_per_ha: e.target.value === "" ? "" : Number(e.target.value) }))}
+                className="rounded-xl"
+                placeholder="1000"
+              />
+            </div>
+          </div>
+
+          {selectedImplement?.tank_capacity_liters && form.liters_per_ha > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-blue-700">
+              🧴 <strong>1 tanque = {(selectedImplement.tank_capacity_liters / form.liters_per_ha).toFixed(1)} ha</strong>
+              {" "}({selectedImplement.tank_capacity_liters}L ÷ {form.liters_per_ha} L/ha)
+            </div>
+          )}
+
           <div>
             <label className={labelClass}>Condições climáticas ideais</label>
-            <Input value={form.climate_conditions} onChange={(e) => setForm(p => ({ ...p, climate_conditions: e.target.value }))} className="rounded-xl" placeholder="Temp: 15-30°C | Vento: 3-10 km/h | Umidade: 60-90%" />
+            <Input value={form.climate_conditions} onChange={(e) => setForm(p => ({ ...p, climate_conditions: e.target.value }))} className="rounded-xl" placeholder="Temp: 15–30°C | Vento: 0–10 km/h | Umidade: 60–90%" />
           </div>
 
           <div>
@@ -209,6 +265,7 @@ export default function RAEditorModal({ ra, onClose }) {
                     orchard={selectedOrchard}
                     onChange={(updated) => handleProductChange(i, updated)}
                     onRemove={() => handleRemoveProduct(i)}
+                    qtyPerTank={calcQtyPerTank(p.dose)}
                   />
                 ))}
               </div>

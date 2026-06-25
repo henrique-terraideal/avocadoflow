@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Calculator, Package } from "lucide-react";
 
-export default function RAProductRow({ product, index, products, orchard, onChange, onRemove }) {
+export default function RAProductRow({ product, index, products, orchard, onChange, onRemove, qtyPerTank }) {
   const inputClass = "w-full h-9 rounded-lg border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
   const labelClass = "text-[10px] font-medium text-muted-foreground mb-0.5 block";
 
@@ -84,6 +84,12 @@ export default function RAProductRow({ product, index, products, orchard, onChan
           </div>
         </div>
       </div>
+
+      {qtyPerTank != null && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 text-xs text-blue-700">
+          🧴 <strong>{qtyPerTank}</strong> por tanque
+        </div>
+      )}
 
       <div>
         <label className={labelClass}>Obs.</label>

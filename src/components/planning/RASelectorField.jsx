@@ -26,11 +26,15 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
   }, [recommendations, search]);
 
   const handleSelect = async (ra) => {
-    const prods = await base44.entities.RecommendationProduct.filter(
-      { recommendation_id: ra.id },
-      "sort_order",
-      100
-    );
+    const [prods, implement_] = await Promise.all([
+      base44.entities.RecommendationProduct.filter({ recommendation_id: ra.id }, "sort_order", 100),
+      ra.implement_id ? base44.entities.Implement.get(ra.implement_id).catch(() => null) : Promise.resolve(null),
+    ]);
+
+    const tankCapacity = implement_?.tank_capacity_liters ?? null;
+    const litersPerHa = ra.liters_per_ha || 1000;
+    const haPerTank = tankCapacity && litersPerHa ? tankCapacity / litersPerHa : null;
+
     const raData = {
       ra_id: ra.id,
       code: ra.code || "",
@@ -39,11 +43,14 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
       climate_conditions: ra.climate_conditions || "",
       machine_config: ra.machine_config || "",
       implement_config: ra.implement_config || "",
+      implement_name: implement_?.name || "",
+      liters_per_ha: litersPerHa,
       products: prods.map(p => ({
         product_name: p.product_name || "",
         application_mode: p.application_mode || "",
         dose: p.dose ?? null,
         total_quantity: p.total_quantity ?? null,
+        qty_per_tank: haPerTank && p.dose != null ? parseFloat((p.dose * haPerTank).toFixed(3)) : null,
         obs: p.obs || "",
       })),
     };
@@ -176,16 +183,19 @@ export function RADetails({ ra, products = [] }) {
         <div className="space-y-1.5">
           {productList.map((p, i) => (
             <div key={i} className="flex items-start gap-2 bg-background/50 rounded-lg p-1.5">
-              <Package className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
-              <div className="flex-1 min-w-0">
-                <span className="text-xs text-foreground font-bold">{p.product_name}</span>
-                <div className="text-[10px] text-muted-foreground">
-                  {p.application_mode}
-                  {p.dose != null ? ` · Dose: ${p.dose}` : ""}
-                  {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
-                </div>
-                {p.obs && <div className="text-[10px] text-muted-foreground">{p.obs}</div>}
+            <Package className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <span className="text-xs text-foreground font-bold">{p.product_name}</span>
+              <div className="text-[10px] text-muted-foreground">
+                {p.application_mode}
+                {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
+                {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
               </div>
+              {p.qty_per_tank != null && (
+                <div className="text-[10px] text-blue-600 font-semibold">🧴 {p.qty_per_tank} por tanque</div>
+              )}
+              {p.obs && <div className="text-[10px] text-muted-foreground">{p.obs}</div>}
+            </div>
             </div>
           ))}
         </div>
