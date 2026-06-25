@@ -16,16 +16,16 @@ import WhatsAppAgentPanel from "../components/admin/WhatsAppAgentPanel";
 import ProductsPanel from "../components/admin/ProductsPanel";
 
 const TABS = [
-  { id: "operators", label: "Operadores", icon: Users, description: "Adicione e gerencie os operadores de campo" },
-  { id: "operations", label: "Operações", icon: ListChecks, description: "Configure as operações disponíveis" },
-  { id: "orchards", label: "Pomares", icon: TreePine, description: "Gerencie os pomares cadastrados" },
-  { id: "templates", label: "Templates de Operação", icon: Layers, description: "Campos customizados e configurações especiais" },
-  { id: "machinery", label: "Máquinas e Implementos", icon: Tractor, description: "Cadastro de tratores, implementos e especificações técnicas" },
-  { id: "products", label: "Produtos", icon: FlaskConical, description: "Cadastro de produtos, princípios ativos e condições climáticas" },
-  { id: "users", label: "Usuários", icon: UserCog, description: "Controle de acesso e permissões" },
-  { id: "whatsapp", label: "WhatsApp Agente", icon: MessageCircle, description: "Conecte o WhatsApp para Ação Rápida" },
-  { id: "config", label: "Configurações", icon: Settings2, description: "Integração com Google Sheets" },
-];
+{ id: "operators", label: "Operadores", icon: Users, description: "Adicione e gerencie os operadores de campo" },
+{ id: "operations", label: "Operações", icon: ListChecks, description: "Configure as operações disponíveis" },
+{ id: "orchards", label: "Pomares", icon: TreePine, description: "Gerencie os pomares cadastrados" },
+{ id: "templates", label: "Templates de Operação", icon: Layers, description: "Campos customizados e configurações especiais" },
+{ id: "machinery", label: "Máquinas e Implementos", icon: Tractor, description: "Cadastro de tratores, implementos e especificações técnicas" },
+{ id: "products", label: "Produtos", icon: FlaskConical, description: "Cadastro de produtos, princípios ativos e condições climáticas" },
+{ id: "users", label: "Usuários", icon: UserCog, description: "Controle de acesso e permissões" },
+{ id: "whatsapp", label: "WhatsApp Agente", icon: MessageCircle, description: "Conecte o WhatsApp para Ação Rápida" },
+{ id: "config", label: "Configura\xE7\xF5es da Planilha Google", icon: Settings2, description: "Integração com Google Sheets" }];
+
 
 export default function Admin() {
   const [activeTab, setActiveTab] = useState(null);
@@ -61,8 +61,8 @@ export default function Admin() {
         </div>
         <QuickActionFAB />
         <BottomNav />
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -90,8 +90,8 @@ export default function Admin() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className="w-full bg-card border border-border rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 hover:shadow-md transition-all text-left"
-            >
+              className="w-full bg-card border border-border rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 hover:shadow-md transition-all text-left">
+              
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <Icon className="w-6 h-6 text-primary" />
               </div>
@@ -100,13 +100,13 @@ export default function Admin() {
                 <p className="text-sm text-muted-foreground">{tab.description}</p>
               </div>
               <ArrowLeft className="w-5 h-5 text-muted-foreground rotate-180" />
-            </button>
-          );
+            </button>);
+
         })}
       </div>
 
       <QuickActionFAB />
       <BottomNav />
-    </div>
-  );
+    </div>);
+
 }
