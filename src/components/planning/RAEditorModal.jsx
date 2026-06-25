@@ -64,6 +64,8 @@ export default function RAEditorModal({ ra, onClose }) {
         setProducts(prods.map(p => ({
           id: p.id,
           product_name: p.product_name || "",
+          active_ingredient: p.active_ingredient || "",
+          target: p.target || "",
           application_mode: p.application_mode || "ÁREA",
           dose: p.dose ?? "",
           total_quantity: p.total_quantity ?? "",
@@ -82,6 +84,8 @@ export default function RAEditorModal({ ra, onClose }) {
   const handleAddProduct = () => {
     setProducts(prev => [...prev, {
       product_name: "",
+      active_ingredient: "",
+      target: "",
       application_mode: "ÁREA",
       dose: "",
       total_quantity: "",
@@ -110,6 +114,8 @@ export default function RAEditorModal({ ra, onClose }) {
           prods.map((p, i) => ({
             recommendation_id: raId,
             product_name: p.product_name,
+            active_ingredient: p.active_ingredient || "",
+            target: p.target || "",
             application_mode: p.application_mode,
             dose: p.dose === "" ? null : Number(p.dose),
             total_quantity: p.total_quantity === "" ? null : Number(p.total_quantity),

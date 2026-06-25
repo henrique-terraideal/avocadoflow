@@ -71,7 +71,31 @@ Deno.serve(async (req) => {
       return null;
     };
 
-    // Group rows by RA code — one parent RA per code, multiple products inside
+    // Fetch existing products to map name → active_ingredient/target
+    const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 500);
+    const productMap = {}; // name.toUpperCase() → product record
+    for (const p of existingProducts) {
+      productMap[p.name.toUpperCase()] = p;
+    }
+
+    // Create missing products (name only — no doses)
+    const newProductNames = new Set();
+    for (const row of rows) {
+      const name = (row.produto || '').trim();
+      if (name && !productMap[name.toUpperCase()]) {
+        newProductNames.add(name);
+      }
+    }
+    if (newProductNames.size > 0) {
+      const created = await base44.asServiceRole.entities.Product.bulkCreate(
+        [...newProductNames].map(name => ({ name }))
+      );
+      for (const p of created) {
+        productMap[p.name.toUpperCase()] = p;
+      }
+    }
+
+    // Group rows by RA code
     const groupedByCode = {};
     for (const row of rows) {
       const code = (row.ra || '').trim();
@@ -92,9 +116,12 @@ Deno.serve(async (req) => {
       }
       const productName = (row.produto || '').trim();
       if (productName) {
+        const productRecord = productMap[productName.toUpperCase()];
         groupedByCode[code].products.push({
           product_name: productName,
-          application_mode: (row.aplicacao || '').toUpperCase().includes('ÁREA') ? 'ÁREA' : 'PLANTA',
+          active_ingredient: productRecord?.active_ingredient || '',
+          target: productRecord?.target || '',
+          application_mode: (row.aplicacao || '').toUpperCase().includes('ÁREA') || (row.aplicacao || '').toUpperCase().includes('AREA') ? 'ÁREA' : 'PLANTA',
           dose: parseNumber(row.dose),
           total_quantity: parseNumber(row.quant_total),
           obs: (row.obs || '').trim(),
@@ -107,21 +134,6 @@ Deno.serve(async (req) => {
 
     if (raEntries.length === 0) {
       return Response.json({ error: 'Nenhuma linha válida encontrada. Verifique se as colunas RA e PRODUTO estão preenchidas.' }, { status: 400 });
-    }
-
-    // Get existing products and create missing ones
-    const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 500);
-    const productNames = new Set(existingProducts.map(p => p.name.toUpperCase()));
-    const newProducts = [];
-    for (const row of rows) {
-      const name = (row.produto || '').trim();
-      if (name && !productNames.has(name.toUpperCase())) {
-        productNames.add(name.toUpperCase());
-        newProducts.push({ name });
-      }
-    }
-    if (newProducts.length > 0) {
-      await base44.asServiceRole.entities.Product.bulkCreate(newProducts);
     }
 
     // Fetch existing RAs to check for duplicates by code
@@ -165,8 +177,7 @@ Deno.serve(async (req) => {
       imported: createdCount + updatedCount,
       created: createdCount,
       updated: updatedCount,
-      products_created: newProducts.length,
-      total_products: existingProducts.length + newProducts.length,
+      products_created: newProductNames.size,
       product_records: allProductRecords.length
     });
   } catch (error) {

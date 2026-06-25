@@ -42,7 +42,8 @@ export default function RAProductRow({ product, index, products, orchard, onChan
             onChange({
               ...product,
               product_name: e.target.value,
-              dose: p ? (product.application_mode === "ÁREA" ? p.recommended_dose_area : p.recommended_dose_plant) || product.dose : product.dose,
+              active_ingredient: p?.active_ingredient || "",
+              target: p?.target || "",
             });
           }}
           className={inputClass}
@@ -50,10 +51,10 @@ export default function RAProductRow({ product, index, products, orchard, onChan
           <option value="">Selecione...</option>
           {products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
         </select>
-        {selectedProduct && (
+        {(product.active_ingredient || product.target || selectedProduct?.active_ingredient || selectedProduct?.target) && (
           <p className="text-[9px] text-muted-foreground mt-0.5">
-            {selectedProduct.active_ingredient ? `Princípio: ${selectedProduct.active_ingredient}` : ""}
-            {selectedProduct.target ? ` · Alvo: ${selectedProduct.target}` : ""}
+            {(product.active_ingredient || selectedProduct?.active_ingredient) ? `Princípio: ${product.active_ingredient || selectedProduct?.active_ingredient}` : ""}
+            {(product.target || selectedProduct?.target) ? ` · Alvo: ${product.target || selectedProduct?.target}` : ""}
           </p>
         )}
       </div>

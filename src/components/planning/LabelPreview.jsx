@@ -151,9 +151,16 @@ export default function LabelPreview({ label, compact, forPrint }) {
               return (
                 <div key={i} style={{ background: "white", borderRadius: "1.5mm", padding: "1.5mm", marginTop: "1mm" }}>
                   <div style={{ fontSize: "8pt", fontWeight: "700", color: "#1a7a3a" }}>{p.product_name}</div>
+                  {(p.active_ingredient || p.target) && (
+                    <div style={{ fontSize: "7pt", color: "#2a6a4a", fontStyle: "italic" }}>
+                      {p.active_ingredient ? `P.A.: ${p.active_ingredient}` : ""}
+                      {p.active_ingredient && p.target ? " · " : ""}
+                      {p.target ? `Alvo: ${p.target}` : ""}
+                    </div>
+                  )}
                   <div style={{ fontSize: "7pt", color: "#555" }}>
                     {p.application_mode || ""}
-                    {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
+                    {p.dose != null ? ` · Dose: ${p.dose}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
                     {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
                   </div>
                   {qpt != null && (
@@ -262,9 +269,16 @@ export default function LabelPreview({ label, compact, forPrint }) {
             return (
               <div key={i} className="bg-background/50 rounded-lg p-1.5 mt-1">
                 <p className="text-xs font-bold">{p.product_name}</p>
+                {(p.active_ingredient || p.target) && (
+                  <p className="text-[9px] text-primary/70 font-medium">
+                    {p.active_ingredient ? `P.A.: ${p.active_ingredient}` : ""}
+                    {p.active_ingredient && p.target ? " · " : ""}
+                    {p.target ? `Alvo: ${p.target}` : ""}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   {p.application_mode}
-                  {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
+                  {p.dose != null ? ` · Dose: ${p.dose}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
                   {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
                 </p>
                 {qpt != null && (

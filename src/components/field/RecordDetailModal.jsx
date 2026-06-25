@@ -188,9 +188,16 @@ export default function RecordDetailModal({ record, onClose }) {
                               <Package className="w-3.5 h-3.5 text-primary shrink-0" />
                               <span className="text-xs font-bold">{p.product_name}</span>
                             </div>
+                            {(p.active_ingredient || p.target) && (
+                              <p className="text-[10px] text-primary/70 font-medium pl-5">
+                                {p.active_ingredient ? `P.A.: ${p.active_ingredient}` : ""}
+                                {p.active_ingredient && p.target ? " · " : ""}
+                                {p.target ? `Alvo: ${p.target}` : ""}
+                              </p>
+                            )}
                             <p className="text-xs text-muted-foreground pl-5">
                               {p.application_mode}
-                              {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
+                              {p.dose != null ? ` · Dose: ${p.dose}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
                               {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
                             </p>
                             {p.qty_per_tank != null && (

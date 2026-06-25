@@ -109,22 +109,14 @@ function ProductForm({ product, onSave, onCancel, saving }) {
     name: product?.name || "",
     active_ingredient: product?.active_ingredient || "",
     target: product?.target || "",
-    recommended_dose_area: product?.recommended_dose_area ?? "",
-    recommended_dose_plant: product?.recommended_dose_plant ?? "",
     active: product?.active ?? true,
   });
 
   const handleSubmit = () => {
     if (!form.name.trim()) return;
-    const data = {
-      ...form,
-      recommended_dose_area: form.recommended_dose_area === "" ? null : Number(form.recommended_dose_area),
-      recommended_dose_plant: form.recommended_dose_plant === "" ? null : Number(form.recommended_dose_plant),
-    };
-    onSave(data);
+    onSave(form);
   };
 
-  const inputClass = "w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
   const labelClass = "text-xs font-medium text-muted-foreground mb-1 block";
 
   return (
@@ -141,16 +133,6 @@ function ProductForm({ product, onSave, onCancel, saving }) {
         <div>
           <label className={labelClass}>Alvo</label>
           <Input value={form.target} onChange={(e) => setForm(p => ({ ...p, target: e.target.value }))} className="rounded-xl" />
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>Dose/ha</label>
-          <Input type="number" step="0.01" value={form.recommended_dose_area} onChange={(e) => setForm(p => ({ ...p, recommended_dose_area: e.target.value }))} className="rounded-xl" placeholder="0.0" />
-        </div>
-        <div>
-          <label className={labelClass}>Dose/planta</label>
-          <Input type="number" step="0.01" value={form.recommended_dose_plant} onChange={(e) => setForm(p => ({ ...p, recommended_dose_plant: e.target.value }))} className="rounded-xl" placeholder="0.0" />
         </div>
       </div>
 

@@ -48,6 +48,8 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
       liters_per_ha: litersPerHa,
       products: prods.map(p => ({
         product_name: p.product_name || "",
+        active_ingredient: p.active_ingredient || "",
+        target: p.target || "",
         application_mode: p.application_mode || "",
         dose: p.dose ?? null,
         total_quantity: p.total_quantity ?? null,
@@ -187,9 +189,16 @@ export function RADetails({ ra, products = [] }) {
             <Package className="w-3.5 h-3.5 text-primary shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <span className="text-xs text-foreground font-bold">{p.product_name}</span>
+              {(p.active_ingredient || p.target) && (
+                <div className="text-[9px] text-primary/70 font-medium">
+                  {p.active_ingredient ? `P.A.: ${p.active_ingredient}` : ""}
+                  {p.active_ingredient && p.target ? " · " : ""}
+                  {p.target ? `Alvo: ${p.target}` : ""}
+                </div>
+              )}
               <div className="text-[10px] text-muted-foreground">
                 {p.application_mode}
-                {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
+                {p.dose != null ? ` · Dose: ${p.dose}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
                 {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
               </div>
               {p.qty_per_tank != null && (

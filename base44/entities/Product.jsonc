@@ -14,14 +14,6 @@
       "type": "string",
       "description": "Alvo/praga controlado"
     },
-    "recommended_dose_area": {
-      "type": "number",
-      "description": "Dosagem recomendada por hectare"
-    },
-    "recommended_dose_plant": {
-      "type": "number",
-      "description": "Dosagem recomendada por planta"
-    },
     "active": {
       "type": "boolean",
       "default": true,
