@@ -52,11 +52,13 @@ export default function Records() {
   const enrichedRecords = records.map((r) => {
     if (r.additional_details) return r;
     const opCode = r.operation?.split(".")[0]?.trim();
+    const opName = r.operation?.replace(/^\d+[\.\-]\s*/, "").trim().toLowerCase();
     const match = planningLabels.find((l) =>
       l.operator_name === r.operator_name &&
-      l.operation_code === opCode &&
       l.orchard_number === r.orchard_number &&
-      l.additional_details
+      l.additional_details &&
+      l.date === r.date &&
+      (l.operation_code === opCode || l.operation_name?.toLowerCase() === opName)
     );
     return match ? { ...r, additional_details: match.additional_details } : r;
   });
