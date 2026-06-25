@@ -194,8 +194,8 @@ export default function Planning() {
         // Detect RA data
         for (const val of Object.values(details)) {
           try {
-            const parsed = JSON.parse(val);
-            if (parsed && parsed.ra_id) {
+            const parsed = typeof val === "string" ? JSON.parse(val) : val;
+            if (parsed && typeof parsed === "object" && parsed.ra_id) {
               let raHtml = `<div style="border-top:1px dashed #1a7a3a;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;background:#f0f7f1;border-radius:2mm;padding:2mm;">`;
               raHtml += `<div style="font-size:9pt;font-weight:800;color:#1a7a3a;margin-bottom:1mm;">🌿 RA: ${parsed.code}</div>`;
               if (parsed.product) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Produto: </span><span style="color:#555;">${parsed.product}</span></div>`;
@@ -219,25 +219,25 @@ export default function Planning() {
               .filter(f => f.template_id === tmpl.id && f.show_on_label && f.field_type !== "ra_selector")
               .filter(f => details[f.field_label] !== undefined && details[f.field_label] !== "");
             if (labelFields.length > 0) {
-              const rows = labelFields.map(f => {
-                const val = details[f.field_label];
-                if (f.field_type === "photo" && val) {
-                  return `<div style="font-size:8pt;margin-bottom:2mm;"><div style="font-weight:700;color:#333;margin-bottom:1mm;">${f.field_label}:</div><img src="${val}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;" /></div>`;
-                }
-                if (f.field_type === "hour_meter" && val) {
-                  let hm = {};
-                  try { hm = JSON.parse(val); } catch {}
-                  const hmText = `Inicial: ${hm.start || "-"} / Final: ${hm.end || "-"}`;
-                  return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${hmText}</span></div>`;
-                }
-                if (f.field_type === "multiple_choice" && val) {
-                  let arr = [];
-                  try { arr = JSON.parse(val); } catch { arr = [val]; }
-                  return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${arr.join(", ")}</span></div>`;
-                }
-                return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${val}</span></div>`;
-              }).join("");
-              extraFieldsHtml = `<div style="border-top:1px dashed #ccc;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;">${rows}</div>`;
+            const rows = labelFields.map(f => {
+              const val = details[f.field_label];
+              if (f.field_type === "photo" && val) {
+                return `<div style="font-size:8pt;margin-bottom:2mm;"><div style="font-weight:700;color:#333;margin-bottom:1mm;">${f.field_label}:</div><img src="${val}" style="width:100%;max-width:70mm;border-radius:2mm;display:block;" /></div>`;
+              }
+              if (f.field_type === "hour_meter" && val) {
+                let hm = {};
+                try { hm = JSON.parse(val); } catch {}
+                const hmText = `Inicial: ${hm.start || "-"} / Final: ${hm.end || "-"}`;
+                return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${hmText}</span></div>`;
+              }
+              if (f.field_type === "multiple_choice" && val) {
+                let arr = [];
+                try { arr = JSON.parse(val); } catch { arr = [val]; }
+                return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${arr.join(", ")}</span></div>`;
+              }
+              return `<div style="font-size:8pt;margin-bottom:1.5mm;"><span style="font-weight:700;color:#333;">${f.field_label}: </span><span style="color:#555;">${val}</span></div>`;
+            }).join("");
+            extraFieldsHtml += `<div style="border-top:1px dashed #ccc;margin-top:2mm;padding-top:2mm;margin-bottom:2mm;">${rows}</div>`;
             }
           }
         }

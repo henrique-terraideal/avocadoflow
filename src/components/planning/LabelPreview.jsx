@@ -32,7 +32,7 @@ export default function LabelPreview({ label, compact, forPrint }) {
       for (const val of Object.values(details)) {
         try {
           const parsed = typeof val === "string" ? JSON.parse(val) : val;
-          if (parsed && parsed.ra_id) { raData = parsed; break; }
+          if (parsed && typeof parsed === "object" && parsed.ra_id) { raData = parsed; break; }
         } catch {}
       }
       // Custom fields from templates (exclude RA fields — they're rendered separately)
