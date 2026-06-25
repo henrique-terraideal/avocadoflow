@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import BottomNav from "../components/field/BottomNav";
 import QuickActionFAB from "../components/QuickActionFAB";
+import RecordDetailModal from "../components/field/RecordDetailModal";
 
 export default function Records() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoaded, setUserLoaded] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   useEffect(() => {
     base44.auth.me().then((u) => { setCurrentUser(u); setUserLoaded(true); }).catch(() => setUserLoaded(true));
@@ -96,7 +98,8 @@ export default function Records() {
                   {items.map((record) => (
                     <div
                       key={record.id}
-                      className="bg-card rounded-2xl border border-border p-4 space-y-2"
+                      onClick={() => setSelectedRecord(record)}
+                      className="bg-card rounded-2xl border border-border p-4 space-y-2 cursor-pointer hover:border-primary/40 transition-colors"
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -142,6 +145,10 @@ export default function Records() {
             ))
         )}
       </div>
+
+      {selectedRecord && (
+        <RecordDetailModal record={selectedRecord} onClose={() => setSelectedRecord(null)} />
+      )}
 
       <QuickActionFAB />
       <BottomNav />
