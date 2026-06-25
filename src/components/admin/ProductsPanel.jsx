@@ -111,12 +111,6 @@ function ProductForm({ product, onSave, onCancel, saving }) {
     target: product?.target || "",
     recommended_dose_area: product?.recommended_dose_area ?? "",
     recommended_dose_plant: product?.recommended_dose_plant ?? "",
-    ideal_temp_min: product?.ideal_temp_min ?? "",
-    ideal_temp_max: product?.ideal_temp_max ?? "",
-    ideal_wind_min: product?.ideal_wind_min ?? "",
-    ideal_wind_max: product?.ideal_wind_max ?? "",
-    ideal_humidity_min: product?.ideal_humidity_min ?? "",
-    ideal_humidity_max: product?.ideal_humidity_max ?? "",
     active: product?.active ?? true,
   });
 
@@ -126,12 +120,6 @@ function ProductForm({ product, onSave, onCancel, saving }) {
       ...form,
       recommended_dose_area: form.recommended_dose_area === "" ? null : Number(form.recommended_dose_area),
       recommended_dose_plant: form.recommended_dose_plant === "" ? null : Number(form.recommended_dose_plant),
-      ideal_temp_min: form.ideal_temp_min === "" ? null : Number(form.ideal_temp_min),
-      ideal_temp_max: form.ideal_temp_max === "" ? null : Number(form.ideal_temp_max),
-      ideal_wind_min: form.ideal_wind_min === "" ? null : Number(form.ideal_wind_min),
-      ideal_wind_max: form.ideal_wind_max === "" ? null : Number(form.ideal_wind_max),
-      ideal_humidity_min: form.ideal_humidity_min === "" ? null : Number(form.ideal_humidity_min),
-      ideal_humidity_max: form.ideal_humidity_max === "" ? null : Number(form.ideal_humidity_max),
     };
     onSave(data);
   };
@@ -165,37 +153,7 @@ function ProductForm({ product, onSave, onCancel, saving }) {
           <Input type="number" step="0.01" value={form.recommended_dose_plant} onChange={(e) => setForm(p => ({ ...p, recommended_dose_plant: e.target.value }))} className="rounded-xl" placeholder="0.0" />
         </div>
       </div>
-      <div>
-        <p className="text-xs font-semibold text-muted-foreground uppercase mb-1.5">Condições climáticas ideais</p>
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <label className={labelClass}>Temp min (°C)</label>
-            <Input type="number" value={form.ideal_temp_min} onChange={(e) => setForm(p => ({ ...p, ideal_temp_min: e.target.value }))} className="rounded-xl" />
-          </div>
-          <div>
-            <label className={labelClass}>Temp max (°C)</label>
-            <Input type="number" value={form.ideal_temp_max} onChange={(e) => setForm(p => ({ ...p, ideal_temp_max: e.target.value }))} className="rounded-xl" />
-          </div>
-          <div className="col-span-3 grid grid-cols-2 gap-2">
-            <div>
-              <label className={labelClass}>Vento min (km/h)</label>
-              <Input type="number" value={form.ideal_wind_min} onChange={(e) => setForm(p => ({ ...p, ideal_wind_min: e.target.value }))} className="rounded-xl" />
-            </div>
-            <div>
-              <label className={labelClass}>Vento max (km/h)</label>
-              <Input type="number" value={form.ideal_wind_max} onChange={(e) => setForm(p => ({ ...p, ideal_wind_max: e.target.value }))} className="rounded-xl" />
-            </div>
-          </div>
-          <div>
-            <label className={labelClass}>Umidade min (%)</label>
-            <Input type="number" value={form.ideal_humidity_min} onChange={(e) => setForm(p => ({ ...p, ideal_humidity_min: e.target.value }))} className="rounded-xl" />
-          </div>
-          <div>
-            <label className={labelClass}>Umidade max (%)</label>
-            <Input type="number" value={form.ideal_humidity_max} onChange={(e) => setForm(p => ({ ...p, ideal_humidity_max: e.target.value }))} className="rounded-xl" />
-          </div>
-        </div>
-      </div>
+
       <div className="flex gap-2 pt-1">
         <Button variant="outline" className="flex-1 rounded-xl" onClick={onCancel}>
           <X className="w-4 h-4" /> Cancelar
