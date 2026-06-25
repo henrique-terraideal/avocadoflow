@@ -25,9 +25,6 @@ export default function RAEditorModal({ ra, onClose }) {
     machine_config: ra?.machine_config || "",
     implement_config: ra?.implement_config || "",
     climate_conditions: ra?.climate_conditions || "",
-    value: ra?.value ?? "",
-    cost_per_ha: ra?.cost_per_ha ?? "",
-    purchase_date: ra?.purchase_date || "",
     active: ra?.active ?? true,
   });
 
@@ -99,8 +96,6 @@ export default function RAEditorModal({ ra, onClose }) {
       ...form,
       dose: form.dose === "" ? null : Number(form.dose),
       total_quantity: form.total_quantity === "" ? null : Number(form.total_quantity),
-      value: form.value === "" ? null : Number(form.value),
-      cost_per_ha: form.cost_per_ha === "" ? null : Number(form.cost_per_ha),
     };
     mutation.mutate(data);
   };
@@ -208,21 +203,6 @@ export default function RAEditorModal({ ra, onClose }) {
           <div>
             <label className={labelClass}>Regulagem do implemento</label>
             <Input value={form.implement_config} onChange={(e) => setForm(p => ({ ...p, implement_config: e.target.value }))} className="rounded-xl" placeholder="Ex: Largura 12m, 48 bicos" />
-          </div>
-
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <label className={labelClass}>Valor (R$)</label>
-              <Input type="number" step="0.01" value={form.value} onChange={(e) => setForm(p => ({ ...p, value: e.target.value }))} className="rounded-xl" placeholder="0.00" />
-            </div>
-            <div>
-              <label className={labelClass}>Custo/ha (R$)</label>
-              <Input type="number" step="0.01" value={form.cost_per_ha} onChange={(e) => setForm(p => ({ ...p, cost_per_ha: e.target.value }))} className="rounded-xl" placeholder="0.00" />
-            </div>
-            <div>
-              <label className={labelClass}>Compra prevista</label>
-              <Input type="date" value={form.purchase_date} onChange={(e) => setForm(p => ({ ...p, purchase_date: e.target.value }))} className="rounded-xl" />
-            </div>
           </div>
 
           <div>
