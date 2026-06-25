@@ -104,6 +104,7 @@ export default function Planning() {
       date: selectedDate,
       observations,
       qr_scanned: false,
+      additional_details: Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null,
     });
     setFillingLabel(null);
   };

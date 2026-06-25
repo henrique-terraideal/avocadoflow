@@ -48,6 +48,10 @@
     "created_by_user_id": {
       "type": "string",
       "description": "ID do usu\u00e1rio que criou o registro"
+    },
+    "additional_details": {
+      "type": "string",
+      "description": "JSON com os valores dos campos customizados do template (ex: {\"campo\": \"valor\"})"
     }
   },
   "required": [
