@@ -17,6 +17,15 @@ function QRImg({ data, size = 120 }) {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+// Calculate qty_per_tank for a product if not already stored
+function resolveQtyPerTank(p, raData) {
+  if (p.qty_per_tank != null) return p.qty_per_tank;
+  const tank = raData?.tank_capacity_liters;
+  const lpha = raData?.liters_per_ha || 1000;
+  if (!tank || !lpha || p.dose == null) return null;
+  return parseFloat((p.dose * (tank / lpha)).toFixed(3));
+}
+
 export default function LabelPreview({ label, compact, forPrint }) {
   // Parse RA data helper — works for both old format (single product fields) and new format (products array)
   const detectRA = (details) => {
@@ -131,22 +140,25 @@ export default function LabelPreview({ label, compact, forPrint }) {
               </div>
             )}
             {/* Lista de produtos */}
-            {(raData.products || []).map((p, i) => (
-              <div key={i} style={{ background: "white", borderRadius: "1.5mm", padding: "1.5mm", marginTop: "1mm" }}>
-                <div style={{ fontSize: "8pt", fontWeight: "700", color: "#1a7a3a" }}>{p.product_name}</div>
-                <div style={{ fontSize: "7pt", color: "#555" }}>
-                  {p.application_mode || ""}
-                  {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
-                  {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
-                </div>
-                {p.qty_per_tank != null && (
-                  <div style={{ fontSize: "8pt", fontWeight: "700", color: "#1a5599", marginTop: "0.5mm" }}>
-                    🧴 {p.qty_per_tank} por tanque
+            {(raData.products || []).map((p, i) => {
+              const qpt = resolveQtyPerTank(p, raData);
+              return (
+                <div key={i} style={{ background: "white", borderRadius: "1.5mm", padding: "1.5mm", marginTop: "1mm" }}>
+                  <div style={{ fontSize: "8pt", fontWeight: "700", color: "#1a7a3a" }}>{p.product_name}</div>
+                  <div style={{ fontSize: "7pt", color: "#555" }}>
+                    {p.application_mode || ""}
+                    {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
+                    {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
                   </div>
-                )}
-                {p.obs && <div style={{ fontSize: "7pt", color: "#777" }}>{p.obs}</div>}
-              </div>
-            ))}
+                  {qpt != null && (
+                    <div style={{ fontSize: "8pt", fontWeight: "700", color: "#1a5599", marginTop: "0.5mm" }}>
+                      🧴 {qpt} por tanque
+                    </div>
+                  )}
+                  {p.obs && <div style={{ fontSize: "7pt", color: "#777" }}>{p.obs}</div>}
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -238,20 +250,23 @@ export default function LabelPreview({ label, compact, forPrint }) {
           {raData.climate_conditions && <p className="text-xs"><span className="font-medium">Clima:</span> {raData.climate_conditions}</p>}
           {raData.machine_config && <p className="text-xs"><span className="font-medium">Maquinário:</span> {raData.machine_config}</p>}
           {raData.implement_config && <p className="text-xs"><span className="font-medium">Implemento:</span> {raData.implement_config}</p>}
-          {(raData.products || []).map((p, i) => (
-            <div key={i} className="bg-background/50 rounded-lg p-1.5 mt-1">
-              <p className="text-xs font-bold">{p.product_name}</p>
-              <p className="text-xs text-muted-foreground">
-                {p.application_mode}
-                {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
-                {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
-              </p>
-              {p.qty_per_tank != null && (
-                <p className="text-xs text-blue-600 font-semibold">🧴 {p.qty_per_tank} por tanque</p>
-              )}
-              {p.obs && <p className="text-[10px] text-muted-foreground">{p.obs}</p>}
-            </div>
-          ))}
+          {(raData.products || []).map((p, i) => {
+            const qpt = resolveQtyPerTank(p, raData);
+            return (
+              <div key={i} className="bg-background/50 rounded-lg p-1.5 mt-1">
+                <p className="text-xs font-bold">{p.product_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {p.application_mode}
+                  {p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}
+                  {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
+                </p>
+                {qpt != null && (
+                  <p className="text-xs text-blue-600 font-semibold">🧴 {qpt} por tanque</p>
+                )}
+                {p.obs && <p className="text-[10px] text-muted-foreground">{p.obs}</p>}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

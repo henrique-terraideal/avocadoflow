@@ -44,6 +44,7 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
       machine_config: ra.machine_config || "",
       implement_config: ra.implement_config || "",
       implement_name: implement_?.name || "",
+      tank_capacity_liters: tankCapacity,
       liters_per_ha: litersPerHa,
       products: prods.map(p => ({
         product_name: p.product_name || "",

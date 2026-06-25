@@ -204,11 +204,17 @@ export default function Planning() {
             if (parsed.machine_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Maquinário: </span><span style="color:#555;">${parsed.machine_config}</span></div>`;
             if (parsed.implement_config) raHtml += `<div style="font-size:7pt;margin-bottom:1mm;"><span style="font-weight:700;color:#333;">Implemento: </span><span style="color:#555;">${parsed.implement_config}</span></div>`;
             if (parsed.products && parsed.products.length > 0) {
+              const tank = parsed.tank_capacity_liters;
+              const lpha = parsed.liters_per_ha || 1000;
               for (const p of parsed.products) {
+                let qpt = p.qty_per_tank;
+                if (qpt == null && tank && lpha && p.dose != null) {
+                  qpt = parseFloat((p.dose * (tank / lpha)).toFixed(3));
+                }
                 raHtml += `<div style="background:white;border-radius:1.5mm;padding:1.5mm;margin-top:1mm;">`;
                 raHtml += `<div style="font-size:8pt;font-weight:700;color:#1a7a3a;">${p.product_name}</div>`;
                 raHtml += `<div style="font-size:7pt;color:#555;">${p.application_mode || ""}${p.dose != null ? ` · Dose: ${p.dose}/ha` : ""}${p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}</div>`;
-                if (p.qty_per_tank != null) raHtml += `<div style="font-size:8pt;font-weight:700;color:#1a5599;">🧴 ${p.qty_per_tank} por tanque</div>`;
+                if (qpt != null) raHtml += `<div style="font-size:8pt;font-weight:700;color:#1a5599;">🧴 ${qpt} por tanque</div>`;
                 if (p.obs) raHtml += `<div style="font-size:7pt;color:#777;">${p.obs}</div>`;
                 raHtml += `</div>`;
               }
