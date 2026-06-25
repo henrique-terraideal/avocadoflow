@@ -25,19 +25,29 @@ export default function RecordDetailModal({ record, onClose }) {
       if (parsed && typeof parsed === "object") {
         customFields = Object.entries(parsed).map(([label, value]) => {
           let displayValue = value;
+          let isHourMeter = false;
+          let hourMeterData = null;
           // Try to parse JSON values (hour_meter, multiple_choice, etc.)
           try {
             const parsedVal = JSON.parse(value);
-            if (Array.isArray(parsedVal)) displayValue = parsedVal.join(", ");
-            else if (typeof parsedVal === "object") {
-              displayValue = Object.entries(parsedVal)
-                .map(([k, v]) => `${k}: ${v}`)
-                .join(" · ");
+            if (Array.isArray(parsedVal)) {
+              displayValue = parsedVal.join(", ");
+            } else if (typeof parsedVal === "object" && parsedVal !== null) {
+              // Detect hour_meter: has start/end keys
+              if ("start" in parsedVal || "end" in parsedVal) {
+                isHourMeter = true;
+                const s = parseFloat(parsedVal.start);
+                const e = parseFloat(parsedVal.end);
+                const d = parsedVal.delta || (!isNaN(s) && !isNaN(e) ? (e - s).toFixed(1) : null);
+                hourMeterData = { start: parsedVal.start || "—", end: parsedVal.end || "—", delta: d };
+              } else {
+                displayValue = Object.entries(parsedVal).map(([k, v]) => `${k}: ${v}`).join(" · ");
+              }
             }
           } catch {}
           // Check if it's a URL (photo/media)
-          const isMedia = typeof displayValue === "string" && displayValue.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|mp4|webm|mp3|wav|ogg|m4a)/i);
-          return { label, value: displayValue, isMedia };
+          const isMedia = !isHourMeter && typeof displayValue === "string" && displayValue.match(/^https?:\/\/.+\.(jpg|jpeg|png|webp|gif|mp4|webm|mp3|wav|ogg|m4a)/i);
+          return { label, value: displayValue, isMedia, isHourMeter, hourMeterData };
         });
       }
     } catch {}
@@ -113,8 +123,25 @@ export default function RecordDetailModal({ record, onClose }) {
               <div className="space-y-2">
                 {customFields.map((field, i) => (
                   <div key={i} className="p-3 bg-muted/40 rounded-xl">
-                    <p className="text-xs text-muted-foreground font-medium mb-1">{field.label}</p>
-                    {field.isMedia && typeof field.value === "string" && field.value.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
+                    <p className="text-xs text-muted-foreground font-medium mb-2">{field.label}</p>
+                    {field.isHourMeter ? (
+                      <div className="space-y-1.5">
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="bg-background rounded-lg px-3 py-2 text-center">
+                            <p className="text-[10px] text-muted-foreground mb-0.5">Inicial</p>
+                            <p className="text-sm font-bold">{field.hourMeterData.start} h</p>
+                          </div>
+                          <div className="bg-background rounded-lg px-3 py-2 text-center">
+                            <p className="text-[10px] text-muted-foreground mb-0.5">Final</p>
+                            <p className="text-sm font-bold">{field.hourMeterData.end} h</p>
+                          </div>
+                        </div>
+                        <div className="bg-primary/10 border border-primary/30 rounded-lg px-3 py-2 flex items-center justify-between">
+                          <p className="text-xs text-muted-foreground font-medium">Δ Horas trabalhadas</p>
+                          <p className="text-sm font-bold text-primary">{field.hourMeterData.delta != null ? `${field.hourMeterData.delta} h` : "—"}</p>
+                        </div>
+                      </div>
+                    ) : field.isMedia && typeof field.value === "string" && field.value.match(/\.(jpg|jpeg|png|webp|gif)$/i) ? (
                       <img src={field.value} alt={field.label} className="w-full rounded-lg" />
                     ) : field.isMedia && typeof field.value === "string" && field.value.match(/\.(mp4|webm)$/i) ? (
                       <video src={field.value} controls className="w-full rounded-lg" />

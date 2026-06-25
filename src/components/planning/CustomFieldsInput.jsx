@@ -501,32 +501,54 @@ function HourMeterField({ value, onChange }) {
   try { hm = value ? JSON.parse(value) : { start: "", end: "" }; } catch {}
 
   const handleChange = (field, val) => {
-    onChange(JSON.stringify({ ...hm, [field]: val }));
+    const updated = { ...hm, [field]: val };
+    const s = parseFloat(updated.start);
+    const e = parseFloat(updated.end);
+    if (!isNaN(s) && !isNaN(e) && e >= s) {
+      updated.delta = (e - s).toFixed(1);
+    } else {
+      updated.delta = "";
+    }
+    onChange(JSON.stringify(updated));
   };
 
+  const delta = hm.delta || (() => {
+    const s = parseFloat(hm.start);
+    const e = parseFloat(hm.end);
+    return (!isNaN(s) && !isNaN(e) && e >= s) ? (e - s).toFixed(1) : null;
+  })();
+
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <div>
-        <p className="text-xs text-muted-foreground mb-1">Inicial</p>
-        <Input
-          type="number"
-          step="0.1"
-          value={hm.start || ""}
-          onChange={(e) => handleChange("start", e.target.value)}
-          placeholder="0.0"
-          className="h-11 rounded-xl"
-        />
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Inicial</p>
+          <Input
+            type="number"
+            step="0.1"
+            value={hm.start || ""}
+            onChange={(e) => handleChange("start", e.target.value)}
+            placeholder="0.0"
+            className="h-11 rounded-xl"
+          />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground mb-1">Final</p>
+          <Input
+            type="number"
+            step="0.1"
+            value={hm.end || ""}
+            onChange={(e) => handleChange("end", e.target.value)}
+            placeholder="0.0"
+            className="h-11 rounded-xl"
+          />
+        </div>
       </div>
-      <div>
-        <p className="text-xs text-muted-foreground mb-1">Final</p>
-        <Input
-          type="number"
-          step="0.1"
-          value={hm.end || ""}
-          onChange={(e) => handleChange("end", e.target.value)}
-          placeholder="0.0"
-          className="h-11 rounded-xl"
-        />
+      <div className={`flex items-center justify-between px-3 py-2 rounded-xl border ${delta !== null && delta !== "" ? "bg-primary/10 border-primary/30" : "bg-muted/40 border-border"}`}>
+        <p className="text-xs text-muted-foreground font-medium">Δ Horas trabalhadas</p>
+        <p className={`text-sm font-bold ${delta !== null && delta !== "" ? "text-primary" : "text-muted-foreground"}`}>
+          {delta !== null && delta !== "" ? `${delta} h` : "—"}
+        </p>
       </div>
     </div>
   );
