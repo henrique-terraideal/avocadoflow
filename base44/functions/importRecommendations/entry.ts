@@ -11,28 +11,24 @@ Deno.serve(async (req) => {
     const fileUrl = body.file_url;
     if (!fileUrl) return Response.json({ error: 'file_url is required' }, { status: 400 });
 
+    // Schema flexível — todos os campos como string para máxima compatibilidade
     const extractResult = await base44.asServiceRole.integrations.Core.ExtractDataFromUploadedFile({
       file_url: fileUrl,
       json_schema: {
-        type: "object",
-        properties: {
-          items: {
-            type: "array",
-            items: {
-              type: "object",
-              properties: {
-                ra: { type: "string" },
-                data: { type: "string" },
-                tipo: { type: "string" },
-                pomar: { type: "string" },
-                status: { type: "string" },
-                produto: { type: "string" },
-                aplicacao: { type: "string" },
-                dose: { type: "string" },
-                obs: { type: "string" },
-                quant_total: { type: "string" }
-              }
-            }
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            ra: { type: "string" },
+            data: { type: "string" },
+            tipo: { type: "string" },
+            pomar: { type: "string" },
+            status: { type: "string" },
+            produto: { type: "string" },
+            aplicacao: { type: "string" },
+            dose: { type: "string" },
+            obs: { type: "string" },
+            quant_total: { type: "string" }
           }
         }
       }
@@ -42,46 +38,146 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Falha ao extrair dados do arquivo', details: extractResult.details }, { status: 400 });
     }
 
-    const rows = extractResult.output.items || [];
-    if (rows.length === 0) {
-      return Response.json({ error: 'Nenhuma recomendação encontrada no arquivo' }, { status: 400 });
+    // O output pode vir como array, objeto com "items", ou objeto único
+    let rows = [];
+    const output = extractResult.output;
+    if (Array.isArray(output)) {
+      rows = output;
+    } else if (output.items && Array.isArray(output.items)) {
+      rows = output.items;
+    } else if (typeof output === 'object') {
+      // Tenta encontrar qualquer array dentro do objeto
+      for (const key of Object.keys(output)) {
+        if (Array.isArray(output[key])) {
+          rows = output[key];
+          break;
+        }
+      }
     }
 
+    if (rows.length === 0) {
+      return Response.json({ error: 'Nenhuma recomendação encontrada no arquivo. Verifique se há uma coluna "RA" e "PRODUTO" preenchidas.' }, { status: 400 });
+    }
+
+    // --- Normalização de cabeçalhos ---
+    // Mapeia variações comuns de nomes de colunas para os campos padrão
+    const fieldAliases = {
+      ra: ['ra', 'codigo', 'cod', 'cod_ra', 'recomendacao', 'cod_recomendacao'],
+      data: ['data', 'date', 'data_aplicacao', 'data_prevista'],
+      tipo: ['tipo', 'type', 'categoria', 'tipo_recomendacao'],
+      pomar: ['pomar', 'orchard', 'cod_pomar', 'pomar_code', 'orchard_code'],
+      status: ['status', 'situacao', 'state'],
+      produto: ['produto', 'product', 'nome_produto', 'product_name'],
+      aplicacao: ['aplicacao', 'aplicação', 'modo_aplicacao', 'application_mode', 'modo'],
+      dose: ['dose', 'dosagem', 'dosage'],
+      obs: ['obs', 'observacoes', 'observação', 'observaçãoões', 'notes', 'note'],
+      quant_total: ['quant_total', 'quant. total', 'quant total', 'quantidade_total', 'total', 'qtd_total', 'qt_total', 'quantidade']
+    };
+
+    // Constrói mapa reverso: alias normalizada → campo padrão
+    const aliasToField = {};
+    for (const [field, aliases] of Object.entries(fieldAliases)) {
+      for (const alias of aliases) {
+        aliasToField[alias.toUpperCase().replace(/[\s._-]/g, '')] = field;
+      }
+    }
+
+    const normalizeKey = (key) => {
+      if (!key) return null;
+      const normalized = String(key).toUpperCase().replace(/[\s._-]/g, '');
+      return aliasToField[normalized] || null;
+    };
+
+    // Normaliza todas as linhas: mapeia chaves variadas para campos padrão
+    const normalizedRows = rows.map((row) => {
+      const normalized = {};
+      for (const [key, value] of Object.entries(row)) {
+        const field = normalizeKey(key);
+        if (field && normalized[field] === undefined) {
+          normalized[field] = value;
+        }
+      }
+      return normalized;
+    });
+
+    // Filtra linhas inválidas (sem RA ou sem PRODUTO) — remove títulos e linhas vazias
+    const validRows = normalizedRows.filter((row) => {
+      const ra = String(row.ra || '').trim();
+      const produto = String(row.produto || '').trim();
+      // Ignora linhas que parecem ser títulos ou cabeçalhos
+      if (ra.toUpperCase().includes('RECOMENDAÇÃO') || ra.toUpperCase().includes('RECOMENDACAO')) return false;
+      return ra && produto;
+    });
+
+    if (validRows.length === 0) {
+      return Response.json({ error: 'Nenhuma linha válida encontrada. Verifique se as colunas RA e PRODUTO estão preenchidas.' }, { status: 400 });
+    }
+
+    // --- Funções de parsing ---
+
     const parseNumber = (val) => {
+      if (val == null) return null;
       if (typeof val === 'number') return val;
-      if (!val) return null;
-      const cleaned = String(val).replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+      const cleaned = String(val).replace(/[R$\s]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.');
       const n = parseFloat(cleaned);
       return isNaN(n) ? null : n;
     };
 
     const parseDate = (val) => {
       if (!val) return null;
+      const str = String(val).trim();
+
+      // Formato ISO: 2025-09-01 ou 2025-09-01 00:00:00
+      const isoMatch = str.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (isoMatch) {
+        return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+      }
+
+      // Formato DD/MM/YYYY ou DD-MM-YYYY
+      const brMatch = str.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+      if (brMatch) {
+        let day = brMatch[1].padStart(2, '0');
+        let month = brMatch[2].padStart(2, '0');
+        let year = parseInt(brMatch[3]);
+        if (year < 100) year = 2000 + year;
+        return `${year}-${month}-${day}`;
+      }
+
+      // Formato Mês/Ano: set/25, SET/25, Setembro/2025, etc.
       const months = { jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06', jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12' };
-      const match = String(val).toLowerCase().match(/(\w{3,})[\/\s]+(\d{2,4})/);
-      if (match) {
-        const monthKey = match[1].substring(0, 3);
+      const monthYearMatch = str.toLowerCase().match(/(\w{3,})[\/\s]+(\d{2,4})/);
+      if (monthYearMatch) {
+        const monthKey = monthYearMatch[1].substring(0, 3);
         const month = months[monthKey];
         if (month) {
-          let year = parseInt(match[2]);
+          let year = parseInt(monthYearMatch[2]);
           if (year < 100) year = 2000 + year;
           return `${year}-${month}-01`;
         }
       }
+
       return null;
     };
 
-    // Fetch existing products to map name → active_ingredient/target
+    const parseApplicationMode = (val) => {
+      if (!val) return 'ÁREA';
+      const upper = String(val).toUpperCase().trim();
+      if (upper.includes('ÁREA') || upper.includes('AREA')) return 'ÁREA';
+      if (upper.includes('PLANTA')) return 'PLANTA';
+      return 'ÁREA';
+    };
+
+    // --- Busca produtos cadastrados para copiar active_ingredient e target ---
     const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 500);
-    const productMap = {}; // name.toUpperCase() → product record
+    const productMap = {};
     for (const p of existingProducts) {
       productMap[p.name.toUpperCase()] = p;
     }
 
-    // Create missing products (name only — no doses)
+    // Cria produtos que ainda não existem (apenas nome)
     const newProductNames = new Set();
-    for (const row of rows) {
-      const name = (row.produto || '').trim();
+    for (const row of validRows) {
+      const name = String(row.produto || '').trim();
       if (name && !productMap[name.toUpperCase()]) {
         newProductNames.add(name);
       }
@@ -95,18 +191,18 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Group rows by RA code
+    // --- Agrupa linhas por código de RA ---
     const groupedByCode = {};
-    for (const row of rows) {
-      const code = (row.ra || '').trim();
+    for (const row of validRows) {
+      const code = String(row.ra || '').trim();
       if (!code) continue;
       if (!groupedByCode[code]) {
         groupedByCode[code] = {
           code,
           date: parseDate(row.data),
-          type: (row.tipo || '').trim(),
-          orchard_code: (row.pomar || '').trim(),
-          status: (row.status || '').trim(),
+          type: String(row.tipo || '').trim(),
+          orchard_code: String(row.pomar || '').trim(),
+          status: String(row.status || '').trim(),
           machine_config: '',
           implement_config: '',
           climate_conditions: '',
@@ -114,17 +210,17 @@ Deno.serve(async (req) => {
           products: []
         };
       }
-      const productName = (row.produto || '').trim();
+      const productName = String(row.produto || '').trim();
       if (productName) {
         const productRecord = productMap[productName.toUpperCase()];
         groupedByCode[code].products.push({
           product_name: productName,
           active_ingredient: productRecord?.active_ingredient || '',
           target: productRecord?.target || '',
-          application_mode: (row.aplicacao || '').toUpperCase().includes('ÁREA') || (row.aplicacao || '').toUpperCase().includes('AREA') ? 'ÁREA' : 'PLANTA',
+          application_mode: parseApplicationMode(row.aplicacao),
           dose: parseNumber(row.dose),
           total_quantity: parseNumber(row.quant_total),
-          obs: (row.obs || '').trim(),
+          obs: String(row.obs || '').trim(),
           sort_order: groupedByCode[code].products.length
         });
       }
@@ -133,10 +229,10 @@ Deno.serve(async (req) => {
     const raEntries = Object.values(groupedByCode).filter(r => r.code && r.products.length > 0);
 
     if (raEntries.length === 0) {
-      return Response.json({ error: 'Nenhuma linha válida encontrada. Verifique se as colunas RA e PRODUTO estão preenchidas.' }, { status: 400 });
+      return Response.json({ error: 'Nenhuma recomendação válida encontrada após processamento.' }, { status: 400 });
     }
 
-    // Fetch existing RAs to check for duplicates by code
+    // --- Busca RAs existentes para atualizar em vez de duplicar ---
     const existingRAs = await base44.asServiceRole.entities.AgronomicRecommendation.list("-created_date", 500);
     const existingRAByCode = {};
     for (const ra of existingRAs) {
