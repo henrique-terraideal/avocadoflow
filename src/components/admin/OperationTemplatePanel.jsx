@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Check, X, GripVertical, Pencil, Tag, AlertTriangle, Zap } from "lucide-react";
+import { Plus, Trash2, Loader2, ChevronDown, ChevronUp, Check, X, GripVertical, Pencil, Tag, AlertTriangle, Zap, Copy } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const FIELD_TYPES = [
@@ -143,7 +143,7 @@ function CustomFieldRow({ field, onDelete, onUpdate }) {
   );
 }
 
-function TemplateEditor({ template, operation, onClose }) {
+function TemplateEditor({ template, operation, onClose, operations, templates }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [newFieldLabel, setNewFieldLabel] = useState("");
@@ -154,6 +154,7 @@ function TemplateEditor({ template, operation, onClose }) {
   const [newFieldOptions, setNewFieldOptions] = useState("");
   const [skipOrchard, setSkipOrchard] = useState(template.skip_orchard || false);
   const [defaultOrchard, setDefaultOrchard] = useState(template.default_orchard || "");
+  const [copySourceId, setCopySourceId] = useState("");
 
   const { data: orchards = [] } = useQuery({
     queryKey: ["orchards"],
@@ -217,6 +218,51 @@ function TemplateEditor({ template, operation, onClose }) {
     });
   };
 
+  // Templates disponíveis para cópia (exclui o próprio e os que não têm campos)
+  const copyableTemplates = templates
+    .filter((t) => t.id !== template.id)
+    .map((t) => {
+      const op = operations.find((o) => o.id === t.operation_id);
+      return { ...t, operation_name: op?.name || "Operação", operation_code: op?.code || "?" };
+    })
+    .sort((a, b) => (a.operation_code || "").localeCompare(b.operation_code || ""));
+
+  const [copying, setCopying] = useState(false);
+
+  const handleCopyFromTemplate = async () => {
+    if (!copySourceId) return;
+    setCopying(true);
+    try {
+      const sourceFields = await base44.entities.CustomField.filter(
+        { template_id: copySourceId },
+        "sort_order",
+        100
+      );
+      if (sourceFields.length === 0) {
+        toast({ title: "Template origem não tem campos", variant: "destructive" });
+        setCopying(false);
+        return;
+      }
+      const newFields = sourceFields.map((f, i) => ({
+        template_id: template.id,
+        field_label: f.field_label,
+        field_type: f.field_type,
+        is_required: f.is_required || false,
+        show_on_label: f.show_on_label || false,
+        input_stage: f.input_stage || "both",
+        options: f.options || "",
+        sort_order: fields.length + i + 1,
+      }));
+      await base44.entities.CustomField.bulkCreate(newFields);
+      queryClient.invalidateQueries({ queryKey: ["custom-fields", template.id] });
+      toast({ title: `${newFields.length} campo(s) copiado(s)!` });
+      setCopySourceId("");
+    } catch (err) {
+      toast({ title: "Erro ao copiar", description: err.message, variant: "destructive" });
+    }
+    setCopying(false);
+  };
+
   return (
     <div className="mt-3 space-y-4 border-t border-border pt-4">
       {/* Configuração de pomar */}
@@ -260,6 +306,37 @@ function TemplateEditor({ template, operation, onClose }) {
           Salvar configuração
         </Button>
       </div>
+
+      {/* Copiar de outro template */}
+      {copyableTemplates.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Copiar Campos de Outro Template</p>
+          <select
+            value={copySourceId}
+            onChange={(e) => setCopySourceId(e.target.value)}
+            className="w-full h-9 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">Selecionar operação de origem...</option>
+            {copyableTemplates.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.operation_code} — {t.operation_name}
+              </option>
+            ))}
+          </select>
+          {copySourceId && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="w-full rounded-xl h-9"
+              disabled={copying}
+              onClick={handleCopyFromTemplate}
+            >
+              {copying ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
+              Copiar Campos
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Campos customizados */}
       <div className="space-y-2">
@@ -524,6 +601,8 @@ export default function OperationTemplatePanel() {
                     template={tmpl}
                     operation={op}
                     onClose={() => setExpandedId(null)}
+                    operations={operations}
+                    templates={templates}
                   />
                 )}
               </div>
