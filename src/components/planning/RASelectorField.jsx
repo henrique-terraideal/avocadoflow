@@ -31,20 +31,27 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
     try { return value ? JSON.parse(value) : null; } catch { return null; }
   }, [value]);
 
+  const normalize = (str) => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  };
+
   const filtered = useMemo(() => {
     if (!search) return recommendations;
-    const s = search.toLowerCase();
+    const s = normalize(search);
     return recommendations.filter(ra => {
       const prods = productsByRA[ra.id] || [];
       const productText = prods
         .map(p => `${p.product_name || ""} ${p.active_ingredient || ""} ${p.target || ""}`)
-        .join(" ")
-        .toLowerCase();
+        .join(" ");
       return (
-        ra.code?.toLowerCase().includes(s) ||
-        ra.type?.toLowerCase().includes(s) ||
-        ra.orchard_code?.toLowerCase().includes(s) ||
-        productText.includes(s)
+        normalize(ra.code).includes(s) ||
+        normalize(ra.type).includes(s) ||
+        normalize(ra.orchard_code).includes(s) ||
+        normalize(productText).includes(s)
       );
     });
   }, [recommendations, productsByRA, search]);
