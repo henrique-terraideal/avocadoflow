@@ -11,6 +11,22 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
     queryFn: () => base44.entities.AgronomicRecommendation.filter({ active: true }, "-created_date", 500),
   });
 
+  // Carrega todos os produtos vinculados para permitir busca por produto, P.A. e alvo
+  const { data: allProducts = [] } = useQuery({
+    queryKey: ["recommendation-products-search"],
+    queryFn: () => base44.entities.RecommendationProduct.list("sort_order", 1000),
+    enabled: recommendations.length > 0,
+  });
+
+  const productsByRA = useMemo(() => {
+    const map = {};
+    for (const p of allProducts) {
+      if (!map[p.recommendation_id]) map[p.recommendation_id] = [];
+      map[p.recommendation_id].push(p);
+    }
+    return map;
+  }, [allProducts]);
+
   const selectedRA = useMemo(() => {
     try { return value ? JSON.parse(value) : null; } catch { return null; }
   }, [value]);
@@ -18,12 +34,20 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
   const filtered = useMemo(() => {
     if (!search) return recommendations;
     const s = search.toLowerCase();
-    return recommendations.filter(ra =>
-      ra.code?.toLowerCase().includes(s) ||
-      ra.type?.toLowerCase().includes(s) ||
-      ra.orchard_code?.toLowerCase().includes(s)
-    );
-  }, [recommendations, search]);
+    return recommendations.filter(ra => {
+      const prods = productsByRA[ra.id] || [];
+      const productText = prods
+        .map(p => `${p.product_name || ""} ${p.active_ingredient || ""} ${p.target || ""}`)
+        .join(" ")
+        .toLowerCase();
+      return (
+        ra.code?.toLowerCase().includes(s) ||
+        ra.type?.toLowerCase().includes(s) ||
+        ra.orchard_code?.toLowerCase().includes(s) ||
+        productText.includes(s)
+      );
+    });
+  }, [recommendations, productsByRA, search]);
 
   const handleSelect = async (ra) => {
     const [prods, implement_] = await Promise.all([
@@ -110,7 +134,7 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar RA por código, tipo, pomar..."
+            placeholder="Buscar por código, produto, P.A., alvo..."
             className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
           {isLoading ? (
