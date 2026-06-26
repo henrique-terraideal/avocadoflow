@@ -57,15 +57,30 @@ export default function Recommendations() {
     },
   });
 
-  const filtered = recommendations.filter(ra => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    const prods = productsByRA[ra.id] || [];
-    return ra.code?.toLowerCase().includes(s) ||
-      ra.type?.toLowerCase().includes(s) ||
-      ra.orchard_code?.toLowerCase().includes(s) ||
-      prods.some(p => p.product_name?.toLowerCase().includes(s));
-  });
+  const normalize = (str) => {
+    if (!str) return "";
+    return str
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  };
+
+  const filtered = useMemo(() => {
+    if (!search) return recommendations;
+    const s = normalize(search);
+    return recommendations.filter(ra => {
+      const prods = productsByRA[ra.id] || [];
+      const productText = prods
+        .map(p => `${p.product_name || ""} ${p.active_ingredient || ""} ${p.target || ""}`)
+        .join(" ");
+      return (
+        normalize(ra.code).includes(s) ||
+        normalize(ra.type).includes(s) ||
+        normalize(ra.orchard_code).includes(s) ||
+        normalize(productText).includes(s)
+      );
+    });
+  }, [recommendations, productsByRA, search]);
 
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
