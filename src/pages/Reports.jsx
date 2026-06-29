@@ -143,10 +143,20 @@ export default function Reports() {
       );
     };
 
+    // Deduplicate labels by qr_data — multiple labels can exist for the same activity
+    // due to previous rollover duplication issues
+    const seenQr = new Set();
+    const dedupedLabels = filteredLabels.filter((l) => {
+      if (!l.qr_data) return true;
+      if (seenQr.has(l.qr_data)) return false;
+      seenQr.add(l.qr_data);
+      return true;
+    });
+
     // Delayed = labels that were auto-rescheduled (rolled over from a previous date)
-    const delayedLabels = filteredLabels.filter((l) => l.auto_rescheduled === true);
-    const pendingLabels = filteredLabels.filter((l) => l.date >= today && !isLabelCompleted(l) && !l.auto_rescheduled);
-    const completedLabels = filteredLabels.filter((l) => isLabelCompleted(l));
+    const delayedLabels = dedupedLabels.filter((l) => l.auto_rescheduled === true);
+    const pendingLabels = dedupedLabels.filter((l) => l.date >= today && !isLabelCompleted(l) && !l.auto_rescheduled);
+    const completedLabels = dedupedLabels.filter((l) => isLabelCompleted(l));
 
     // Apply status filter
     let statusRecords = filteredRecords;
@@ -165,7 +175,7 @@ export default function Reports() {
     }
 
     // Summary
-    const totalActivities = filteredLabels.length;
+    const totalActivities = dedupedLabels.length;
     const totalCompleted = completedLabels.length;
     const totalDelayed = delayedLabels.length;
     const totalHours = statusRecords.reduce((acc, r) => acc + calcHours(r.start_time, r.end_time), 0);
@@ -237,6 +247,17 @@ export default function Reports() {
           </div>
         ) : (
           <>
+            {/* Painel 1 — Resumo */}
+            <section>
+              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-2">Resumo Geral</h2>
+              <SummaryCards
+                total={processed.totalActivities}
+                completed={processed.totalCompleted}
+                delayed={processed.totalDelayed}
+                totalHours={processed.totalHours}
+              />
+            </section>
+
             <DashboardFilterBar
               startDate={startDate} setStartDate={setStartDate}
               endDate={endDate} setEndDate={setEndDate}
@@ -249,17 +270,6 @@ export default function Reports() {
               status={status} setStatus={setStatus}
               onClear={clearFilters}
             />
-
-            {/* Painel 1 — Resumo */}
-            <section>
-              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-2">Resumo Geral</h2>
-              <SummaryCards
-                total={processed.totalActivities}
-                completed={processed.totalCompleted}
-                delayed={processed.totalDelayed}
-                totalHours={processed.totalHours}
-              />
-            </section>
 
             {/* Painel 2 — Tarefas Atrasadas */}
             <section>
