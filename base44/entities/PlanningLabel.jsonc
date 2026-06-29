@@ -44,6 +44,10 @@
     "additional_details": {
       "type": "string",
       "description": "JSON com os valores dos campos customizados do template (ex: {\"campo\": \"valor\"})"
+    },
+    "draft_data": {
+      "type": "string",
+      "description": "JSON com dados parciais preenchidos no modal de hor\u00e1rios (rascunho n\u00e3o finalizado). Limpo quando o registro \u00e9 finalizado."
     }
   },
   "required": [

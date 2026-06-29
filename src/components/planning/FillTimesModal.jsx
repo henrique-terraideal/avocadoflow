@@ -8,15 +8,26 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function FillTimesModal({ label, customFields, onSave, onClose }) {
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
-  const [observations, setObservations] = useState("");
+export default function FillTimesModal({ label, customFields, onSave, onSaveDraft, onClose }) {
+  // Parse draft data if it exists (partial save from a previous session)
+  const draftData = (() => {
+    try { return label.draft_data ? JSON.parse(label.draft_data) : null; }
+    catch { return null; }
+  })();
 
-  // Pre-fill custom values from existing additional_details
+  const [startTime, setStartTime] = useState(draftData?.startTime || "");
+  const [endTime, setEndTime] = useState(draftData?.endTime || "");
+  const [observations, setObservations] = useState(draftData?.observations || "");
+
+  // Pre-fill custom values from existing additional_details, then overlay draft values
   const [customValues, setCustomValues] = useState(() => {
-    try { return label.additional_details ? JSON.parse(label.additional_details) : {}; }
-    catch { return {}; }
+    let base = {};
+    try { base = label.additional_details ? JSON.parse(label.additional_details) : {}; }
+    catch { base = {}; }
+    if (draftData?.customValues) {
+      return { ...base, ...draftData.customValues };
+    }
+    return base;
   });
 
   // Filter fields to show in registration (registration or both)
@@ -37,6 +48,10 @@ export default function FillTimesModal({ label, customFields, onSave, onClose })
   const handleSave = () => {
     if (!canSave) return;
     onSave({ startTime, endTime, observations, customValues });
+  };
+
+  const handleSaveDraft = () => {
+    onSaveDraft({ startTime, endTime, observations, customValues });
   };
 
   return (
@@ -123,6 +138,9 @@ export default function FillTimesModal({ label, customFields, onSave, onClose })
         <div className="flex gap-2 pt-1">
           <Button variant="outline" size="lg" onClick={onClose} className="flex-1 rounded-xl h-12">
             Cancelar
+          </Button>
+          <Button variant="secondary" size="lg" onClick={handleSaveDraft} className="flex-1 rounded-xl h-12 gap-1">
+            Salvar Rascunho
           </Button>
           <Button size="lg" disabled={!canSave} onClick={handleSave} className="flex-1 rounded-xl h-12 gap-1">
             <Check className="w-4 h-4" />

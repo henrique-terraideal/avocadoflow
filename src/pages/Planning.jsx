@@ -94,8 +94,8 @@ export default function Planning() {
       Object.assign(mergedDetails, customValues);
     }
 
-    // Update PlanningLabel with merged details
-    updateMutation.mutate({ id: label.id, data: { additional_details: JSON.stringify(mergedDetails) } });
+    // Update PlanningLabel with merged details and clear draft
+    updateMutation.mutate({ id: label.id, data: { additional_details: JSON.stringify(mergedDetails), draft_data: null } });
 
     base44.entities.FieldRecord.create({
       operator_name: label.operator_name,
@@ -108,6 +108,24 @@ export default function Planning() {
       observations,
       qr_scanned: false,
       additional_details: Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null,
+    });
+    setFillingLabel(null);
+  };
+
+  const handleSaveDraft = ({ startTime, endTime, observations, customValues }) => {
+    const label = fillingLabel;
+    let mergedDetails = {};
+    try { mergedDetails = label.additional_details ? JSON.parse(label.additional_details) : {}; }
+    catch { mergedDetails = {}; }
+    if (customValues && typeof customValues === "object") {
+      Object.assign(mergedDetails, customValues);
+    }
+    updateMutation.mutate({
+      id: label.id,
+      data: {
+        additional_details: Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null,
+        draft_data: JSON.stringify({ startTime, endTime, observations, customValues }),
+      },
     });
     setFillingLabel(null);
   };
@@ -405,6 +423,12 @@ export default function Planning() {
                     <span className="font-semibold text-sm text-foreground">
                       {label.operator_name} · {label.orchard_number}
                     </span>
+                    {label.draft_data && (
+                      <span className="flex items-center gap-1 text-xs text-amber-600 font-medium">
+                        <Clock className="w-3 h-3" />
+                        Rascunho
+                      </span>
+                    )}
                     {label.auto_rescheduled && (
                       <span className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
@@ -485,6 +509,7 @@ export default function Planning() {
           label={fillingLabel}
           customFields={getRegistrationFields(fillingLabel)}
           onSave={handleFillTimes}
+          onSaveDraft={handleSaveDraft}
           onClose={() => setFillingLabel(null)}
         />
       )}
