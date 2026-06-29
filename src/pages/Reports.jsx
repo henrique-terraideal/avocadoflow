@@ -143,20 +143,22 @@ export default function Reports() {
       );
     };
 
-    // Deduplicate labels by qr_data — multiple labels can exist for the same activity
-    // due to previous rollover duplication issues
-    const seenQr = new Set();
+    // Deduplicate labels by composite key: date + operator + operation + orchard
+    // Same person doing the same activity in the same orchard on the same day = 1 activity
+    // If ANY of these change (e.g. different day), it's a new activity
+    const seenKeys = new Set();
     const dedupedLabels = filteredLabels.filter((l) => {
-      if (!l.qr_data) return true;
-      if (seenQr.has(l.qr_data)) return false;
-      seenQr.add(l.qr_data);
+      const key = `${l.date}|${l.operator_name}|${l.operation_name}|${l.orchard_number}`;
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
       return true;
     });
 
-    // Delayed = labels that were auto-rescheduled (rolled over from a previous date)
-    const delayedLabels = dedupedLabels.filter((l) => l.auto_rescheduled === true);
-    const pendingLabels = dedupedLabels.filter((l) => l.date >= today && !isLabelCompleted(l) && !l.auto_rescheduled);
+    // Classify labels into mutually exclusive categories:
+    // Priority: Completed → Delayed → Pending → Overdue
     const completedLabels = dedupedLabels.filter((l) => isLabelCompleted(l));
+    const delayedLabels = dedupedLabels.filter((l) => l.auto_rescheduled === true && !isLabelCompleted(l));
+    const pendingLabels = dedupedLabels.filter((l) => l.date >= today && !isLabelCompleted(l) && !l.auto_rescheduled);
 
     // Apply status filter
     let statusRecords = filteredRecords;
