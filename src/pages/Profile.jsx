@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, LogOut, Save, User, Loader2 } from "lucide-react";
+import { ArrowLeft, LogOut, Save, User, Loader2, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import BottomNav from "../components/field/BottomNav";
@@ -76,6 +76,21 @@ export default function Profile() {
             className="w-full rounded-xl h-11"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4 mr-2" />Salvar</>}
+          </Button>
+        </div>
+
+        {/* Atualizar app */}
+        <div className="bg-card rounded-2xl border border-border p-4">
+          <p className="text-sm text-muted-foreground mb-3">
+            Não está vendo as atualizações? Recarregue o aplicativo para garantir a versão mais recente.
+          </p>
+          <Button
+            variant="outline"
+            onClick={() => window.location.reload(true)}
+            className="w-full rounded-xl h-11"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Atualizar aplicativo
           </Button>
         </div>
 
