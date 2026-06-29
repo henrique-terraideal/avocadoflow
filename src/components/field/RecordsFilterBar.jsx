@@ -35,8 +35,8 @@ export default function RecordsFilterBar({ search, setSearch, selectedDate, setS
       </div>
 
       {/* Filtros: Data + RA */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[140px]">
           <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
           <input
             type="date"
@@ -53,7 +53,7 @@ export default function RecordsFilterBar({ search, setSearch, selectedDate, setS
 
         <button
           onClick={() => setShowOnlyRA(!showOnlyRA)}
-          className={`h-9 px-3 rounded-xl border-2 text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0
+          className={`h-9 px-3 rounded-xl border-2 text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 whitespace-nowrap
             ${showOnlyRA ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
         >
           <Leaf className="w-3.5 h-3.5" />
