@@ -35,8 +35,8 @@ export default function RecordsFilterBar({ search, setSearch, selectedDate, setS
       </div>
 
       {/* Filtros: Data + RA */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 min-w-0">
+      <div className="flex items-center gap-2 flex-wrap gap-y-2">
+        <div className="relative flex-1 min-w-[200px]">
           <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input
             type="date"
