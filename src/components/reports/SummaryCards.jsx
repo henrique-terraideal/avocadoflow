@@ -1,12 +1,18 @@
 import React from "react";
 import { ClipboardList, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 
+const formatHours = (decimalHours) => {
+  const h = Math.floor(decimalHours);
+  const m = Math.round((decimalHours - h) * 60);
+  return `${h}h ${m}min`;
+};
+
 export default function SummaryCards({ total, completed, delayed, totalHours }) {
   const cards = [
     { label: "Total Atividades", value: total, icon: ClipboardList, color: "text-blue-500", bg: "bg-blue-500/10" },
     { label: "Concluídas", value: completed, icon: CheckCircle2, color: "text-green-500", bg: "bg-green-500/10" },
     { label: "Atrasadas", value: delayed, icon: AlertTriangle, color: "text-red-500", bg: "bg-red-500/10" },
-    { label: "Horas Total", value: `${totalHours.toFixed(1)}h`, icon: Clock, color: "text-orange-500", bg: "bg-orange-500/10" },
+    { label: "Horas Total", value: formatHours(totalHours), icon: Clock, color: "text-orange-500", bg: "bg-orange-500/10" },
   ];
 
   return (
