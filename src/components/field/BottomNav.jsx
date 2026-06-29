@@ -13,11 +13,11 @@ export default function BottomNav() {
 
   const NAV_ITEMS = [
     ...(isAdmin ? [{ to: "/relatorios", icon: BarChart3, label: "Dados" }] : []),
-    { to: "/", icon: PlusCircle, label: "Novo" },
     { to: "/registros", icon: List, label: "Registros" },
+    ...(isAdmin ? [{ to: "/planejamento", icon: ClipboardList, label: "Planejar" }] : []),
+    { to: "/", icon: PlusCircle, label: "Novo", elevated: true },
     ...(isAdmin ? [
       { to: "/recomendacoes", icon: Leaf, label: "RAs" },
-      { to: "/planejamento", icon: ClipboardList, label: "Planejar" },
       { to: "/admin", icon: Settings, label: "Admin" },
     ] : []),
     { to: "/perfil", icon: UserCircle, label: "Perfil" },
@@ -29,6 +29,25 @@ export default function BottomNav() {
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.to;
+          if (item.elevated) {
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className="flex-1 flex flex-col items-center justify-end"
+              >
+                <div
+                  className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-colors mb-1
+                    ${isActive ? "bg-primary text-primary-foreground" : "bg-primary text-primary-foreground"}`}
+                >
+                  <Icon className="w-6 h-6" />
+                </div>
+                <span className={`text-[10px] font-semibold ${isActive ? "text-primary" : "text-muted-foreground"}`}>
+                  {item.label}
+                </span>
+              </Link>
+            );
+          }
           return (
             <Link
               key={item.to}
