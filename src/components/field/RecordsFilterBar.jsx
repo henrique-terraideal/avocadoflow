@@ -34,32 +34,31 @@ export default function RecordsFilterBar({ search, setSearch, selectedDate, setS
         )}
       </div>
 
-      {/* Filtros: Data + RA */}
-      <div className="flex items-center gap-2 flex-wrap gap-y-2">
-        <div className="relative flex-1 min-w-[200px]">
-          <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="date"
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full h-9 rounded-xl border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring min-w-0"
-          />
-          {selectedDate && (
-            <button onClick={() => setSelectedDate("")} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        <button
-          onClick={() => setShowOnlyRA(!showOnlyRA)}
-          className={`h-9 px-3 rounded-xl border-2 text-xs font-semibold flex items-center gap-1.5 transition-all shrink-0 whitespace-nowrap
-            ${showOnlyRA ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
-        >
-          <Leaf className="w-3.5 h-3.5" />
-          Com RA
-        </button>
+      {/* Filtros: Data */}
+      <div className="relative">
+        <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <input
+          type="date"
+          value={selectedDate}
+          onChange={(e) => setSelectedDate(e.target.value)}
+          className="w-full h-9 rounded-xl border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+        {selectedDate && (
+          <button onClick={() => setSelectedDate("")} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        )}
       </div>
+
+      {/* Filtro: Com RA */}
+      <button
+        onClick={() => setShowOnlyRA(!showOnlyRA)}
+        className={`w-full h-9 px-3 rounded-xl border-2 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all
+          ${showOnlyRA ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"}`}
+      >
+        <Leaf className="w-3.5 h-3.5" />
+        Com RA
+      </button>
 
       {/* Contador + limpar */}
       <div className="flex items-center justify-between px-1">
