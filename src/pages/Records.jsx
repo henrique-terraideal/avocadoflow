@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -10,11 +10,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import BottomNav from "../components/field/BottomNav";
 import QuickActionFAB from "../components/QuickActionFAB";
 import RecordDetailModal from "../components/field/RecordDetailModal";
+import RecordsFilterBar from "../components/field/RecordsFilterBar";
+
+const normalize = (str) => {
+  if (!str) return "";
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
 
 export default function Records() {
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoaded, setUserLoaded] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [search, setSearch] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [showOnlyRA, setShowOnlyRA] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then((u) => { setCurrentUser(u); setUserLoaded(true); }).catch(() => setUserLoaded(true));
@@ -63,8 +72,20 @@ export default function Records() {
     return match ? { ...r, additional_details: match.additional_details } : r;
   });
 
+  // Apply filters
+  const filteredRecords = useMemo(() => {
+    return enrichedRecords.filter((r) => {
+      const matchDate = selectedDate ? r.date === selectedDate : true;
+      const matchRA = showOnlyRA ? !!(r.additional_details && r.additional_details.includes("ra_selector")) : true;
+      const matchSearch = search
+        ? normalize(r.operator_name + " " + r.operation + " " + (r.observations || "")).includes(normalize(search))
+        : true;
+      return matchDate && matchRA && matchSearch;
+    });
+  }, [enrichedRecords, selectedDate, showOnlyRA, search]);
+
   // Group by date
-  const grouped = enrichedRecords.reduce((acc, r) => {
+  const grouped = filteredRecords.reduce((acc, r) => {
     const date = r.date || "Sem data";
     if (!acc[date]) acc[date] = [];
     acc[date].push(r);
@@ -88,6 +109,18 @@ export default function Records() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
+        {!isLoading && records.length > 0 && (
+          <RecordsFilterBar
+            search={search}
+            setSearch={setSearch}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            showOnlyRA={showOnlyRA}
+            setShowOnlyRA={setShowOnlyRA}
+            resultCount={filteredRecords.length}
+            totalCount={records.length}
+          />
+        )}
         {isLoading ? (
           Array(3).fill(0).map((_, i) => (
             <div key={i} className="space-y-3">
@@ -99,7 +132,7 @@ export default function Records() {
         ) : Object.keys(grouped).length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">
             <Calendar className="w-12 h-12 mx-auto mb-4 opacity-40" />
-            <p className="font-medium">Nenhum registro ainda</p>
+            <p className="font-medium">{records.length === 0 ? "Nenhum registro ainda" : "Nenhum registro encontrado"}</p>
           </div>
         ) : (
           Object.entries(grouped)
