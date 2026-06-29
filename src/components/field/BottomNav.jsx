@@ -14,8 +14,8 @@ export default function BottomNav() {
   const NAV_ITEMS = [
     { to: "/", icon: PlusCircle, label: "Novo" },
     { to: "/registros", icon: List, label: "Registros" },
-    { to: "/relatorios", icon: BarChart3, label: "Dados" },
     ...(isAdmin ? [
+      { to: "/relatorios", icon: BarChart3, label: "Dados" },
       { to: "/recomendacoes", icon: Leaf, label: "RAs" },
       { to: "/planejamento", icon: ClipboardList, label: "Planejar" },
       { to: "/admin", icon: Settings, label: "Admin" },

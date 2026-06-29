@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, BarChart3, AlertTriangle, CheckCircle2, ClipboardList } from "lucide-react";
+import { ArrowLeft, BarChart3, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +10,6 @@ import DashboardFilterBar from "../components/reports/DashboardFilterBar";
 import SummaryCards from "../components/reports/SummaryCards";
 import DelayedTasksList from "../components/reports/DelayedTasksList";
 import ChartsSection from "../components/reports/ChartsSection";
-import ConcludedActivitiesTable from "../components/reports/ConcludedActivitiesTable";
 
 const calcHours = (startTime, endTime) => {
   if (!startTime || !endTime) return 0;
@@ -144,8 +143,9 @@ export default function Reports() {
       );
     };
 
-    const delayedLabels = filteredLabels.filter((l) => l.date < today && !isLabelCompleted(l));
-    const pendingLabels = filteredLabels.filter((l) => l.date >= today && !isLabelCompleted(l));
+    // Delayed = labels that were auto-rescheduled (rolled over from a previous date)
+    const delayedLabels = filteredLabels.filter((l) => l.auto_rescheduled === true);
+    const pendingLabels = filteredLabels.filter((l) => l.date >= today && !isLabelCompleted(l) && !l.auto_rescheduled);
     const completedLabels = filteredLabels.filter((l) => isLabelCompleted(l));
 
     // Apply status filter
@@ -181,15 +181,19 @@ export default function Reports() {
       .map(([name, hours]) => ({ name, hours: parseFloat(hours.toFixed(2)) }))
       .sort((a, b) => b.hours - a.hours);
 
-    // Aggregation by activity (operation code extracted from operation field)
+    // Aggregation by activity — code for X-axis, full name for tooltip
     const hoursByActivityMap = {};
     statusRecords.forEach((r) => {
       const h = calcHours(r.start_time, r.end_time);
-      const code = r.operation?.split(".")[0]?.trim() || r.operation || "N/A";
-      hoursByActivityMap[code] = (hoursByActivityMap[code] || 0) + h;
+      const code = r.operation?.split(".")[0]?.trim() || "N/A";
+      const fullName = r.operation || code;
+      if (!hoursByActivityMap[code]) {
+        hoursByActivityMap[code] = { name: code, fullName, hours: 0 };
+      }
+      hoursByActivityMap[code].hours += h;
     });
-    const hoursByActivity = Object.entries(hoursByActivityMap)
-      .map(([name, hours]) => ({ name, hours: parseFloat(hours.toFixed(2)) }))
+    const hoursByActivity = Object.values(hoursByActivityMap)
+      .map(({ name, fullName, hours }) => ({ name, fullName, hours: parseFloat(hours.toFixed(2)) }))
       .sort((a, b) => b.hours - a.hours);
 
     return {
@@ -198,7 +202,6 @@ export default function Reports() {
       totalDelayed,
       totalHours,
       delayedTasks: statusDelayed,
-      concludedRecords: statusRecords,
       hoursByOrchard,
       hoursByActivity,
     };
@@ -276,14 +279,6 @@ export default function Reports() {
               />
             </section>
 
-            {/* Painel 5 — Histórico de Concluídas */}
-            <section>
-              <h2 className="text-sm font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
-                Atividades Concluídas
-              </h2>
-              <ConcludedActivitiesTable records={processed.concludedRecords} />
-            </section>
           </>
         )}
       </div>

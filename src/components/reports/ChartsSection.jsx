@@ -1,6 +1,19 @@
 import React from "react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
+function CustomTooltip({ active, payload }) {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-card border border-border rounded-lg p-2.5 shadow-md text-xs">
+        <p className="font-bold text-foreground mb-0.5">{data.fullName || data.name}</p>
+        <p className="text-muted-foreground">{data.hours.toFixed(1)} horas</p>
+      </div>
+    );
+  }
+  return null;
+}
+
 export default function ChartsSection({ hoursByOrchard, hoursByActivity }) {
   const renderChart = (data, color, title) => (
     <div className="bg-card rounded-2xl border border-border p-4">
@@ -15,10 +28,7 @@ export default function ChartsSection({ hoursByOrchard, hoursByActivity }) {
             <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
             <XAxis dataKey="name" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={50} />
             <YAxis tick={{ fontSize: 11 }} />
-            <Tooltip
-              formatter={(value) => [`${value.toFixed(1)}h`, "Horas"]}
-              contentStyle={{ borderRadius: "0.75rem", border: "1px solid hsl(var(--border))", fontSize: "12px" }}
-            />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
             <Bar dataKey="hours" fill={color} radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
