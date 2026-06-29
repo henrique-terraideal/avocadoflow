@@ -1,21 +1,37 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, Pencil, Check, X, Loader2, FlaskConical } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, X, Loader2, FlaskConical, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+
+const normalize = (str) => {
+  if (!str) return "";
+  return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
 
 export default function ProductsPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["products"],
     queryFn: () => base44.entities.Product.list("-created_date", 500),
   });
+
+  const filteredProducts = useMemo(() => {
+    if (!search.trim()) return products;
+    const s = normalize(search);
+    return products.filter(p =>
+      normalize(p.name).includes(s) ||
+      normalize(p.active_ingredient).includes(s) ||
+      normalize(p.target).includes(s)
+    );
+  }, [products, search]);
 
   const createMutation = useMutation({
     mutationFn: (data) => base44.entities.Product.create(data),
@@ -61,11 +77,41 @@ export default function ProductsPanel() {
         />
       )}
 
+      {/* Barra de busca */}
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur-sm space-y-1.5">
+        <div className="relative">
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, P.A. ou alvo..."
+            className="pl-9 rounded-xl"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="absolute right-3 top-2.5 text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+        {products.length > 0 && (
+          <p className="text-xs text-muted-foreground px-1">
+            {filteredProducts.length === products.length
+              ? `${products.length} produto(s)`
+              : `${filteredProducts.length} de ${products.length} produto(s)`}
+          </p>
+        )}
+      </div>
+
       <div className="space-y-2">
         {products.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-8">Nenhum produto cadastrado.</p>
+        ) : filteredProducts.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">Nenhum produto encontrado.</p>
         ) : (
-          products.map((product) => (
+          filteredProducts.map((product) => (
             <div key={product.id}>
               {editingId === product.id ? (
                 <ProductForm
