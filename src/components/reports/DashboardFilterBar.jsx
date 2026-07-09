@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Calendar, X, ChevronDown, Users, TreePine } from "lucide-react";
+import DateInput from "@/components/ui/DateInput";
 
 export default function DashboardFilterBar({
   startDate, setStartDate,
@@ -27,21 +28,21 @@ export default function DashboardFilterBar({
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
           <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-          <input
-            type="date"
+          <DateInput
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             className="w-full h-10 rounded-xl border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="dd/mm/aaaa"
           />
         </div>
         <span className="text-muted-foreground text-sm">→</span>
         <div className="relative flex-1">
           <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground" />
-          <input
-            type="date"
+          <DateInput
             value={endDate}
             onChange={(e) => setEndDate(e.target.value)}
             className="w-full h-10 rounded-xl border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            placeholder="dd/mm/aaaa"
           />
         </div>
       </div>

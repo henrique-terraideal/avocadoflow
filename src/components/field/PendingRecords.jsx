@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PendingRecordModal from "./PendingRecordModal";
+import DateInput from "@/components/ui/DateInput";
 import { useNavigate } from "react-router-dom";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -210,11 +211,11 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
                     </button>
                   ) : (
                     <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="date"
+                      <DateInput
                         value={editingDateValue}
                         onChange={(e) => setEditingDateValue(e.target.value)}
-                        className="flex-1 h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        wrapperClassName="flex-1"
+                        className="w-full h-8 rounded-lg border border-input bg-background px-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         autoFocus
                       />
                       <button

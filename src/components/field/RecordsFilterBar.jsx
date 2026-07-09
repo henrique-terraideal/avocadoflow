@@ -1,5 +1,6 @@
 import React from "react";
 import { Search, X, Leaf, Calendar } from "lucide-react";
+import DateInput from "@/components/ui/DateInput";
 
 const normalize = (str) => {
   if (!str) return "";
@@ -37,11 +38,11 @@ export default function RecordsFilterBar({ search, setSearch, selectedDate, setS
       {/* Filtros: Data */}
       <div className="relative">
         <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-muted-foreground pointer-events-none" />
-        <input
-          type="date"
+        <DateInput
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
           className="w-full h-9 rounded-xl border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          placeholder="dd/mm/aaaa"
         />
         {selectedDate && (
           <button onClick={() => setSelectedDate("")} className="absolute right-2 top-2 text-muted-foreground hover:text-foreground">

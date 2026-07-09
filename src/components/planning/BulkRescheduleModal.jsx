@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarDays, X, Check } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import DateInput from "@/components/ui/DateInput";
 
 export default function BulkRescheduleModal({ count, onSave, onClose }) {
   const [newDate, setNewDate] = useState("");
@@ -34,8 +35,7 @@ export default function BulkRescheduleModal({ count, onSave, onClose }) {
 
         <div>
           <p className="text-sm font-semibold mb-2">Nova data</p>
-          <input
-            type="date"
+          <DateInput
             value={newDate}
             onChange={(e) => setNewDate(e.target.value)}
             className="w-full h-12 rounded-xl border border-input bg-background px-3 text-base font-semibold focus:outline-none focus:ring-2 focus:ring-ring"

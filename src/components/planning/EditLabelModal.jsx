@@ -6,6 +6,7 @@ import { Check, X } from "lucide-react";
 import OperationFilter from "../field/OperationFilter";
 import CustomFieldsInput from "./CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
+import DateInput from "@/components/ui/DateInput";
 
 export default function EditLabelModal({ label, operators, operations, onSave, onClose }) {
   const [selectedOperator, setSelectedOperator] = useState(
@@ -84,8 +85,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
         {/* Data */}
         <div>
           <p className="text-sm font-semibold mb-2">Data</p>
-          <input
-            type="date"
+          <DateInput
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="w-full h-11 rounded-xl border border-input bg-background px-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-ring"

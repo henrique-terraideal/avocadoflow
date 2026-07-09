@@ -10,6 +10,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import CustomFieldsInput from "../planning/CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 import { useMemo } from "react";
+import DateInput from "@/components/ui/DateInput";
 
 function nowTime() {
   const d = new Date();
@@ -140,10 +141,10 @@ export default function PendingRecordModal({ label, operators, operations, onSav
             )}
             {editingDate && (
               <div className="flex items-center gap-2 mt-1">
-                <input
-                  type="date"
+                <DateInput
                   value={newDateValue}
                   onChange={(e) => setNewDateValue(e.target.value)}
+                  wrapperClassName="shrink-0"
                   className="h-7 rounded-lg border border-input bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
                   autoFocus
                 />
