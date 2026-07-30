@@ -102,11 +102,10 @@ export default function Recommendations() {
   const filtered = useMemo(() => {
     const s = search ? normalize(search) : "";
     return recommendations.filter(ra => {
-      if (filterStatus && ra.status !== filterStatus) return false;
       if (filterTypes.size > 0 && !filterTypes.has(ra.type)) return false;
       if (filterOrchards.size > 0 && !filterOrchards.has(ra.orchard_code)) return false;
       if (filterMonth && (!ra.date || !ra.date.startsWith(filterMonth))) return false;
-      if (filterStatus !== "todas" && (ra.status || "").toLowerCase() !== filterStatus) return false;
+      if (filterStatus && filterStatus !== "todas" && (ra.status || "planejada").toLowerCase() !== filterStatus) return false;
       if (!s) return true;
       const prods = productsByRA[ra.id] || [];
       const productText = prods
@@ -412,85 +411,19 @@ ${fichasHtml}
         </div>
 
         {/* Status filter */}
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => setFilterStatus("planejada")}
-            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              filterStatus === "planejada"
-                ? "bg-blue-100 text-blue-700 border-blue-300"
-                : "bg-background border-border text-muted-foreground hover:border-blue-300"
-            }`}
-          >
-            📋 Planejada
-          </button>
-          <button
-            onClick={() => setFilterStatus("pendente")}
-            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              filterStatus === "pendente"
-                ? "bg-amber-100 text-amber-700 border-amber-300"
-                : "bg-background border-border text-muted-foreground hover:border-amber-300"
-            }`}
-          >
-            ⏳ Pendente
-          </button>
-          <button
-            onClick={() => setFilterStatus("executada")}
-            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              filterStatus === "executada"
-                ? "bg-green-100 text-green-700 border-green-300"
-                : "bg-background border-border text-muted-foreground hover:border-green-300"
-            }`}
-          >
-            ✅ Executada
-          </button>
-          <button
-            onClick={() => setFilterStatus("")}
-            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
-              filterStatus === ""
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-background border-border text-muted-foreground hover:border-primary/50"
-            }`}
-          >
-            Todas
-          </button>
-        </div>
-
-        {/* Status filter chips */}
         <div className="flex items-center gap-1.5">
           {[
-            { key: "planejada", label: "Planejada", color: "bg-blue-100 text-blue-700 border-blue-300" },
-            { key: "pendente", label: "Pendente", color: "bg-amber-100 text-amber-700 border-amber-300" },
-            { key: "executada", label: "Executada", color: "bg-green-100 text-green-700 border-green-300" },
-            { key: "todas", label: "Todas", color: "bg-muted text-muted-foreground border-border" },
+            { key: "planejada", label: "📋 Planejada", active: "bg-blue-100 text-blue-700 border-blue-300" },
+            { key: "pendente",  label: "⏳ Pendente",  active: "bg-amber-100 text-amber-700 border-amber-300" },
+            { key: "executada", label: "✅ Executada", active: "bg-green-100 text-green-700 border-green-300" },
+            { key: "todas",     label: "Todas",         active: "bg-primary text-primary-foreground border-primary" },
           ].map((s) => (
             <button
               key={s.key}
               onClick={() => setFilterStatus(s.key)}
               className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg border transition-all ${
                 filterStatus === s.key
-                  ? `${s.color} border-current`
-                  : "bg-background border-border text-muted-foreground hover:border-primary/30"
-              }`}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Status filter chips */}
-        <div className="flex items-center gap-1.5">
-          {[
-            { key: "planejada", label: "Planejada", activeColor: "bg-blue-500 text-white border-blue-500" },
-            { key: "pendente", label: "Pendente", activeColor: "bg-amber-500 text-white border-amber-500" },
-            { key: "executada", label: "Executada", activeColor: "bg-green-500 text-white border-green-500" },
-            { key: "todas", label: "Todas", activeColor: "bg-primary text-primary-foreground border-primary" },
-          ].map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setFilterStatus(s.key)}
-              className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg border transition-all ${
-                filterStatus === s.key
-                  ? s.activeColor
+                  ? s.active
                   : "bg-background border-border text-muted-foreground hover:border-primary/30"
               }`}
             >
