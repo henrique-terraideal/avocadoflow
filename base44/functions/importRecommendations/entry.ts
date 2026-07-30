@@ -202,20 +202,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    // --- Agrupa linhas por código de RA ---
+    // --- Agrupa linhas por código de RA + pomar (cada RA é única por pomar) ---
     const groupedByCode = {};
     for (const row of validRows) {
       const code = String(row.ra || '').trim();
       if (!code) continue;
-      if (!groupedByCode[code]) {
-        groupedByCode[code] = {
+      const orchardCode = (() => {
+        const raw = String(row.pomar || '').trim();
+        return orchardLookup[raw.toUpperCase()] || raw;
+      })();
+      const groupKey = code + '|' + orchardCode;
+      if (!groupedByCode[groupKey]) {
+        groupedByCode[groupKey] = {
           code,
           date: parseDate(row.data),
           type: String(row.tipo || '').trim(),
-          orchard_code: (() => {
-            const raw = String(row.pomar || '').trim();
-            return orchardLookup[raw.toUpperCase()] || raw;
-          })(),
+          orchard_code: orchardCode,
           status: String(row.status || '').trim(),
           machine_config: '',
           implement_config: '',
@@ -227,7 +229,7 @@ Deno.serve(async (req) => {
       const productName = String(row.produto || '').trim();
       if (productName) {
         const productRecord = productMap[productName.toUpperCase()];
-        groupedByCode[code].products.push({
+        groupedByCode[groupKey].products.push({
           product_name: productName,
           active_ingredient: productRecord?.active_ingredient || '',
           target: productRecord?.target || '',
@@ -235,7 +237,7 @@ Deno.serve(async (req) => {
           dose: parseNumber(row.dose),
           total_quantity: parseNumber(row.quant_total),
           obs: String(row.obs || '').trim(),
-          sort_order: groupedByCode[code].products.length
+          sort_order: groupedByCode[groupKey].products.length
         });
       }
     }
@@ -250,7 +252,7 @@ Deno.serve(async (req) => {
     const existingRAs = await base44.asServiceRole.entities.AgronomicRecommendation.list("-created_date", 500);
     const existingRAByCode = {};
     for (const ra of existingRAs) {
-      if (ra.code) existingRAByCode[ra.code] = ra;
+      if (ra.code) existingRAByCode[ra.code + '|' + (ra.orchard_code || '')] = ra;
     }
 
     let createdCount = 0;
@@ -259,7 +261,7 @@ Deno.serve(async (req) => {
 
     for (const entry of raEntries) {
       const { products, ...raFields } = entry;
-      const existing = existingRAByCode[entry.code];
+      const existing = existingRAByCode[entry.code + '|' + (entry.orchard_code || '')];
       let raId;
 
       if (existing) {
