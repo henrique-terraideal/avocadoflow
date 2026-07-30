@@ -14,6 +14,10 @@
       "type": "string",
       "description": "Alvo/praga controlado"
     },
+    "carencia": {
+      "type": "string",
+      "description": "Per\u00edodo de car\u00eancia padr\u00e3o do produto (ex: '30 dias', 'N\u00e3o se aplica')"
+    },
     "active": {
       "type": "boolean",
       "default": true,
