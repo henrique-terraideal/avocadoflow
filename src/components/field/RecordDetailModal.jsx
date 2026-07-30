@@ -1,7 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import { User, Wrench, TreePine, Clock, X, Calendar, MapPin, ScanLine, FileText, Tag, History, Hash, Leaf, Package, Beaker, Thermometer, Tractor } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import RADetailModal from "./RADetailModal";
+
+const formatQtBr = (v) => v != null && !isNaN(v) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
 
 function formatDateTime(dt) {
   try {
@@ -11,7 +14,8 @@ function formatDateTime(dt) {
   }
 }
 
-export default function RecordDetailModal({ record, onClose, onOpenRA }) {
+export default function RecordDetailModal({ record, onClose }) {
+  const [showRADetail, setShowRADetail] = useState(false);
   if (!record) return null;
 
   const details = [];
@@ -149,15 +153,15 @@ export default function RecordDetailModal({ record, onClose, onOpenRA }) {
                       </div>
                     ) : field.isRA ? (
                       <div className="space-y-1.5">
-                        <div
-                          onClick={() => onOpenRA?.({ ra_id: field.raData.ra_id, ra_code: field.raData.code, orchard: field.raData.orchard, type: field.raData.type })}
-                          className={`flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-3 py-2 ${onOpenRA ? "cursor-pointer hover:bg-primary/20 transition-colors" : ""}`}
+                        <button
+                          onClick={() => setShowRADetail(true)}
+                          className="w-full flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-3 py-2 hover:bg-primary/20 transition-colors"
                         >
                           <Leaf className="w-4 h-4 text-primary shrink-0" />
                           <span className="text-sm font-bold text-primary">{field.raData.code}</span>
                           {field.raData.orchard && <span className="text-xs text-muted-foreground">· {field.raData.orchard}</span>}
-                          {onOpenRA && <span className="text-[10px] text-primary/50 ml-1">→ clique para detalhes</span>}
-                        </div>
+                          <span className="ml-auto text-[10px] text-primary/60 font-medium">Ver detalhes →</span>
+                        </button>
                         {field.raData.type && (
                           <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
                             <Beaker className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
@@ -191,7 +195,6 @@ export default function RecordDetailModal({ record, onClose, onOpenRA }) {
                             <div className="flex items-center gap-2">
                               <Package className="w-3.5 h-3.5 text-primary shrink-0" />
                               <span className="text-xs font-bold">{p.product_name}</span>
-                              {p.unit && <span className="text-[10px] text-primary/70 font-semibold">[{p.unit}]</span>}
                             </div>
                             {(p.active_ingredient || p.target) && (
                               <p className="text-[10px] text-primary/70 font-medium pl-5">
@@ -201,13 +204,13 @@ export default function RecordDetailModal({ record, onClose, onOpenRA }) {
                               </p>
                             )}
                             <p className="text-xs text-muted-foreground pl-5">
-                              {p.application_mode}
-                              {p.dose != null ? ` · Dose: ${Number(p.dose).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
-                              {p.total_quantity != null ? ` · Total: ${Number(p.total_quantity).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}` : ""}
-                            </p>
-                            {p.qty_per_tank != null && (
-                              <p className="text-xs text-blue-600 font-semibold pl-5">🧴 {Number(p.qty_per_tank).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}{p.unit ? ` ${p.unit}` : ""} por tanque</p>
-                            )}
+                               {p.application_mode}
+                               {p.dose != null ? ` · Dose: ${formatQtBr(p.dose)}${p.unit ? " " + p.unit : ""}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
+                               {p.total_quantity != null ? ` · Total: ${formatQtBr(p.total_quantity)}${p.unit ? " " + p.unit : ""}` : ""}
+                             </p>
+                             {p.qty_per_tank != null && (
+                               <p className="text-xs text-blue-600 font-semibold pl-5">🧴 {formatQtBr(p.qty_per_tank)}{p.unit ? " " + p.unit : ""} por tanque</p>
+                             )}
                             {p.obs && <p className="text-[10px] text-muted-foreground pl-5">{p.obs}</p>}
                           </div>
                         ))}
@@ -287,6 +290,10 @@ export default function RecordDetailModal({ record, onClose, onOpenRA }) {
           </button>
         </div>
       </div>
+
+      {showRADetail && (
+        <RADetailModal raData={customFields.find(f => f.isRA)?.raData} onClose={() => setShowRADetail(false)} />
+      )}
     </div>
   );
 }

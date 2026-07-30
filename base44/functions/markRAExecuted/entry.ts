@@ -1,126 +1,92 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
 /**
- * markRAExecuted — Called after a FieldRecord is created via QR scan.
- * Reads the FieldRecord's additional_details to find the ra_id,
- * then updates the AgronomicRecommendation status to "executada".
- *
- * Also checks: if there are multiple PlanningLabels (multiple operators) for the same RA,
- * only marks as "executada" when ALL labels have been registered (i.e., all FieldRecords created).
- *
- * Input: { record_id } — the FieldRecord ID just created
+ * markRAExecuted — Called after a FieldRecord is created via QR scan or pending modal.
+ * Checks if ALL PlanningLabels linked to an RA have been registered (supports multiple operators).
+ * When all are done, updates RA status from "pendente" to "executada".
  */
-export async function main(req: any) {
+Deno.serve(async (req) => {
   try {
-    const { record_id } = await req.json();
-    if (!record_id) {
-      return Response.json({ error: 'record_id is required' }, { status: 400 });
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { ra_id } = await req.json();
+    if (!ra_id) return Response.json({ error: 'ra_id is required' }, { status: 400 });
+
+    // Fetch RA
+    const ra = await base44.asServiceRole.entities.AgronomicRecommendation.get(ra_id);
+    if (!ra) return Response.json({ error: 'RA not found' }, { status: 404 });
+
+    // Already executada — skip
+    if ((ra.status || '').toLowerCase() === 'executada') {
+      return Response.json({ success: true, message: 'RA already executada', status: 'executada' });
     }
 
-    // 1. Fetch the FieldRecord
-    const record = await base44.asServiceRole.entities.FieldRecord.get(record_id);
-    if (!record) {
-      return Response.json({ error: 'Record not found' }, { status: 404 });
-    }
-
-    // 2. Extract ra_id from additional_details
-    let raId = null;
-    if (record.additional_details) {
-      try {
-        const details = JSON.parse(record.additional_details);
-        // Check direct ra_id
-        if (details.ra_id) {
-          raId = details.ra_id;
-        } else {
-          // Check nested (ra_selector field)
-          for (const val of Object.values(details)) {
-            try {
-              const parsed = JSON.parse(val as string);
-              if (parsed && parsed.ra_id) {
-                raId = parsed.ra_id;
-                break;
-              }
-            } catch {}
-          }
-        }
-      } catch {}
-    }
-
-    if (!raId) {
-      return Response.json({
-        success: true,
-        message: 'No RA linked to this record — nothing to update.',
-        ra_id: null,
-      });
-    }
-
-    // 3. Fetch the RA
-    const ra = await base44.asServiceRole.entities.AgronomicRecommendation.get(raId);
-    if (!ra) {
-      return Response.json({ error: 'RA not found: ' + raId }, { status: 404 });
-    }
-
-    // 4. Check if there are multiple labels for this RA
-    const allLabels = await base44.asServiceRole.entities.PlanningLabel.list("-created_date", 500);
+    // Fetch all PlanningLabels linked to this RA
+    const allLabels = await base44.asServiceRole.entities.PlanningLabel.list("-created_date", 1000);
     const raLabels = allLabels.filter(l => {
       try {
-        const d = JSON.parse(l.additional_details || '{}');
-        return d.ra_id === raId;
+        const details = JSON.parse(l.additional_details || '{}');
+        return details.ra_id === ra_id;
       } catch { return false; }
     });
 
     if (raLabels.length === 0) {
-      // No labels — just mark as executada directly
-      if (ra.status !== 'executada') {
-        await base44.asServiceRole.entities.AgronomicRecommendation.update(raId, { status: 'executada' });
-      }
-      return Response.json({
-        success: true,
-        ra_id: raId,
-        ra_code: ra.code,
-        new_status: 'executada',
-        message: 'RA marked as executada (no labels found).',
-      });
+      return Response.json({ success: true, message: 'No labels linked to this RA', status: ra.status || 'planejada' });
     }
 
-    // 5. Count how many FieldRecords exist for this RA's labels
-    const allRecords = await base44.asServiceRole.entities.FieldRecord.list("-created_date", 500);
-    let registeredCount = 0;
+    // Fetch all FieldRecords linked to this RA (via additional_details.ra_id)
+    const allRecords = await base44.asServiceRole.entities.FieldRecord.list("-created_date", 1000);
+    const raRecords = allRecords.filter(r => {
+      try {
+        const details = JSON.parse(r.additional_details || '{}');
+        // Check all values in additional_details for an object with ra_id
+        for (const val of Object.values(details)) {
+          try {
+            const v = typeof val === 'string' ? JSON.parse(val) : val;
+            if (v && typeof v === 'object' && v.ra_id === ra_id) return true;
+          } catch {}
+        }
+        return false;
+      } catch { return false; }
+    });
 
-    for (const lbl of raLabels) {
-      const hasRecord = allRecords.some(r =>
-        r.operator_name === lbl.operator_name &&
-        r.orchard_number === lbl.orchard_number &&
-        r.planned_date === lbl.date &&
-        r.qr_scanned === true
+    // Check if each label has a matching registered record
+    const allDone = raLabels.every(label => {
+      let actCode: string | null = null;
+      let labelOpId: string | null = null;
+      try {
+        const url = new URL(label.qr_data);
+        actCode = url.searchParams.get('act_code');
+        labelOpId = url.searchParams.get('op_id');
+      } catch {}
+
+      return raRecords.some(r =>
+        r.orchard_number === label.orchard_number &&
+        r.start_time && r.end_time &&
+        (!labelOpId || r.operator_id === labelOpId) &&
+        (!actCode || (r.operation && r.operation.includes(actCode)))
       );
-      if (hasRecord) registeredCount++;
+    });
+
+    if (allDone) {
+      await base44.asServiceRole.entities.AgronomicRecommendation.update(ra_id, { status: 'executada' });
+      return Response.json({
+        success: true,
+        message: 'RA marked as executada',
+        status: 'executada',
+        labels_total: raLabels.length,
+      });
     }
 
-    // 6. If all labels have been registered, mark RA as "executada"
-    if (registeredCount >= raLabels.length) {
-      if (ra.status !== 'executada') {
-        await base44.asServiceRole.entities.AgronomicRecommendation.update(raId, { status: 'executada' });
-      }
-      return Response.json({
-        success: true,
-        ra_id: raId,
-        ra_code: ra.code,
-        new_status: 'executada',
-        labels_total: raLabels.length,
-        labels_registered: registeredCount,
-        message: `RA marked as executada (${registeredCount}/${raLabels.length} labels registered).`,
-      });
-    } else {
-      return Response.json({
-        success: true,
-        ra_id: raId,
-        ra_code: ra.code,
-        new_status: ra.status,
-        labels_total: raLabels.length,
-        labels_registered: registeredCount,
-        message: `RA stays as ${ra.status} (${registeredCount}/${raLabels.length} labels registered).`,
-      });
-    }
-  } catch (err) {
-    return Response.json({ error: err.message || 'Internal error' }, { status: 500 });
+    return Response.json({
+      success: true,
+      message: 'Not all labels registered yet',
+      status: ra.status || 'planejada',
+      labels_total: raLabels.length,
+    });
+  } catch (error) {
+    return Response.json({ error: error.message, stack: error.stack }, { status: 500 });
   }
-}
+});
