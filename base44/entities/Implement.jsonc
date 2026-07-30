@@ -18,6 +18,14 @@
       "type": "string",
       "description": "JSON com especifica\u00e7\u00f5es t\u00e9cnicas (ex: [{\"label\":\"Largura\",\"value\":\"12m\"},{\"label\":\"N\u00ba Bicos\",\"value\":\"48\"}])"
     },
+    "marcha_trabalho": {
+      "type": "string",
+      "description": "Marcha de trabalho recomendada para este implemento (ex: 4L, 5A, 6L)"
+    },
+    "rpm": {
+      "type": "number",
+      "description": "RPM recomendado do trator para opera\u00e7\u00e3o com este implemento (ex: 1800)"
+    },
     "active": {
       "type": "boolean",
       "default": true,

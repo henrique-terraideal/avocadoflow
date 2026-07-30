@@ -551,7 +551,7 @@ ${fichasHtml}
 // === Ficha A4 HTML Generator ===
 
 function generateFichaHTML(item, isLast) {
-  const { ra, products, label, implement, operation } = item;
+  const { ra, products, label, implement, machine, operation } = item;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '___/___/_____';
@@ -604,13 +604,13 @@ function generateFichaHTML(item, isLast) {
     ? `${ra.orchard_code}${ra.orchard_name ? ' — ' + ra.orchard_name : ''}${ra.orchard_area ? ' (' + ra.orchard_area + ' ha)' : ''}`
     : '—';
 
-  // Machine/Tractor/Implement info block
+  // Machine/Tractor/Implement info block — pulled from Machine and Implement entities
   const machineItems = [];
-  if (ra.tractor) machineItems.push({ label: 'Trator', value: ra.tractor });
+  if (machine?.name) machineItems.push({ label: 'Trator', value: machine.name });
   if (implement?.name) machineItems.push({ label: 'Implemento', value: implement.name });
   if (implement?.tank_capacity_liters) machineItems.push({ label: 'Capac. Tanque', value: `${implement.tank_capacity_liters} L` });
-  if (ra.marcha_trabalho) machineItems.push({ label: 'Marcha', value: ra.marcha_trabalho });
-  if (ra.rpm) machineItems.push({ label: 'RPM', value: `${ra.rpm}` });
+  if (implement?.marcha_trabalho) machineItems.push({ label: 'Marcha', value: implement.marcha_trabalho });
+  if (implement?.rpm) machineItems.push({ label: 'RPM', value: `${implement.rpm}` });
   if (ra.machine_config) machineItems.push({ label: 'Regulagem Máq.', value: ra.machine_config });
   if (ra.implement_config) machineItems.push({ label: 'Regulagem Impl.', value: ra.implement_config });
   if (isPulverizacao && ra.liters_per_ha) machineItems.push({ label: 'Volume de Calda', value: `${ra.liters_per_ha} L/ha` });

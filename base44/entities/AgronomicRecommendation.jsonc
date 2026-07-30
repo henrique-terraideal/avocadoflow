@@ -23,9 +23,13 @@
       "type": "string",
       "description": "Status (ex: PRODU\u00c7\u00c3O)"
     },
+    "machine_id": {
+      "type": "string",
+      "description": "ID do trator/maquin\u00e1rio vinculado (refer\u00eancia \u00e0 entity Machine)"
+    },
     "implement_id": {
       "type": "string",
-      "description": "ID do implemento utilizado (para c\u00e1lculo de quantidade por tanque)"
+      "description": "ID do implemento utilizado (refer\u00eancia \u00e0 entity Implement)"
     },
     "liters_per_ha": {
       "type": "number",
@@ -34,23 +38,11 @@
     },
     "machine_config": {
       "type": "string",
-      "description": "Configura\u00e7\u00e3o/regulagem do maquin\u00e1rio"
+      "description": "Configura\u00e7\u00e3o/regulagem adicional do maquin\u00e1rio (observa\u00e7\u00f5es espec\u00edficas desta RA)"
     },
     "implement_config": {
       "type": "string",
-      "description": "Configura\u00e7\u00e3o/regulagem do implemento"
-    },
-    "tractor": {
-      "type": "string",
-      "description": "Identifica\u00e7\u00e3o do trator utilizado (ex: John Deere 5078E)"
-    },
-    "marcha_trabalho": {
-      "type": "string",
-      "description": "Marcha de trabalho recomendada (ex: 4L)"
-    },
-    "rpm": {
-      "type": "number",
-      "description": "RPM do trator durante a aplica\u00e7\u00e3o (ex: 1800)"
+      "description": "Configura\u00e7\u00e3o/regulagem adicional do implemento (observa\u00e7\u00f5es espec\u00edficas desta RA)"
     },
     "application_observations": {
       "type": "string",

@@ -20,10 +20,12 @@ export default function RAEditorModal({ ra, onClose }) {
     type: ra?.type || "",
     orchard_code: ra?.orchard_code || "",
     status: ra?.status || "PRODUÇÃO",
+    machine_id: ra?.machine_id || "",
     implement_id: ra?.implement_id || "",
     liters_per_ha: ra?.liters_per_ha ?? 1000,
     machine_config: ra?.machine_config || "",
     implement_config: ra?.implement_config || "",
+    application_observations: ra?.application_observations || "",
     climate_conditions: ra?.climate_conditions || DEFAULT_CLIMATE,
     active: ra?.active ?? true,
   });
@@ -46,7 +48,13 @@ export default function RAEditorModal({ ra, onClose }) {
     queryFn: () => base44.entities.Implement.filter({ active: true }, "sort_order", 200),
   });
 
+  const { data: machines = [] } = useQuery({
+    queryKey: ["machines"],
+    queryFn: () => base44.entities.Machine.filter({ active: true }, "sort_order", 200),
+  });
+
   const selectedImplement = implements_.find(i => i.id === form.implement_id) || null;
+  const selectedMachine = machines.find(m => m.id === form.machine_id) || null;
 
   // ha per tank = tank_capacity / liters_per_ha
   // qty per tank for a product = dose_per_ha * ha_per_tank
@@ -69,6 +77,7 @@ export default function RAEditorModal({ ra, onClose }) {
           application_mode: p.application_mode || "ÁREA",
           dose: p.dose ?? "",
           total_quantity: p.total_quantity ?? "",
+          carencia: p.carencia || "",
           obs: p.obs || "",
         })));
       })
@@ -91,6 +100,7 @@ export default function RAEditorModal({ ra, onClose }) {
       application_mode: "ÁREA",
       dose: "",
       total_quantity: "",
+      carencia: "",
       obs: "",
     }]);
   };
@@ -121,6 +131,7 @@ export default function RAEditorModal({ ra, onClose }) {
             application_mode: p.application_mode,
             dose: p.dose === "" ? null : Number(p.dose),
             total_quantity: p.total_quantity === "" ? null : Number(p.total_quantity),
+            carencia: p.carencia || "",
             obs: p.obs,
             sort_order: i,
           }))
@@ -198,8 +209,21 @@ export default function RAEditorModal({ ra, onClose }) {
             </p>
           )}
 
-          {/* Implemento + Litros por ha */}
+          {/* Trator + Implemento */}
           <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className={labelClass}>Trator / Máquina</label>
+              <select
+                value={form.machine_id}
+                onChange={(e) => setForm(p => ({ ...p, machine_id: e.target.value }))}
+                className={inputClass}
+              >
+                <option value="">Nenhum</option>
+                {machines.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className={labelClass}>Implemento (pulverizador)</label>
               <select
@@ -215,6 +239,15 @@ export default function RAEditorModal({ ra, onClose }) {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* Marcha + RPM from implement */}
+          {selectedImplement && (selectedImplement.marcha_trabalho || selectedImplement.rpm) && (
+            <div className="bg-muted/30 rounded-xl border border-border px-3 py-2 text-xs text-muted-foreground flex gap-4">
+              {selectedImplement.marcha_trabalho && <span>⚙️ Marcha: <strong className="text-foreground">{selectedImplement.marcha_trabalho}</strong></span>}
+              {selectedImplement.rpm && <span>🔄 RPM: <strong className="text-foreground">{selectedImplement.rpm}</strong></span>}
+            </div>
+          )}
             <div>
               <label className={labelClass}>Calda (L/ha)</label>
               <Input

@@ -25,11 +25,17 @@ Deno.serve(async (req) => {
     // Fetch Operations for mapping
     const operations = await base44.asServiceRole.entities.Operation.filter({ active: true });
 
-    // Fetch existing PlanningLabels to avoid duplicates (check by ra_id in additional_details)
+    // Fetch existing PlanningLabels to avoid duplicates
     const allLabels = await base44.asServiceRole.entities.PlanningLabel.list("-created_date", 500);
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
 
-    // Fetch Implements if entity exists
+    // Fetch Machines (tractors)
+    let machines_list = [];
+    try {
+      machines_list = await base44.asServiceRole.entities.Machine.filter({ active: true });
+    } catch (_) {}
+
+    // Fetch Implements
     let implements_list = [];
     try {
       implements_list = await base44.asServiceRole.entities.Implement.filter({ active: true });
@@ -51,7 +57,10 @@ Deno.serve(async (req) => {
       // Find orchard info
       const orchard = orchards.find(o => o.code === ra.orchard_code);
 
-      // Find implement
+      // Find machine (tractor) via machine_id
+      const machine = ra.machine_id ? machines_list.find(m => m.id === ra.machine_id) : null;
+
+      // Find implement via implement_id
       const implement = ra.implement_id ? implements_list.find(i => i.id === ra.implement_id) : null;
 
       // Check if a PlanningLabel already exists for this RA (avoid duplicates)
@@ -63,7 +72,6 @@ Deno.serve(async (req) => {
       });
 
       if (!label) {
-        // Build additional details with full RA data
         const tankCapacity = implement?.tank_capacity_liters || 0;
         const litersPerHa = ra.liters_per_ha || 1000;
 
@@ -73,14 +81,15 @@ Deno.serve(async (req) => {
           type: ra.type,
           climate_conditions: ra.climate_conditions || '',
           machine_config: ra.machine_config || '',
+          machine_id: ra.machine_id || '',
+          machine_name: machine?.name || '',
           implement_id: ra.implement_id || '',
           implement_name: implement?.name || '',
           implement_config: ra.implement_config || '',
+          implement_marcha: implement?.marcha_trabalho || '',
+          implement_rpm: implement?.rpm || null,
           liters_per_ha: litersPerHa,
           tank_capacity_liters: tankCapacity,
-          tractor: ra.tractor || '',
-          marcha_trabalho: ra.marcha_trabalho || '',
-          rpm: ra.rpm || null,
           application_observations: ra.application_observations || '',
           products: raProducts.map(p => ({
             product_name: p.product_name,
@@ -97,7 +106,6 @@ Deno.serve(async (req) => {
           }))
         };
 
-        // Create PlanningLabel
         const opCode = operation?.code || '';
         const opName = operation?.name || '';
         const opId = operation?.id || '';
@@ -115,7 +123,6 @@ Deno.serve(async (req) => {
           additional_details: JSON.stringify(additionalDetails)
         });
 
-        // Generate QR data with label ID (deep-link into NewRecord with params)
         const appBaseUrl = 'https://avocadoflow.app';
         const qrParams = new URLSearchParams({
           act_id: opId,
@@ -145,9 +152,6 @@ Deno.serve(async (req) => {
           machine_config: ra.machine_config,
           implement_config: ra.implement_config,
           liters_per_ha: ra.liters_per_ha || 1000,
-          tractor: ra.tractor || '',
-          marcha_trabalho: ra.marcha_trabalho || '',
-          rpm: ra.rpm || null,
           application_observations: ra.application_observations || '',
         },
         products: raProducts,
@@ -157,10 +161,18 @@ Deno.serve(async (req) => {
           operation_code: label.operation_code,
           operation_name: label.operation_name,
         },
+        machine: machine ? {
+          id: machine.id,
+          name: machine.name,
+          specs: machine.specs,
+        } : null,
         implement: implement ? {
+          id: implement.id,
           name: implement.name,
           tank_capacity_liters: implement.tank_capacity_liters,
           specs: implement.specs,
+          marcha_trabalho: implement.marcha_trabalho || '',
+          rpm: implement.rpm || null,
         } : null,
         operation: operation ? {
           id: operation.id,
@@ -176,7 +188,6 @@ Deno.serve(async (req) => {
   }
 });
 
-// Maps RA type string to the most appropriate Operation
 function matchOperation(raType, operations) {
   if (!raType || !operations || operations.length === 0) return null;
 
@@ -187,7 +198,6 @@ function matchOperation(raType, operations) {
 
   const typeNorm = normalize(raType);
 
-  // Keyword-based matching (most specific first)
   const keywordMap = [
     { keywords: ['PULVER'], opKeywords: ['PULVER'] },
     { keywords: ['FERTIRRIG', 'FERTIADUB'], opKeywords: ['FERTIRRIG', 'FERTI', 'FERT'] },
@@ -210,7 +220,6 @@ function matchOperation(raType, operations) {
     }
   }
 
-  // Fallback: word-by-word matching
   const typeWords = typeNorm.split(/\s+/).filter(w => w.length > 3);
   for (const word of typeWords) {
     const match = operations.find(o => normalize(o.name).includes(word));

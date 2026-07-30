@@ -92,9 +92,20 @@ export default function RAProductRow({ product, index, products, orchard, onChan
         </div>
       )}
 
-      <div>
-        <label className={labelClass}>Obs.</label>
-        <Input value={product.obs} onChange={(e) => onChange({ ...product, obs: e.target.value })} className="rounded-lg h-9" placeholder="..." />
+      <div className="grid grid-cols-2 gap-2">
+        <div>
+          <label className={labelClass}>Carência</label>
+          <Input
+            value={product.carencia || ""}
+            onChange={(e) => onChange({ ...product, carencia: e.target.value })}
+            className="rounded-lg h-9"
+            placeholder="Ex: 30 dias"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Obs.</label>
+          <Input value={product.obs} onChange={(e) => onChange({ ...product, obs: e.target.value })} className="rounded-lg h-9" placeholder="..." />
+        </div>
       </div>
     </div>
   );
