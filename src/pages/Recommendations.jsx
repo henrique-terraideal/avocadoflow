@@ -687,6 +687,13 @@ function generateFichaHTML(item, isLast) {
   // Check if it's a pulverização type (show volume de calda)
   const isPulverizacao = (ra.type || '').toUpperCase().includes('PULVER');
 
+  // Check if any product has active_ingredient or target filled
+  const hasPA = products.some(p => p.active_ingredient && p.active_ingredient.trim());
+  const hasTarget = products.some(p => p.target && p.target.trim());
+
+  // Dynamic column widths based on how many columns are visible
+  const colCount = 7 + (hasPA ? 1 : 0) + (hasTarget ? 1 : 0);
+
   // Products table rows
   const productRows = products.map((p, i) => {
     const tankCapacity = implement?.tank_capacity_liters || 0;
@@ -695,25 +702,28 @@ function generateFichaHTML(item, isLast) {
       ? (p.dose * (tankCapacity / litersPerHa)).toFixed(3)
       : null;
 
+    const paCell = hasPA ? `<td style="text-align: left; font-style: italic; color: #2a6a4a;">${p.active_ingredient || '—'}</td>` : '';
+    const targetCell = hasTarget ? `<td style="text-align: left; color: #555;">${p.target || '—'}</td>` : '';
+
     return `
       <tr>
         <td style="width: 6mm; text-align: center; font-weight: 700; color: #1a7a3a;">${i + 1}</td>
-        <td style="width: 45mm;">
+        <td style="width: 40mm;">
           <div class="product-name">${p.product_name || '—'}</div>
-          ${p.active_ingredient ? `<div class="product-pa">P.A.: ${p.active_ingredient}</div>` : ''}
-          ${p.target ? `<div class="product-target">Alvo: ${p.target}</div>` : ''}
         </td>
-        <td style="width: 16mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
-        <td style="width: 18mm; text-align: center; font-weight: 700;">
+        ${paCell}
+        ${targetCell}
+        <td style="width: 14mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
+        <td style="width: 16mm; text-align: center; font-weight: 700;">
           ${p.dose != null ? `${p.dose}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
         </td>
-        <td style="width: 18mm; text-align: center;">
+        <td style="width: 16mm; text-align: center;">
           ${qtyPerTank ? `<strong style="color: #1a5599;">${qtyPerTank}</strong>` : '—'}
         </td>
-        <td style="width: 16mm; text-align: center;">
+        <td style="width: 14mm; text-align: center;">
           ${p.total_quantity != null ? p.total_quantity : '—'}
         </td>
-        <td style="width: 18mm; text-align: center;">
+        <td style="width: 16mm; text-align: center;">
           ${p.carencia ? `<span class="product-carencia">${p.carencia}</span>` : '—'}
         </td>
       </tr>
@@ -783,16 +793,18 @@ function generateFichaHTML(item, isLast) {
         <thead>
           <tr>
             <th style="width: 6mm; text-align: center;">#</th>
-            <th style="width: 45mm;">Produto Comercial</th>
-            <th style="width: 16mm; text-align: center;">Modo</th>
-            <th style="width: 18mm; text-align: center;">Dose</th>
-            <th style="width: 18mm; text-align: center;">Qtd/Tanque</th>
-            <th style="width: 16mm; text-align: center;">Total</th>
-            <th style="width: 18mm; text-align: center;">Carência</th>
+            <th style="width: 40mm;">Produto Comercial</th>
+            ${hasPA ? '<th style="width: 22mm;">Princípio Ativo</th>' : ''}
+            ${hasTarget ? '<th style="width: 18mm;">Alvo</th>' : ''}
+            <th style="width: 14mm; text-align: center;">Modo</th>
+            <th style="width: 16mm; text-align: center;">Dose</th>
+            <th style="width: 16mm; text-align: center;">Qtd/Tanque</th>
+            <th style="width: 14mm; text-align: center;">Total</th>
+            <th style="width: 16mm; text-align: center;">Carência</th>
           </tr>
         </thead>
         <tbody>
-          ${productRows || '<tr><td colspan="7" style="text-align:center;color:#999;padding:4mm;">Nenhum produto cadastrado</td></tr>'}
+          ${productRows || `<tr><td colspan="${colCount}" style="text-align:center;color:#999;padding:4mm;">Nenhum produto cadastrado</td></tr>`}
         </tbody>
       </table>
 
