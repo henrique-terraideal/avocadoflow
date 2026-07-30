@@ -3,6 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Leaf, Lock, Thermometer, Wind, Droplets, Package, Beaker, Tractor, Wrench } from "lucide-react";
 
+const formatQtBr = (v) => v != null && !isNaN(v) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+
 export default function RASelectorField({ value, onChange, onRASelected, readOnly }) {
   const [search, setSearch] = useState("");
 
@@ -82,10 +84,10 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
         active_ingredient: p.active_ingredient || "",
         target: p.target || "",
         application_mode: p.application_mode || "",
-        unit: p.unit || "",
         dose: p.dose ?? null,
         total_quantity: p.total_quantity ?? null,
         qty_per_tank: haPerTank && p.dose != null ? parseFloat((p.dose * haPerTank).toFixed(3)) : null,
+        unit: p.unit || "",
         obs: p.obs || "",
       })),
     };
@@ -230,11 +232,11 @@ export function RADetails({ ra, products = [] }) {
               )}
               <div className="text-[10px] text-muted-foreground">
                 {p.application_mode}
-                {p.dose != null ? ` · Dose: ${Number(p.dose).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
-                {p.total_quantity != null ? ` · Total: ${Number(p.total_quantity).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}` : ""}
+                {p.dose != null ? ` · Dose: ${formatQtBr(p.dose)}${p.unit ? " " + p.unit : ""}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
+                {p.total_quantity != null ? ` · Total: ${formatQtBr(p.total_quantity)}${p.unit ? " " + p.unit : ""}` : ""}
               </div>
               {p.qty_per_tank != null && (
-                <div className="text-[10px] text-blue-600 font-semibold">🧴 {Number(p.qty_per_tank).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}{p.unit ? ` ${p.unit}` : ""} por tanque</div>
+                <div className="text-[10px] text-blue-600 font-semibold">🧴 {formatQtBr(p.qty_per_tank)}{p.unit ? " " + p.unit : ""} por tanque</div>
               )}
               {p.obs && <div className="text-[10px] text-muted-foreground">{p.obs}</div>}
             </div>

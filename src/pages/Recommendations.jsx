@@ -627,6 +627,8 @@ ${fichasHtml}
 
 // === Ficha A4 HTML Generator ===
 
+const formatQtBr = (v) => v != null && !isNaN(v) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
+
 function generateFichaHTML(item, isLast) {
   const { ra, products, label, implement, machine, operation } = item;
 
@@ -671,13 +673,13 @@ function generateFichaHTML(item, isLast) {
         ${targetCell}
         <td style="width: 14mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
         <td style="width: 16mm; text-align: center; font-weight: 700;">
-          ${p.dose != null ? `${Number(p.dose).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? ' ' + p.unit : ''}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
+          ${p.dose != null ? `${formatQtBr(p.dose)}${p.unit ? ' ' + p.unit : ''}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
         </td>
         <td style="width: 16mm; text-align: center;">
-          ${qtyPerTank ? `<strong style="color: #1a5599;">${Number(qtyPerTank).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? ' ' + p.unit : ''}</strong>` : '—'}
+          ${qtyPerTank ? `<strong style="color: #1a5599;">${formatQtBr(qtyPerTank)}${p.unit ? ' ' + p.unit : ''}</strong>` : '—'}
         </td>
         <td style="width: 14mm; text-align: center;">
-          ${p.total_quantity != null ? `${Number(p.total_quantity).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? ' ' + p.unit : ''}` : '—'}
+          ${p.total_quantity != null ? `${formatQtBr(p.total_quantity)}${p.unit ? ' ' + p.unit : ''}` : '—'}
         </td>
         <td style="width: 16mm; text-align: center;">
           ${p.carencia ? `<span class="product-carencia">${p.carencia}</span>` : '—'}

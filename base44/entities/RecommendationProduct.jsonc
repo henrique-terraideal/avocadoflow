@@ -12,21 +12,23 @@
     },
     "active_ingredient": {
       "type": "string",
-      "description": "Princípio ativo do produto (copiado do cadastro no momento da importação)"
+      "description": "Princ\u00edpio ativo do produto (copiado do cadastro no momento da importa\u00e7\u00e3o)"
     },
     "target": {
       "type": "string",
-      "description": "Alvo/praga controlado (copiado do cadastro no momento da importação)"
+      "description": "Alvo/praga controlado (copiado do cadastro no momento da importa\u00e7\u00e3o)"
     },
     "unit": {
       "type": "string",
-      "enum": ["L", "mL", "kg", "g", "t"],
-      "description": "Unidade de medida (copiada do cadastro de produto — L, mL, kg, g, t)"
+      "description": "Unidade de medida (copiada do cadastro do produto)"
     },
     "application_mode": {
       "type": "string",
-      "enum": ["ÁREA", "PLANTA"],
-      "description": "Modo de aplicação: por área (ha) ou por planta"
+      "enum": [
+        "\u00c1REA",
+        "PLANTA"
+      ],
+      "description": "Modo de aplica\u00e7\u00e3o: por \u00e1rea (ha) ou por planta"
     },
     "dose": {
       "type": "number",
@@ -38,15 +40,15 @@
     },
     "carencia": {
       "type": "string",
-      "description": "Período de carência (intervalo de segurança entre aplicação e colheita, ex: '30 dias')"
+      "description": "Per\u00edodo de car\u00eancia (intervalo de seguran\u00e7a entre aplica\u00e7\u00e3o e colheita, ex: '30 dias')"
     },
     "obs": {
       "type": "string",
-      "description": "Observações do produto"
+      "description": "Observa\u00e7\u00f5es do produto"
     },
     "sort_order": {
       "type": "number",
-      "description": "Ordem de exibição"
+      "description": "Ordem de exibi\u00e7\u00e3o"
     }
   },
   "required": [

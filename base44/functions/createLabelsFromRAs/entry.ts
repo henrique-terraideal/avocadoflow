@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+// v1.1 - includes unit in auto-sync
 
 Deno.serve(async (req) => {
   try {
@@ -43,11 +44,11 @@ Deno.serve(async (req) => {
 
       const currentPA = rp.active_ingredient || '';
       const currentTarget = rp.target || '';
+      const currentUnit = rp.unit || '';
       const newPA = catalogEntry.active_ingredient || currentPA;
       const newTarget = catalogEntry.target || currentTarget;
-
-      const currentUnit = rp.unit || '';
       const newUnit = catalogEntry.unit || currentUnit;
+
       if (newPA !== currentPA || newTarget !== currentTarget || newUnit !== currentUnit) {
         await base44.asServiceRole.entities.RecommendationProduct.update(rp.id, {
           active_ingredient: newPA,
@@ -129,6 +130,7 @@ Deno.serve(async (req) => {
           application_mode: p.application_mode || 'AREA',
           dose: p.dose,
           total_quantity: p.total_quantity,
+          unit: p.unit || '',
           carencia: p.carencia || '',
           obs: p.obs || '',
           qty_per_tank: tankCapacity && p.dose != null

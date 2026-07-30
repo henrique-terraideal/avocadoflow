@@ -127,10 +127,14 @@ export default function ProductsPanel() {
                       <FlaskConical className="w-4 h-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm">{product.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="font-semibold text-sm">{product.name}</p>
+                        {product.unit && (
+                          <span className="text-[10px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded">{product.unit}</span>
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground truncate">
-                        {product.unit ? <span className="font-medium text-primary">[{product.unit}]</span> : ""}
-                        {product.active_ingredient ? ` P.A.: ${product.active_ingredient}` : ""}
+                        {product.active_ingredient ? `P.A.: ${product.active_ingredient}` : ""}
                         {product.target ? ` · Alvo: ${product.target}` : ""}
                         {product.carencia ? ` · Carência: ${product.carencia}` : ""}
                       </p>
@@ -198,18 +202,17 @@ function ProductForm({ product, onSave, onCancel, saving }) {
       <div>
         <label className={labelClass}>Unidade de medida</label>
         <select
-          value={form.unit}
+          value={form.unit || ""}
           onChange={(e) => setForm(p => ({ ...p, unit: e.target.value }))}
-          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full h-9 rounded-xl border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
-          <option value="">Selecione...</option>
-          <option value="L">L — Litro</option>
-          <option value="mL">mL — Mililitro</option>
-          <option value="kg">kg — Quilograma</option>
-          <option value="g">g — Grama</option>
-          <option value="t">t — Tonelada</option>
+          <option value="">—</option>
+          <option value="L">L (Litro)</option>
+          <option value="mL">mL (Mililitro)</option>
+          <option value="kg">kg (Quilograma)</option>
+          <option value="g">g (Grama)</option>
+          <option value="t">t (Tonelada)</option>
         </select>
-        <p className="text-[10px] text-muted-foreground mt-1">Aparece na ficha de campo e na RA (Dose, Qtd/Tanque, Total)</p>
       </div>
 
       <div className="flex gap-2 pt-1">
