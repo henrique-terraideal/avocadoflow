@@ -24,7 +24,7 @@ export default function Recommendations() {
   const [filterTypes, setFilterTypes] = useState(new Set());
   const [filterOrchards, setFilterOrchards] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
-  const [filterDate, setFilterDate] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
   const [printing, setPrinting] = useState(false);
   const fileRef = useRef(null);
 
@@ -103,7 +103,7 @@ export default function Recommendations() {
     return recommendations.filter(ra => {
       if (filterTypes.size > 0 && !filterTypes.has(ra.type)) return false;
       if (filterOrchards.size > 0 && !filterOrchards.has(ra.orchard_code)) return false;
-      if (filterDate && ra.date !== filterDate) return false;
+      if (filterMonth && (!ra.date || !ra.date.startsWith(filterMonth))) return false;
       if (!s) return true;
       const prods = productsByRA[ra.id] || [];
       const productText = prods
@@ -116,7 +116,7 @@ export default function Recommendations() {
         normalize(productText).includes(s)
       );
     });
-  }, [recommendations, productsByRA, search, filterTypes, filterOrchards, filterDate]);
+  }, [recommendations, productsByRA, search, filterTypes, filterOrchards, filterMonth]);
 
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
@@ -414,8 +414,8 @@ ${fichasHtml}
           orchards={uniqueOrchards}
           activeTypes={filterTypes}
           activeOrchards={filterOrchards}
-          filterDate={filterDate}
-          onDateChange={setFilterDate}
+          filterMonth={filterMonth}
+          onMonthChange={setFilterMonth}
           onToggleType={(t) => {
             const next = new Set(filterTypes);
             next.has(t) ? next.delete(t) : next.add(t);
@@ -426,7 +426,7 @@ ${fichasHtml}
             next.has(o) ? next.delete(o) : next.add(o);
             setFilterOrchards(next);
           }}
-          onClear={() => { setFilterTypes(new Set()); setFilterOrchards(new Set()); setFilterDate(""); }}
+          onClear={() => {     setFilterTypes(new Set()); setFilterOrchards(new Set()); setFilterMonth(""); }}
         />
 
         {/* List */}

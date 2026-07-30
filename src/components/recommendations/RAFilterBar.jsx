@@ -1,6 +1,5 @@
 import React from "react";
 import { X, Droplets, SprayCan, Bug, Leaf, Calendar } from "lucide-react";
-import DateInput from "@/components/ui/DateInput";
 
 function getTypeIcon(type) {
   const t = (type || "")
@@ -19,29 +18,44 @@ export default function RAFilterBar({
   orchards,
   activeTypes,
   activeOrchards,
-  filterDate,
-  onDateChange,
+  filterMonth,
+  onMonthChange,
   onToggleType,
   onToggleOrchard,
   onClear,
 }) {
-  const hasFilters = activeTypes.size > 0 || activeOrchards.size > 0 || filterDate;
+  const hasFilters = activeTypes.size > 0 || activeOrchards.size > 0 || filterMonth;
   if (types.length === 0 && orchards.length === 0) return null;
+
+  const MONTH_NAMES = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+  ];
+  const monthLabel = (() => {
+    if (!filterMonth) return "";
+    const [y, m] = filterMonth.split("-");
+    return `${MONTH_NAMES[parseInt(m, 10) - 1]}/${y}`;
+  })();
 
   return (
     <div className="space-y-2">
-      {/* Date filter */}
+      {/* Month filter */}
       <div className="relative">
         <Calendar className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 z-10 pointer-events-none" />
-        <DateInput
-          value={filterDate || ""}
-          onChange={onDateChange}
-          placeholder="Filtrar por data"
+        <input
+          type="month"
+          value={filterMonth || ""}
+          onChange={(e) => onMonthChange(e.target.value)}
           className="w-full h-10 rounded-xl border border-input bg-background pl-9 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        {filterDate && (
+        {monthLabel && (
+          <span className="pointer-events-none absolute inset-0 flex items-center pl-9 text-sm" style={{ color: "hsl(var(--foreground))" }}>
+            {monthLabel}
+          </span>
+        )}
+        {filterMonth && (
           <button
-            onClick={() => onDateChange("")}
+            onClick={() => onMonthChange("")}
             className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground z-10"
           >
             <X className="w-4 h-4" />
