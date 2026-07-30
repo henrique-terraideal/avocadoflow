@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import PendingRecordModal from "./PendingRecordModal";
+import RADetailModal from "../planning/RADetailModal";
 import DateInput from "@/components/ui/DateInput";
 import { useNavigate } from "react-router-dom";
 
@@ -17,6 +18,7 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
   const [openLabel, setOpenLabel] = useState(null);
   const [editingDateLabel, setEditingDateLabel] = useState(null);
   const [editingDateValue, setEditingDateValue] = useState("");
+  const [raDetailId, setRaDetailId] = useState(null);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -120,20 +122,22 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
       keepPending,
     });
 
-    // Check if all labels for this RA are registered, then mark as executada
+    // Check if all labels for this RA are done, and mark RA as executada
     if (mergedDetails.ra_id) {
       try {
         await base44.functions.invoke("markRAExecuted", { ra_id: mergedDetails.ra_id });
         queryClient.invalidateQueries({ queryKey: ["recommendations"] });
         queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
       } catch (e) {
-        console.error('Failed to check RA execution status:', e);
+        console.error('Failed to mark RA:', e);
       }
     }
 
     setOpenLabel(null);
     if (keepPending) {
       navigate("/");
+    } else if (mergedDetails.ra_id) {
+      setRaDetailId(mergedDetails.ra_id);
     }
   };
 
@@ -272,6 +276,10 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
           onSave={handleSave}
           onClose={() => setOpenLabel(null)}
         />
+      )}
+
+      {raDetailId && (
+        <RADetailModal raId={raDetailId} onClose={() => setRaDetailId(null)} />
       )}
     </div>
   );

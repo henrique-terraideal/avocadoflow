@@ -16,6 +16,7 @@ import QRScanner from "../components/field/QRScanner";
 import BottomNav from "../components/field/BottomNav";
 import PendingRecords from "../components/field/PendingRecords";
 import PendingRecordModal from "../components/field/PendingRecordModal";
+import RADetailModal from "../components/planning/RADetailModal";
 import QuickActionFAB from "../components/QuickActionFAB";
 
 export default function NewRecord() {
@@ -27,6 +28,7 @@ export default function NewRecord() {
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [qrLabel, setQrLabel] = useState(null);
+  const [raDetailId, setRaDetailId] = useState(null);
 
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedOperator, setSelectedOperator] = useState(null);
@@ -97,10 +99,9 @@ export default function NewRecord() {
     window.history.replaceState({}, "", window.location.pathname);
   }, [operators, operations]);
 
-  const handleQRScan = (rawValue) => {
+  const handleQRScan = async (rawValue) => {
     setShowScanner(false);
     try {
-      // Monta um objeto "label" simulado para abrir o PendingRecordModal
       let qr_data = rawValue;
       let date = new Date().toISOString().split("T")[0];
 
@@ -117,7 +118,34 @@ export default function NewRecord() {
         qr_data = `${window.location.origin}/?${params.toString()}`;
       }
 
-      setQrLabel({ qr_data, date });
+      // Fetch PlanningLabel by ra_label_id from QR URL
+      const url = new URL(qr_data);
+      const raLabelId = url.searchParams.get("ra_label_id");
+
+      if (raLabelId) {
+        try {
+          const label = await base44.entities.PlanningLabel.get(raLabelId);
+          let raId = null;
+          try { raId = JSON.parse(label.additional_details || "{}").ra_id; } catch {}
+
+          if (raId) {
+            const ra = await base44.entities.AgronomicRecommendation.get(raId);
+            if ((ra.status || "").toLowerCase() === "executada") {
+              toast({ title: "RA já executada", description: `A RA ${ra.code} já foi concluída.` });
+              setRaDetailId(raId);
+              return;
+            }
+          }
+          // RA not executada — proceed with full label data
+          setQrLabel({ ...label, qr_data, date });
+        } catch {
+          // Label not found — proceed with basic data
+          setQrLabel({ qr_data, date });
+        }
+      } else {
+        // No ra_label_id — old behavior
+        setQrLabel({ qr_data, date });
+      }
     } catch {
       toast({ title: "QR Code inválido", description: "Formato não reconhecido.", variant: "destructive" });
     }
@@ -392,16 +420,13 @@ export default function NewRecord() {
             });
             queryClient.invalidateQueries({ queryKey: ["field-records"] });
             queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
-
-            // Check if all labels for this RA are registered, then mark as executada
+            // Check if all labels for this RA are done, and mark RA as executada
             if (mergedDetails.ra_id) {
               try {
                 await base44.functions.invoke("markRAExecuted", { ra_id: mergedDetails.ra_id });
                 queryClient.invalidateQueries({ queryKey: ["recommendations"] });
                 queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
-              } catch (e) {
-                console.error('Failed to check RA execution status:', e);
-              }
+              } catch (e) { console.error("Failed to mark RA:", e); }
             }
             if (options.keepPending) {
               // Reabre o modal com campos zerados para novo registro na mesma atividade
@@ -410,11 +435,19 @@ export default function NewRecord() {
               setTimeout(() => setQrLabel(current), 100);
             } else {
               setQrLabel(null);
-              setSubmitted(true);
+              if (mergedDetails.ra_id) {
+                setRaDetailId(mergedDetails.ra_id);
+              } else {
+                setSubmitted(true);
+              }
             }
           }}
           onClose={() => setQrLabel(null)}
         />
+      )}
+
+      {raDetailId && (
+        <RADetailModal raId={raDetailId} onClose={() => setRaDetailId(null)} />
       )}
 
       <QuickActionFAB />
