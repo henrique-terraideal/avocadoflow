@@ -39,7 +39,6 @@ export default function Recommendations() {
     enabled: recommendations.length > 0,
   });
 
-  // Group products by recommendation_id
   const productsByRA = useMemo(() => {
     const map = {};
     for (const p of allProducts) {
@@ -150,14 +149,12 @@ export default function Recommendations() {
 
     setPrinting(true);
     try {
-      // Call backend function to create PlanningLabels and get RA data
       const res = await base44.functions.invoke("createLabelsFromRAs", { ra_ids: ids });
       if (res.data?.error) throw new Error(res.data.error);
 
       const results = res.data?.results || [];
       if (results.length === 0) throw new Error("Nenhuma RA encontrada");
 
-      // Generate ficha HTML for each RA
       const fichasHtml = results.map((item, idx) => generateFichaHTML(item, idx === results.length - 1)).join("");
 
       const html = `<!DOCTYPE html>
@@ -173,7 +170,7 @@ export default function Recommendations() {
       width: 210mm;
       min-height: 297mm;
       max-width: 210mm;
-      padding: 15mm 18mm;
+      padding: 12mm 15mm;
       page-break-after: always;
       position: relative;
     }
@@ -187,111 +184,120 @@ export default function Recommendations() {
       justify-content: space-between;
       align-items: center;
       border-bottom: 3px solid #1a7a3a;
-      padding-bottom: 4mm;
-      margin-bottom: 5mm;
+      padding-bottom: 3mm;
+      margin-bottom: 4mm;
     }
-    .header-left { font-size: 18pt; font-weight: 900; color: #1a7a3a; letter-spacing: -0.5px; }
+    .header-left { font-size: 16pt; font-weight: 900; color: #1a7a3a; letter-spacing: -0.5px; }
     .header-right { text-align: right; }
-    .header-right .title { font-size: 12pt; font-weight: 700; color: #333; text-transform: uppercase; }
+    .header-right .title { font-size: 11pt; font-weight: 700; color: #333; text-transform: uppercase; }
     .header-right .subtitle { font-size: 8pt; color: #666; margin-top: 1mm; }
 
     .ra-info-box {
       background: #f0f7f1;
       border: 1.5px solid #1a7a3a;
-      border-radius: 3mm;
-      padding: 4mm;
-      margin-bottom: 4mm;
+      border-radius: 2mm;
+      padding: 3.5mm;
+      margin-bottom: 3mm;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
     }
     .ra-info-left { flex: 1; }
     .ra-info-right { text-align: right; }
-    .ra-code { font-size: 14pt; font-weight: 900; color: #1a7a3a; margin-bottom: 2mm; }
-    .ra-type { font-size: 10pt; font-weight: 600; color: #333; }
+    .ra-code { font-size: 13pt; font-weight: 900; color: #1a7a3a; margin-bottom: 1.5mm; }
+    .ra-type { font-size: 9.5pt; font-weight: 600; color: #333; }
     .ra-orchard { font-size: 9pt; color: #555; margin-top: 1mm; }
     .ra-date { font-size: 9pt; color: #555; }
 
     .section-title {
-      font-size: 10pt;
+      font-size: 9.5pt;
       font-weight: 800;
       color: #1a7a3a;
       text-transform: uppercase;
       border-bottom: 1px solid #ccc;
       padding-bottom: 1.5mm;
-      margin-top: 5mm;
-      margin-bottom: 3mm;
+      margin-top: 4mm;
+      margin-bottom: 2.5mm;
     }
 
     .products-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 4mm;
+      margin-bottom: 3mm;
     }
     .products-table th {
       background: #1a7a3a;
       color: white;
-      font-size: 8pt;
+      font-size: 7.5pt;
       font-weight: 700;
-      padding: 2.5mm 2mm;
+      padding: 2.5mm 1.5mm;
       text-align: left;
       border: 0.5mm solid #1a7a3a;
     }
     .products-table td {
-      font-size: 8.5pt;
-      padding: 2.5mm 2mm;
+      font-size: 8pt;
+      padding: 2.5mm 1.5mm;
       border: 0.5mm solid #ddd;
       vertical-align: top;
     }
     .products-table tr:nth-child(even) td { background: #f9faf9; }
     .product-name { font-weight: 700; color: #1a3a1a; }
-    .product-pa { font-style: italic; color: #2a6a4a; font-size: 7.5pt; }
-    .product-target { color: #555; font-size: 7.5pt; }
-
-    .manual-fields {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3mm;
-      margin-bottom: 4mm;
-    }
-    .manual-field {
-      border: 0.5mm solid #999;
-      border-radius: 2mm;
-      padding: 2.5mm 3mm;
-      min-height: 10mm;
-    }
-    .manual-field-label {
-      font-size: 7.5pt;
-      font-weight: 700;
-      color: #666;
-      text-transform: uppercase;
-      margin-bottom: 1mm;
-    }
-    .manual-field-value {
-      font-size: 10pt;
-      color: transparent;
-      min-height: 5mm;
-    }
+    .product-pa { font-style: italic; color: #2a6a4a; font-size: 7pt; }
+    .product-target { color: #555; font-size: 7pt; }
+    .product-carencia { font-weight: 700; color: #c44; font-size: 7.5pt; }
 
     .info-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3mm;
-      margin-bottom: 4mm;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2.5mm;
+      margin-bottom: 3mm;
     }
     .info-item {
       font-size: 8.5pt;
-      padding: 2mm 0;
+      padding: 1.5mm 0;
     }
-    .info-label { font-weight: 700; color: #333; }
-    .info-value { color: #555; }
+    .info-label { font-weight: 700; color: #333; display: block; font-size: 7.5pt; text-transform: uppercase; color: #888; }
+    .info-value { color: #1a1a1a; font-weight: 600; }
+
+    .obs-box {
+      background: #fffde8;
+      border: 0.5mm solid #e0c200;
+      border-radius: 2mm;
+      padding: 3mm;
+      margin-bottom: 3mm;
+      font-size: 8.5pt;
+      color: #555;
+    }
+    .obs-box strong { color: #333; }
+
+    .critical-box {
+      background: #fff0f0;
+      border: 1mm solid #c33;
+      border-radius: 2mm;
+      padding: 3.5mm;
+      margin: 3mm 0;
+      display: flex;
+      align-items: center;
+      gap: 3mm;
+    }
+    .critical-icon {
+      font-size: 16pt;
+      flex-shrink: 0;
+    }
+    .critical-text {
+      font-size: 9pt;
+      font-weight: 700;
+      color: #c33;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
 
     .climate-box {
       background: #f5f5f5;
       border: 0.5mm solid #ddd;
       border-radius: 2mm;
       padding: 3mm;
-      margin-bottom: 4mm;
+      margin-bottom: 3mm;
       font-size: 8pt;
       color: #555;
     }
@@ -304,30 +310,15 @@ export default function Recommendations() {
       padding-top: 4mm;
       border-top: 1px dashed #ccc;
     }
-    .qr-img { width: 25mm; height: 25mm; }
+    .qr-img { width: 28mm; height: 28mm; }
     .qr-text { font-size: 8pt; color: #777; }
     .qr-text strong { display: block; font-size: 9pt; color: #1a7a3a; margin-bottom: 1mm; }
-
-    .signature-section {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 15mm;
-      margin-top: 8mm;
-      padding-top: 4mm;
-    }
-    .signature-line {
-      border-top: 0.5mm solid #333;
-      padding-top: 1.5mm;
-      text-align: center;
-      font-size: 8pt;
-      color: #666;
-    }
 
     .footer {
       position: absolute;
       bottom: 8mm;
-      left: 18mm;
-      right: 18mm;
+      left: 15mm;
+      right: 15mm;
       font-size: 7pt;
       color: #999;
       text-align: center;
@@ -342,7 +333,6 @@ ${fichasHtml}
 </body>
 </html>`;
 
-      // Open print window
       const blob = new Blob([html], { type: "text/html" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -354,7 +344,6 @@ ${fichasHtml}
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 10000);
 
-      // Invalidate queries to refresh PlanningLabels
       queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
 
@@ -559,12 +548,11 @@ ${fichasHtml}
   );
 }
 
-// === Ficha HTML Generator ===
+// === Ficha A4 HTML Generator ===
 
 function generateFichaHTML(item, isLast) {
-  const { ra, products, label, implement, operation, custom_fields } = item;
+  const { ra, products, label, implement, operation } = item;
 
-  // Format date
   const formatDate = (dateStr) => {
     if (!dateStr) return '___/___/_____';
     try {
@@ -573,8 +561,10 @@ function generateFichaHTML(item, isLast) {
     } catch { return dateStr; }
   };
 
-  // QR code URL
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(label.qr_data || '')}`;
+
+  // Check if it's a pulverização type (show volume de calda)
+  const isPulverizacao = (ra.type || '').toUpperCase().includes('PULVER');
 
   // Products table rows
   const productRows = products.map((p, i) => {
@@ -586,59 +576,61 @@ function generateFichaHTML(item, isLast) {
 
     return `
       <tr>
-        <td style="width: 8mm; text-align: center; font-weight: 700; color: #1a7a3a;">${i + 1}</td>
-        <td style="width: 42mm;">
+        <td style="width: 6mm; text-align: center; font-weight: 700; color: #1a7a3a;">${i + 1}</td>
+        <td style="width: 45mm;">
           <div class="product-name">${p.product_name || '—'}</div>
           ${p.active_ingredient ? `<div class="product-pa">P.A.: ${p.active_ingredient}</div>` : ''}
           ${p.target ? `<div class="product-target">Alvo: ${p.target}</div>` : ''}
-          ${p.obs ? `<div class="product-target" style="margin-top:1mm;">${p.obs}</div>` : ''}
         </td>
-        <td style="width: 18mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
-        <td style="width: 22mm; text-align: center; font-weight: 700;">
-          ${p.dose != null ? `${p.dose}${p.application_mode === 'PLANTA' ? '/planta' : '/ha'}` : '—'}
+        <td style="width: 16mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
+        <td style="width: 18mm; text-align: center; font-weight: 700;">
+          ${p.dose != null ? `${p.dose}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
         </td>
-        <td style="width: 20mm; text-align: center;">
-          ${qtyPerTank ? `<strong style="color: #1a5599;">${qtyPerTank}/tanque</strong>` : '—'}
+        <td style="width: 18mm; text-align: center;">
+          ${qtyPerTank ? `<strong style="color: #1a5599;">${qtyPerTank}</strong>` : '—'}
         </td>
-        <td style="width: 20mm; text-align: center; font-weight: 700;">
+        <td style="width: 16mm; text-align: center;">
           ${p.total_quantity != null ? p.total_quantity : '—'}
+        </td>
+        <td style="width: 18mm; text-align: center;">
+          ${p.carencia ? `<span class="product-carencia">${p.carencia}</span>` : '—'}
         </td>
       </tr>
     `;
   }).join('');
 
-  // Build manual fill fields (fields the operator fills by hand on the printed ficha)
-  const manualFieldLabels = [
-    { label: 'Data' },
-    { label: 'Hora Início' },
-    { label: 'Hora Fim' },
-    { label: 'Operador' },
-  ];
-
-  // Add custom fields from template (registration stage)
-  if (custom_fields && custom_fields.length > 0) {
-    for (const cf of custom_fields) {
-      if (cf.field_type === 'hour_meter') {
-        manualFieldLabels.push({ label: 'Horímetro Inicial' });
-        manualFieldLabels.push({ label: 'Horímetro Final' });
-      } else if (!manualFieldLabels.some(mf => mf.label === cf.field_label)) {
-        manualFieldLabels.push({ label: cf.field_label });
-      }
-    }
-  }
-
-  // Build manual fields grid (2 columns)
-  const manualFieldsHtml = manualFieldLabels.map(f => `
-    <div class="manual-field">
-      <div class="manual-field-label">${f.label}</div>
-      <div class="manual-field-value">&nbsp;</div>
-    </div>
-  `).join("");
-
   // Orchard info
   const orchardText = ra.orchard_code
     ? `${ra.orchard_code}${ra.orchard_name ? ' — ' + ra.orchard_name : ''}${ra.orchard_area ? ' (' + ra.orchard_area + ' ha)' : ''}`
     : '—';
+
+  // Machine/Tractor/Implement info block
+  const machineItems = [];
+  if (ra.tractor) machineItems.push({ label: 'Trator', value: ra.tractor });
+  if (implement?.name) machineItems.push({ label: 'Implemento', value: implement.name });
+  if (implement?.tank_capacity_liters) machineItems.push({ label: 'Capac. Tanque', value: `${implement.tank_capacity_liters} L` });
+  if (ra.marcha_trabalho) machineItems.push({ label: 'Marcha', value: ra.marcha_trabalho });
+  if (ra.rpm) machineItems.push({ label: 'RPM', value: `${ra.rpm}` });
+  if (ra.machine_config) machineItems.push({ label: 'Regulagem Máq.', value: ra.machine_config });
+  if (ra.implement_config) machineItems.push({ label: 'Regulagem Impl.', value: ra.implement_config });
+  if (isPulverizacao && ra.liters_per_ha) machineItems.push({ label: 'Volume de Calda', value: `${ra.liters_per_ha} L/ha` });
+
+  // Build machine info grid (3 columns)
+  let machineHtml = '';
+  for (let i = 0; i < machineItems.length; i += 3) {
+    const row = machineItems.slice(i, i + 3);
+    const cells = row.map(m => `
+      <div class="info-item">
+        <span class="info-label">${m.label}</span>
+        <span class="info-value">${m.value || '—'}</span>
+      </div>
+    `).join('');
+    const emptyCells = 3 - row.length;
+    for (let j = 0; j < emptyCells; j++) {
+      cells += '<div class="info-item"></div>';
+    }
+    machineHtml += `<div class="info-grid">${cells}</div>`;
+  }
 
   return `
     <div class="ficha-page">
@@ -647,7 +639,7 @@ function generateFichaHTML(item, isLast) {
         <div class="header-left">HP AVOCADO</div>
         <div class="header-right">
           <div class="title">Ficha de Aplicação</div>
-          <div class="subtitle">Recomendação Agronômica</div>
+          <div class="subtitle">Recomendação Agronômica · ${formatDate(ra.date)}</div>
         </div>
       </div>
 
@@ -660,8 +652,7 @@ function generateFichaHTML(item, isLast) {
         </div>
         <div class="ra-info-right">
           ${ra.date ? `<div class="ra-date">📅 Data prevista: ${formatDate(ra.date)}</div>` : ''}
-          ${operation ? `<div class="ra-date" style="margin-top:1mm;">🔧 Operação: ${operation.code} - ${operation.name}</div>` : ''}
-          ${ra.status ? `<div class="ra-date" style="margin-top:1mm;">Status: ${ra.status}</div>` : ''}
+          ${operation ? `<div class="ra-date" style="margin-top:1mm;">🔧 ${operation.code} - ${operation.name}</div>` : ''}
         </div>
       </div>
 
@@ -670,57 +661,62 @@ function generateFichaHTML(item, isLast) {
       <table class="products-table">
         <thead>
           <tr>
-            <th style="width: 8mm; text-align: center;">#</th>
-            <th style="width: 42mm;">Produto</th>
-            <th style="width: 18mm; text-align: center;">Modo</th>
-            <th style="width: 22mm; text-align: center;">Dose</th>
-            <th style="width: 20mm; text-align: center;">Qtd/Tanque</th>
-            <th style="width: 20mm; text-align: center;">Total</th>
+            <th style="width: 6mm; text-align: center;">#</th>
+            <th style="width: 45mm;">Produto Comercial</th>
+            <th style="width: 16mm; text-align: center;">Modo</th>
+            <th style="width: 18mm; text-align: center;">Dose</th>
+            <th style="width: 18mm; text-align: center;">Qtd/Tanque</th>
+            <th style="width: 16mm; text-align: center;">Total</th>
+            <th style="width: 18mm; text-align: center;">Carência</th>
           </tr>
         </thead>
         <tbody>
-          ${productRows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:4mm;">Nenhum produto cadastrado</td></tr>'}
+          ${productRows || '<tr><td colspan="7" style="text-align:center;color:#999;padding:4mm;">Nenhum produto cadastrado</td></tr>'}
         </tbody>
       </table>
 
-      ${implement ? `
-      <!-- Implement Info -->
-      <div class="section-title">Implemento / Maquinário</div>
-      <div class="info-grid">
-        <div class="info-item"><span class="info-label">Implemento:</span> <span class="info-value">${implement.name || '—'}</span></div>
-        <div class="info-item"><span class="info-label">Capacidade tanque:</span> <span class="info-value">${implement.tank_capacity_liters || '—'} L</span></div>
-        ${ra.machine_config ? `<div class="info-item"><span class="info-label">Regulagem maquinário:</span> <span class="info-value">${ra.machine_config}</span></div>` : ''}
-        ${ra.implement_config ? `<div class="info-item"><span class="info-label">Regulagem implemento:</span> <span class="info-value">${ra.implement_config}</span></div>` : ''}
-      </div>
+      <!-- Machine / Tractor / Implement -->
+      ${machineItems.length > 0 ? `
+      <div class="section-title">Maquinário · Trator · Implemento</div>
+      ${machineHtml}
       ` : ''}
 
-      ${ra.climate_conditions ? `
+      <!-- Application Observations -->
+      ${ra.application_observations ? `
+      <div class="section-title">Observações da Aplicação</div>
+      <div class="obs-box">${ra.application_observations}</div>
+      ` : ''}
+
       <!-- Climate Conditions -->
+      ${ra.climate_conditions ? `
       <div class="section-title">Condições Climáticas Ideais</div>
       <div class="climate-box">${ra.climate_conditions}</div>
       ` : ''}
 
-      <!-- Manual Fill Fields -->
-      <div class="section-title">Preenchimento em Campo</div>
-      <div class="manual-fields">
-        ${manualFieldsHtml}
+      <!-- Product-specific observations -->
+      ${products.some(p => p.obs) ? `
+      <div class="section-title">Observações dos Produtos</div>
+      <div class="obs-box">
+        ${products.filter(p => p.obs).map(p => `<strong>${p.product_name}:</strong> ${p.obs}`).join('<br/>')}
+      </div>
+      ` : ''}
+
+      <!-- Critical Message -->
+      <div class="critical-box">
+        <div class="critical-icon">⚠️</div>
+        <div class="critical-text">
+          Realizar Tripla Lavagem e descartar as embalagens no depósito de vasilhames
+        </div>
       </div>
 
       <!-- QR Code Section -->
       <div class="qr-section">
         <img src="${qrUrl}" class="qr-img" alt="QR Code" />
         <div class="qr-text">
-          <strong>Escaneie para registrar</strong>
-          Após a execução, escaneie o QR Code<br/>
-          para abrir o registro no app AvocadoFlow<br/>
-          e preencher os dados da operação.
+          <strong>Escaneie para registrar a operação</strong>
+          Após a execução, escaneie o QR Code para abrir<br/>
+          o registro no app AvocadoFlow e preencher os dados da operação.
         </div>
-      </div>
-
-      <!-- Signatures -->
-      <div class="signature-section">
-        <div class="signature-line">Assinatura do Operador</div>
-        <div class="signature-line">Conferência / Responsável Técnico</div>
       </div>
 
       <!-- Footer -->

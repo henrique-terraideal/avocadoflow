@@ -35,10 +35,6 @@ Deno.serve(async (req) => {
       implements_list = await base44.asServiceRole.entities.Implement.filter({ active: true });
     } catch (_) {}
 
-    // Fetch OperationTemplates and CustomFields for registration fields
-    const templates = await base44.asServiceRole.entities.OperationTemplate.list();
-    const customFields = await base44.asServiceRole.entities.CustomField.list();
-
     // Fetch Orchards for area/plant info
     const orchards = await base44.asServiceRole.entities.Orchard.filter({ active: true });
 
@@ -82,6 +78,10 @@ Deno.serve(async (req) => {
           implement_config: ra.implement_config || '',
           liters_per_ha: litersPerHa,
           tank_capacity_liters: tankCapacity,
+          tractor: ra.tractor || '',
+          marcha_trabalho: ra.marcha_trabalho || '',
+          rpm: ra.rpm || null,
+          application_observations: ra.application_observations || '',
           products: raProducts.map(p => ({
             product_name: p.product_name,
             active_ingredient: p.active_ingredient || '',
@@ -89,6 +89,7 @@ Deno.serve(async (req) => {
             application_mode: p.application_mode || 'ÁREA',
             dose: p.dose,
             total_quantity: p.total_quantity,
+            carencia: p.carencia || '',
             obs: p.obs || '',
             qty_per_tank: tankCapacity && p.dose != null
               ? parseFloat((p.dose * (tankCapacity / litersPerHa)).toFixed(3))
@@ -129,12 +130,6 @@ Deno.serve(async (req) => {
         label.qr_data = qrData;
       }
 
-      // Find template and registration custom fields for this operation
-      const template = operation ? templates.find(t => t.operation_id === operation.id) : null;
-      const opCustomFields = template
-        ? customFields.filter(f => f.template_id === template.id && f.input_stage !== 'planning')
-        : [];
-
       results.push({
         ra: {
           id: ra.id,
@@ -150,6 +145,10 @@ Deno.serve(async (req) => {
           machine_config: ra.machine_config,
           implement_config: ra.implement_config,
           liters_per_ha: ra.liters_per_ha || 1000,
+          tractor: ra.tractor || '',
+          marcha_trabalho: ra.marcha_trabalho || '',
+          rpm: ra.rpm || null,
+          application_observations: ra.application_observations || '',
         },
         products: raProducts,
         label: {
@@ -168,11 +167,6 @@ Deno.serve(async (req) => {
           code: operation.code,
           name: operation.name,
         } : null,
-        custom_fields: opCustomFields.map(f => ({
-          field_label: f.field_label,
-          field_type: f.field_type,
-          is_required: f.is_required,
-        })),
       });
     }
 

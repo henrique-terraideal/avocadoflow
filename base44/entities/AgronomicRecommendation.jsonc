@@ -40,6 +40,22 @@
       "type": "string",
       "description": "Configura\u00e7\u00e3o/regulagem do implemento"
     },
+    "tractor": {
+      "type": "string",
+      "description": "Identifica\u00e7\u00e3o do trator utilizado (ex: John Deere 5078E)"
+    },
+    "marcha_trabalho": {
+      "type": "string",
+      "description": "Marcha de trabalho recomendada (ex: 4L)"
+    },
+    "rpm": {
+      "type": "number",
+      "description": "RPM do trator durante a aplica\u00e7\u00e3o (ex: 1800)"
+    },
+    "application_observations": {
+      "type": "string",
+      "description": "Observa\u00e7\u00f5es espec\u00edficas da aplica\u00e7\u00e3o (ex: n\u00e3o aplicar com vento >10km/h)"
+    },
     "climate_conditions": {
       "type": "string",
       "description": "Condi\u00e7\u00f5es clim\u00e1ticas ideais formatadas"

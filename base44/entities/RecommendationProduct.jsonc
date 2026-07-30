@@ -34,6 +34,10 @@
       "type": "number",
       "description": "Quantidade total calculada"
     },
+    "carencia": {
+      "type": "string",
+      "description": "Per\u00edodo de car\u00eancia (intervalo de seguran\u00e7a entre aplica\u00e7\u00e3o e colheita, ex: '30 dias')"
+    },
     "obs": {
       "type": "string",
       "description": "Observa\u00e7\u00f5es do produto"
