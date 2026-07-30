@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // Deletes ALL PlanningLabels so they regenerate fresh with updated product data
 // Safe to run: labels are recreated automatically when printing fichas
+// v1.1
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
