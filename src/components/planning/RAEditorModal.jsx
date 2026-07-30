@@ -56,15 +56,12 @@ export default function RAEditorModal({ ra, onClose }) {
   const selectedImplement = implements_.find(i => i.id === form.implement_id) || null;
   const selectedMachine = machines.find(m => m.id === form.machine_id) || null;
 
-  // ha per tank = tank_capacity / liters_per_ha
-  // qty per tank for a product = dose_per_ha * ha_per_tank
   const calcQtyPerTank = (dose) => {
     if (!selectedImplement?.tank_capacity_liters || !form.liters_per_ha || !dose) return null;
     const haPerTank = selectedImplement.tank_capacity_liters / form.liters_per_ha;
     return parseFloat((parseFloat(dose) * haPerTank).toFixed(3));
   };
 
-  // Fetch existing products when editing
   useEffect(() => {
     if (!isEdit) return;
     base44.entities.RecommendationProduct.filter({ recommendation_id: ra.id }, "sort_order", 100)
@@ -85,7 +82,6 @@ export default function RAEditorModal({ ra, onClose }) {
   }, [ra, isEdit]);
 
   const selectedOrchard = orchards.find(o => o.code === form.orchard_code || o.name === form.orchard_code);
-  // Valor canônico para o <select>: se o orchard_code atual é um nome, usa o code correspondente
   const orchardSelectValue = selectedOrchard ? selectedOrchard.code : form.orchard_code;
 
   const handleProductChange = (index, updated) => {
@@ -248,6 +244,9 @@ export default function RAEditorModal({ ra, onClose }) {
               {selectedImplement.rpm && <span>🔄 RPM: <strong className="text-foreground">{selectedImplement.rpm}</strong></span>}
             </div>
           )}
+
+          {/* Calda + Regulagem maquinário */}
+          <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Calda (L/ha)</label>
               <Input
@@ -259,6 +258,10 @@ export default function RAEditorModal({ ra, onClose }) {
                 placeholder="1000"
               />
             </div>
+            <div>
+              <label className={labelClass}>Regulagem maquinário</label>
+              <Input value={form.machine_config} onChange={(e) => setForm(p => ({ ...p, machine_config: e.target.value }))} className="rounded-xl" placeholder="Ex: Pressão 3 bar" />
+            </div>
           </div>
 
           {selectedImplement?.tank_capacity_liters && form.liters_per_ha > 0 && (
@@ -268,16 +271,25 @@ export default function RAEditorModal({ ra, onClose }) {
             </div>
           )}
 
+          {/* Observações da aplicação */}
+          <div>
+            <label className={labelClass}>Observações da aplicação</label>
+            <textarea
+              value={form.application_observations}
+              onChange={(e) => setForm(p => ({ ...p, application_observations: e.target.value }))}
+              className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+              rows={2}
+              placeholder="Ex: não aplicar com vento >10km/h, aplicar no período da manhã..."
+            />
+          </div>
+
+          {/* Condições climáticas */}
           <div>
             <label className={labelClass}>Condições climáticas ideais</label>
             <Input value={form.climate_conditions} onChange={(e) => setForm(p => ({ ...p, climate_conditions: e.target.value }))} className="rounded-xl" placeholder="Temp: 15–30°C | Vento: 0–10 km/h | Umidade: 60–90%" />
           </div>
 
-          <div>
-            <label className={labelClass}>Regulagem do maquinário</label>
-            <Input value={form.machine_config} onChange={(e) => setForm(p => ({ ...p, machine_config: e.target.value }))} className="rounded-xl" placeholder="Ex: Pressão 3 bar, bicos XR 11002" />
-          </div>
-
+          {/* Regulagem do implemento */}
           <div>
             <label className={labelClass}>Regulagem do implemento</label>
             <Input value={form.implement_config} onChange={(e) => setForm(p => ({ ...p, implement_config: e.target.value }))} className="rounded-xl" placeholder="Ex: Largura 12m, 48 bicos" />
