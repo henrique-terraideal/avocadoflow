@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
-import { ClipboardCheck, Clock, ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
+import { ClipboardCheck, Clock, ChevronLeft, ChevronRight, CalendarDays, Leaf, X, Package, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { format, addDays, subDays } from "date-fns";
@@ -17,8 +17,22 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
   const [openLabel, setOpenLabel] = useState(null);
   const [editingDateLabel, setEditingDateLabel] = useState(null);
   const [editingDateValue, setEditingDateValue] = useState("");
+  const [raDetail, setRaDetail] = useState(null);
+  const [loadingRA, setLoadingRA] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const loadRADetails = async (raId) => {
+    setLoadingRA(true);
+    try {
+      const ra = await base44.entities.AgronomicRecommendation.get(raId);
+      const products = await base44.entities.RecommendationProduct.filter({ recommendation_id: raId }, "-created_date", 100);
+      setRaDetail({ ra, products });
+    } catch (e) {
+      console.warn("Failed to load RA:", e);
+    }
+    setLoadingRA(false);
+  };
 
   const handleSaveLabelDate = async (label) => {
     if (!editingDateValue) return;
@@ -142,6 +156,9 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     setOpenLabel(null);
     if (keepPending) {
       navigate("/");
+    } else if (mergedDetails.ra_id) {
+      // Open RA details (read-only) after registration
+      loadRADetails(mergedDetails.ra_id);
     }
   };
 
@@ -281,6 +298,111 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
           onClose={() => setOpenLabel(null)}
         />
       )}
+
+      {/* Loading RA indicator */}
+      {loadingRA && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+          <div className="bg-card rounded-2xl p-6 flex items-center gap-3">
+            <Loader2 className="w-5 h-5 text-primary animate-spin" />
+            <span className="text-sm font-medium">Carregando RA...</span>
+          </div>
+        </div>
+      )}
+
+      {/* RA Detail Modal (read-only) */}
+      {raDetail && (
+        <RADetailModal data={raDetail} onClose={() => setRaDetail(null)} />
+      )}
+    </div>
+  );
+}
+
+// Read-only RA Detail Modal
+function RADetailModal({ data, onClose }) {
+  const { ra, products } = data;
+  if (!ra) return null;
+
+  const items = [
+    { label: "Código", value: ra.code },
+    { label: "Tipo", value: ra.type },
+    { label: "Pomar", value: ra.orchard_code },
+    { label: "Data", value: ra.date ? new Date(ra.date + "T12:00:00").toLocaleDateString("pt-BR") : "—" },
+    { label: "Status", value: ra.status },
+    { label: "Litros/ha", value: ra.liters_per_ha || "—" },
+    { label: "Clima ideal", value: ra.climate_conditions || "—" },
+  ];
+
+  if (ra.machine_config) items.push({ label: "Maquinário", value: ra.machine_config });
+  if (ra.implement_config) items.push({ label: "Implemento", value: ra.implement_config });
+  if (ra.application_observations) items.push({ label: "Obs. aplicação", value: ra.application_observations });
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-lg bg-card rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border sticky top-0 bg-card rounded-t-3xl z-10">
+          <div className="flex items-center gap-2">
+            <Leaf className="w-5 h-5 text-primary" />
+            <h2 className="font-bold text-base">RA {ra.code} — Detalhes</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full font-semibold">Somente leitura</span>
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+        <div className="px-5 py-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <div className={`px-3 py-1.5 rounded-full text-xs font-bold ${ra.status === "executada" ? "bg-green-100 text-green-700" : ra.status === "pendente" ? "bg-amber-100 text-amber-700" : "bg-blue-100 text-blue-700"}`}>
+              {ra.status === "executada" ? "✅ Executada" : ra.status === "pendente" ? "⏳ Pendente" : "📋 Planejada"}
+            </div>
+          </div>
+          <div className="space-y-2">
+            {items.map((item, i) => (
+              <div key={i} className="flex items-start gap-3 p-2.5 bg-muted/40 rounded-xl">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground font-medium">{item.label}</p>
+                  <p className="text-sm font-semibold">{item.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          {products && products.length > 0 && (
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Package className="w-4 h-4 text-primary" />
+                <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wide">Produtos ({products.length})</p>
+              </div>
+              <div className="space-y-2">
+                {products.map((p, i) => (
+                  <div key={i} className="p-3 bg-muted/40 rounded-xl">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Package className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <span className="text-sm font-bold">{p.product_name}</span>
+                      {p.unit && <span className="text-[10px] text-primary/70 font-semibold">[{p.unit}]</span>}
+                    </div>
+                    {(p.active_ingredient || p.target) && (
+                      <p className="text-[10px] text-primary/70 font-medium pl-5 mb-0.5">
+                        {p.active_ingredient ? `P.A.: ${p.active_ingredient}` : ""}
+                        {p.active_ingredient && p.target ? " · " : ""}
+                        {p.target ? `Alvo: ${p.target}` : ""}
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground pl-5">
+                      {p.application_mode || "ÁREA"}
+                      {p.dose != null ? ` · Dose: ${Number(p.dose).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
+                      {p.total_quantity != null ? ` · Total: ${Number(p.total_quantity).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}` : ""}
+                    </p>
+                    {p.carencia && <p className="text-[10px] text-muted-foreground pl-5">Carência: {p.carencia}</p>}
+                    {p.obs && <p className="text-[10px] text-muted-foreground pl-5 italic">{p.obs}</p>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
