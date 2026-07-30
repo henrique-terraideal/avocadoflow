@@ -178,7 +178,14 @@ export default function Recommendations() {
                         <Leaf className="w-4 h-4 text-primary" />
                       </div>
                       <div className="min-w-0">
-                        <p className="font-semibold text-sm truncate">{ra.code}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm truncate">{ra.code}</p>
+                          {ra.orchard_code && (
+                            <span className="text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-md shrink-0">
+                              {ra.orchard_code}
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           {raProducts.length} produto{raProducts.length !== 1 ? "s" : ""}
                         </p>
