@@ -19,24 +19,58 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No RAs found for the given IDs' }, { status: 404 });
     }
 
+    // === AUTO-SYNC: pull fresh data from Product catalog before generating ===
+    const catalog = await base44.asServiceRole.entities.Product.list("-created_date", 500);
+    const productMap: Record<string, { active_ingredient: string; target: string }> = {};
+    for (const p of catalog) {
+      if (p.name) {
+        productMap[p.name.trim().toUpperCase()] = {
+          active_ingredient: p.active_ingredient || '',
+          target: p.target || '',
+        };
+      }
+    }
+
     // Fetch products for these RAs
     const allProducts = await base44.asServiceRole.entities.RecommendationProduct.list("-created_date", 2000);
+
+    // Sync each RP with catalog (in-place update + use synced values)
+    for (const rp of allProducts) {
+      const key = (rp.product_name || '').trim().toUpperCase();
+      const catalogEntry = productMap[key];
+      if (!catalogEntry) continue;
+
+      const currentPA = rp.active_ingredient || '';
+      const currentTarget = rp.target || '';
+      const newPA = catalogEntry.active_ingredient || currentPA;
+      const newTarget = catalogEntry.target || currentTarget;
+
+      if (newPA !== currentPA || newTarget !== currentTarget) {
+        await base44.asServiceRole.entities.RecommendationProduct.update(rp.id, {
+          active_ingredient: newPA,
+          target: newTarget,
+        });
+        // Update in-memory copy too so the label uses fresh data
+        rp.active_ingredient = newPA;
+        rp.target = newTarget;
+      }
+    }
 
     // Fetch Operations for mapping
     const operations = await base44.asServiceRole.entities.Operation.filter({ active: true });
 
-    // Fetch existing PlanningLabels to avoid duplicates
+    // Fetch existing PlanningLabels (to find and UPDATE them, not skip)
     const allLabels = await base44.asServiceRole.entities.PlanningLabel.list("-created_date", 500);
     const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' });
 
     // Fetch Machines (tractors)
-    let machines_list = [];
+    let machines_list: any[] = [];
     try {
       machines_list = await base44.asServiceRole.entities.Machine.filter({ active: true });
     } catch (_) {}
 
     // Fetch Implements
-    let implements_list = [];
+    let implements_list: any[] = [];
     try {
       implements_list = await base44.asServiceRole.entities.Implement.filter({ active: true });
     } catch (_) {}
@@ -63,7 +97,46 @@ Deno.serve(async (req) => {
       // Find implement via implement_id
       const implement = ra.implement_id ? implements_list.find(i => i.id === ra.implement_id) : null;
 
-      // Check if a PlanningLabel already exists for this RA (avoid duplicates)
+      const tankCapacity = implement?.tank_capacity_liters || 0;
+      const litersPerHa = ra.liters_per_ha || 1000;
+
+      // Build fresh additional_details with CURRENT data (always up-to-date)
+      const additionalDetails = {
+        ra_id: ra.id,
+        ra_code: ra.code,
+        type: ra.type,
+        climate_conditions: ra.climate_conditions || '',
+        machine_config: ra.machine_config || '',
+        machine_id: ra.machine_id || '',
+        machine_name: machine?.name || '',
+        implement_id: ra.implement_id || '',
+        implement_name: implement?.name || '',
+        implement_config: ra.implement_config || '',
+        implement_marcha: implement?.marcha_trabalho || '',
+        implement_rpm: implement?.rpm || null,
+        liters_per_ha: litersPerHa,
+        tank_capacity_liters: tankCapacity,
+        application_observations: ra.application_observations || '',
+        products: raProducts.map(p => ({
+          product_name: p.product_name,
+          active_ingredient: p.active_ingredient || '',
+          target: p.target || '',
+          application_mode: p.application_mode || 'AREA',
+          dose: p.dose,
+          total_quantity: p.total_quantity,
+          carencia: p.carencia || '',
+          obs: p.obs || '',
+          qty_per_tank: tankCapacity && p.dose != null
+            ? parseFloat((p.dose * (tankCapacity / litersPerHa)).toFixed(3))
+            : null
+        }))
+      };
+
+      const opCode = operation?.code || '';
+      const opName = operation?.name || '';
+      const opId = operation?.id || '';
+
+      // Find existing label for this RA
       let label = allLabels.find(l => {
         try {
           const details = JSON.parse(l.additional_details || '{}');
@@ -71,45 +144,13 @@ Deno.serve(async (req) => {
         } catch { return false; }
       });
 
-      if (!label) {
-        const tankCapacity = implement?.tank_capacity_liters || 0;
-        const litersPerHa = ra.liters_per_ha || 1000;
-
-        const additionalDetails = {
-          ra_id: ra.id,
-          ra_code: ra.code,
-          type: ra.type,
-          climate_conditions: ra.climate_conditions || '',
-          machine_config: ra.machine_config || '',
-          machine_id: ra.machine_id || '',
-          machine_name: machine?.name || '',
-          implement_id: ra.implement_id || '',
-          implement_name: implement?.name || '',
-          implement_config: ra.implement_config || '',
-          implement_marcha: implement?.marcha_trabalho || '',
-          implement_rpm: implement?.rpm || null,
-          liters_per_ha: litersPerHa,
-          tank_capacity_liters: tankCapacity,
-          application_observations: ra.application_observations || '',
-          products: raProducts.map(p => ({
-            product_name: p.product_name,
-            active_ingredient: p.active_ingredient || '',
-            target: p.target || '',
-            application_mode: p.application_mode || 'ÁREA',
-            dose: p.dose,
-            total_quantity: p.total_quantity,
-            carencia: p.carencia || '',
-            obs: p.obs || '',
-            qty_per_tank: tankCapacity && p.dose != null
-              ? parseFloat((p.dose * (tankCapacity / litersPerHa)).toFixed(3))
-              : null
-          }))
-        };
-
-        const opCode = operation?.code || '';
-        const opName = operation?.name || '';
-        const opId = operation?.id || '';
-
+      if (label) {
+        // UPDATE existing label with fresh data (no stale cache!)
+        await base44.asServiceRole.entities.PlanningLabel.update(label.id, {
+          additional_details: JSON.stringify(additionalDetails),
+        });
+      } else {
+        // Create new label
         label = await base44.asServiceRole.entities.PlanningLabel.create({
           date: today,
           operator_name: '',
@@ -137,7 +178,7 @@ Deno.serve(async (req) => {
         label.qr_data = qrData;
       }
 
-      // Update RA status to "pendente" (linked to label, waiting execution)
+      // Update RA status to "pendente"
       if (ra.status !== 'pendente' && ra.status !== 'executada') {
         await base44.asServiceRole.entities.AgronomicRecommendation.update(ra.id, { status: 'pendente' });
       }

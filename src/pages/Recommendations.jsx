@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil, Leaf, Upload, Loader2, FileSpreadsheet, Search, CheckSquare, Square, X, Layers, Printer } from "lucide-react";
+import { Plus, Trash2, Pencil, Leaf, Upload, Loader2, FileSpreadsheet, Search, CheckSquare, Square, X, Layers, Printer, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -27,6 +27,7 @@ export default function Recommendations() {
   const [filterMonth, setFilterMonth] = useState("");
   const [filterStatus, setFilterStatus] = useState("planejada");
   const [printing, setPrinting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const fileRef = useRef(null);
 
   const { data: recommendations = [], isLoading } = useQuery({
@@ -141,6 +142,25 @@ export default function Recommendations() {
     }
     setImporting(false);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  // === Sync RAs with catalog data ===
+  const handleSyncRAs = async () => {
+    setSyncing(true);
+    try {
+      const res = await base44.functions.invoke("syncRAData", {});
+      if (res.data?.error) throw new Error(res.data.error);
+      const data = res.data;
+      toast({
+        title: data.products_updated > 0 ? "RAs sincronizadas" : "Tudo atualizado",
+        description: data.message,
+      });
+      queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendation-products"] });
+    } catch (err) {
+      toast({ title: "Erro na sincronização", description: err.message, variant: "destructive" });
+    }
+    setSyncing(false);
   };
 
   // === Ficha printing ===
@@ -397,6 +417,9 @@ ${fichasHtml}
             {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
           </Button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
+          <Button variant="outline" size="icon" className="rounded-xl shrink-0" onClick={handleSyncRAs} disabled={syncing} title="Sincronizar RAs com cadastros">
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+          </Button>
           <Button size="icon" className="rounded-xl shrink-0" onClick={() => { setEditingRA(null); setShowEditor(true); }} title="Nova RA">
             <Plus className="w-4 h-4" />
           </Button>
