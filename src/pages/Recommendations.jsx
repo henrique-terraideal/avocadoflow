@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil, Leaf, Upload, Loader2, FileSpreadsheet, Search, CheckSquare, Square, X, Layers } from "lucide-react";
+import { Plus, Trash2, Pencil, Leaf, Upload, Loader2, FileSpreadsheet, Search, CheckSquare, Square, X, Layers, Printer } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -25,6 +25,7 @@ export default function Recommendations() {
   const [filterOrchards, setFilterOrchards] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [filterDate, setFilterDate] = useState("");
+  const [printing, setPrinting] = useState(false);
   const fileRef = useRef(null);
 
   const { data: recommendations = [], isLoading } = useQuery({
@@ -139,6 +140,233 @@ export default function Recommendations() {
     }
     setImporting(false);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  // === Ficha printing ===
+
+  const handlePrintFichas = async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+
+    setPrinting(true);
+    try {
+      // Call backend function to create PlanningLabels and get RA data
+      const res = await base44.functions.invoke("createLabelsFromRAs", { ra_ids: ids });
+      if (res.data?.error) throw new Error(res.data.error);
+
+      const results = res.data?.results || [];
+      if (results.length === 0) throw new Error("Nenhuma RA encontrada");
+
+      // Generate ficha HTML for each RA
+      const fichasHtml = results.map((item, idx) => generateFichaHTML(item, idx === results.length - 1)).join("");
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fichas de Aplicação — HP Avocado</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: white; font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; }
+    .ficha-page {
+      width: 210mm;
+      min-height: 297mm;
+      max-width: 210mm;
+      padding: 15mm 18mm;
+      page-break-after: always;
+      position: relative;
+    }
+    .ficha-page:last-child { page-break-after: auto; }
+    @media print {
+      @page { size: A4 portrait; margin: 0; }
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid #1a7a3a;
+      padding-bottom: 4mm;
+      margin-bottom: 5mm;
+    }
+    .header-left { font-size: 18pt; font-weight: 900; color: #1a7a3a; letter-spacing: -0.5px; }
+    .header-right { text-align: right; }
+    .header-right .title { font-size: 12pt; font-weight: 700; color: #333; text-transform: uppercase; }
+    .header-right .subtitle { font-size: 8pt; color: #666; margin-top: 1mm; }
+
+    .ra-info-box {
+      background: #f0f7f1;
+      border: 1.5px solid #1a7a3a;
+      border-radius: 3mm;
+      padding: 4mm;
+      margin-bottom: 4mm;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .ra-info-left { flex: 1; }
+    .ra-info-right { text-align: right; }
+    .ra-code { font-size: 14pt; font-weight: 900; color: #1a7a3a; margin-bottom: 2mm; }
+    .ra-type { font-size: 10pt; font-weight: 600; color: #333; }
+    .ra-orchard { font-size: 9pt; color: #555; margin-top: 1mm; }
+    .ra-date { font-size: 9pt; color: #555; }
+
+    .section-title {
+      font-size: 10pt;
+      font-weight: 800;
+      color: #1a7a3a;
+      text-transform: uppercase;
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 1.5mm;
+      margin-top: 5mm;
+      margin-bottom: 3mm;
+    }
+
+    .products-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 4mm;
+    }
+    .products-table th {
+      background: #1a7a3a;
+      color: white;
+      font-size: 8pt;
+      font-weight: 700;
+      padding: 2.5mm 2mm;
+      text-align: left;
+      border: 0.5mm solid #1a7a3a;
+    }
+    .products-table td {
+      font-size: 8.5pt;
+      padding: 2.5mm 2mm;
+      border: 0.5mm solid #ddd;
+      vertical-align: top;
+    }
+    .products-table tr:nth-child(even) td { background: #f9faf9; }
+    .product-name { font-weight: 700; color: #1a3a1a; }
+    .product-pa { font-style: italic; color: #2a6a4a; font-size: 7.5pt; }
+    .product-target { color: #555; font-size: 7.5pt; }
+
+    .manual-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
+      margin-bottom: 4mm;
+    }
+    .manual-field {
+      border: 0.5mm solid #999;
+      border-radius: 2mm;
+      padding: 2.5mm 3mm;
+      min-height: 10mm;
+    }
+    .manual-field-label {
+      font-size: 7.5pt;
+      font-weight: 700;
+      color: #666;
+      text-transform: uppercase;
+      margin-bottom: 1mm;
+    }
+    .manual-field-value {
+      font-size: 10pt;
+      color: transparent;
+      min-height: 5mm;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3mm;
+      margin-bottom: 4mm;
+    }
+    .info-item {
+      font-size: 8.5pt;
+      padding: 2mm 0;
+    }
+    .info-label { font-weight: 700; color: #333; }
+    .info-value { color: #555; }
+
+    .climate-box {
+      background: #f5f5f5;
+      border: 0.5mm solid #ddd;
+      border-radius: 2mm;
+      padding: 3mm;
+      margin-bottom: 4mm;
+      font-size: 8pt;
+      color: #555;
+    }
+
+    .qr-section {
+      display: flex;
+      align-items: center;
+      gap: 5mm;
+      margin-top: 4mm;
+      padding-top: 4mm;
+      border-top: 1px dashed #ccc;
+    }
+    .qr-img { width: 25mm; height: 25mm; }
+    .qr-text { font-size: 8pt; color: #777; }
+    .qr-text strong { display: block; font-size: 9pt; color: #1a7a3a; margin-bottom: 1mm; }
+
+    .signature-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15mm;
+      margin-top: 8mm;
+      padding-top: 4mm;
+    }
+    .signature-line {
+      border-top: 0.5mm solid #333;
+      padding-top: 1.5mm;
+      text-align: center;
+      font-size: 8pt;
+      color: #666;
+    }
+
+    .footer {
+      position: absolute;
+      bottom: 8mm;
+      left: 18mm;
+      right: 18mm;
+      font-size: 7pt;
+      color: #999;
+      text-align: center;
+      border-top: 0.5pt solid #eee;
+      padding-top: 2mm;
+    }
+  </style>
+</head>
+<body>
+${fichasHtml}
+<script>window.onload=function(){window.print();}<\/script>
+</body>
+</html>`;
+
+      // Open print window
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+      // Invalidate queries to refresh PlanningLabels
+      queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+
+      toast({
+        title: "Fichas geradas!",
+        description: `${results.length} ficha(s) impressa(s). ${results.length} etiqueta(s) criada(s) no Planejamento.`,
+      });
+      setSelectedIds(new Set());
+    } catch (err) {
+      toast({ title: "Erro ao gerar fichas", description: err.message, variant: "destructive" });
+    }
+    setPrinting(false);
   };
 
   return (
@@ -286,6 +514,14 @@ export default function Recommendations() {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={handlePrintFichas}
+                disabled={printing}
+                className="text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              >
+                {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
+                Imprimir
+              </button>
+              <button
                 onClick={() => setShowBulkEdit(true)}
                 className="text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors"
               >
@@ -321,4 +557,176 @@ export default function Recommendations() {
       )}
     </div>
   );
+}
+
+// === Ficha HTML Generator ===
+
+function generateFichaHTML(item, isLast) {
+  const { ra, products, label, implement, operation, custom_fields } = item;
+
+  // Format date
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '___/___/_____';
+    try {
+      const d = new Date(dateStr + 'T12:00:00');
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch { return dateStr; }
+  };
+
+  // QR code URL
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(label.qr_data || '')}`;
+
+  // Products table rows
+  const productRows = products.map((p, i) => {
+    const tankCapacity = implement?.tank_capacity_liters || 0;
+    const litersPerHa = ra.liters_per_ha || 1000;
+    const qtyPerTank = tankCapacity && p.dose != null
+      ? (p.dose * (tankCapacity / litersPerHa)).toFixed(3)
+      : null;
+
+    return `
+      <tr>
+        <td style="width: 8mm; text-align: center; font-weight: 700; color: #1a7a3a;">${i + 1}</td>
+        <td style="width: 42mm;">
+          <div class="product-name">${p.product_name || '—'}</div>
+          ${p.active_ingredient ? `<div class="product-pa">P.A.: ${p.active_ingredient}</div>` : ''}
+          ${p.target ? `<div class="product-target">Alvo: ${p.target}</div>` : ''}
+          ${p.obs ? `<div class="product-target" style="margin-top:1mm;">${p.obs}</div>` : ''}
+        </td>
+        <td style="width: 18mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
+        <td style="width: 22mm; text-align: center; font-weight: 700;">
+          ${p.dose != null ? `${p.dose}${p.application_mode === 'PLANTA' ? '/planta' : '/ha'}` : '—'}
+        </td>
+        <td style="width: 20mm; text-align: center;">
+          ${qtyPerTank ? `<strong style="color: #1a5599;">${qtyPerTank}/tanque</strong>` : '—'}
+        </td>
+        <td style="width: 20mm; text-align: center; font-weight: 700;">
+          ${p.total_quantity != null ? p.total_quantity : '—'}
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  // Build manual fill fields (fields the operator fills by hand on the printed ficha)
+  const manualFieldLabels = [
+    { label: 'Data' },
+    { label: 'Hora Início' },
+    { label: 'Hora Fim' },
+    { label: 'Operador' },
+  ];
+
+  // Add custom fields from template (registration stage)
+  if (custom_fields && custom_fields.length > 0) {
+    for (const cf of custom_fields) {
+      if (cf.field_type === 'hour_meter') {
+        manualFieldLabels.push({ label: 'Horímetro Inicial' });
+        manualFieldLabels.push({ label: 'Horímetro Final' });
+      } else if (!manualFieldLabels.some(mf => mf.label === cf.field_label)) {
+        manualFieldLabels.push({ label: cf.field_label });
+      }
+    }
+  }
+
+  // Build manual fields grid (2 columns)
+  const manualFieldsHtml = manualFieldLabels.map(f => `
+    <div class="manual-field">
+      <div class="manual-field-label">${f.label}</div>
+      <div class="manual-field-value">&nbsp;</div>
+    </div>
+  `).join("");
+
+  // Orchard info
+  const orchardText = ra.orchard_code
+    ? `${ra.orchard_code}${ra.orchard_name ? ' — ' + ra.orchard_name : ''}${ra.orchard_area ? ' (' + ra.orchard_area + ' ha)' : ''}`
+    : '—';
+
+  return `
+    <div class="ficha-page">
+      <!-- Header -->
+      <div class="header">
+        <div class="header-left">HP AVOCADO</div>
+        <div class="header-right">
+          <div class="title">Ficha de Aplicação</div>
+          <div class="subtitle">Recomendação Agronômica</div>
+        </div>
+      </div>
+
+      <!-- RA Info Box -->
+      <div class="ra-info-box">
+        <div class="ra-info-left">
+          <div class="ra-code">RA: ${ra.code || '—'}</div>
+          <div class="ra-type">${ra.type || '—'}</div>
+          ${ra.orchard_code ? `<div class="ra-orchard">🌳 Pomar: ${orchardText}</div>` : ''}
+        </div>
+        <div class="ra-info-right">
+          ${ra.date ? `<div class="ra-date">📅 Data prevista: ${formatDate(ra.date)}</div>` : ''}
+          ${operation ? `<div class="ra-date" style="margin-top:1mm;">🔧 Operação: ${operation.code} - ${operation.name}</div>` : ''}
+          ${ra.status ? `<div class="ra-date" style="margin-top:1mm;">Status: ${ra.status}</div>` : ''}
+        </div>
+      </div>
+
+      <!-- Products Table -->
+      <div class="section-title">Produtos / Insumos</div>
+      <table class="products-table">
+        <thead>
+          <tr>
+            <th style="width: 8mm; text-align: center;">#</th>
+            <th style="width: 42mm;">Produto</th>
+            <th style="width: 18mm; text-align: center;">Modo</th>
+            <th style="width: 22mm; text-align: center;">Dose</th>
+            <th style="width: 20mm; text-align: center;">Qtd/Tanque</th>
+            <th style="width: 20mm; text-align: center;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${productRows || '<tr><td colspan="6" style="text-align:center;color:#999;padding:4mm;">Nenhum produto cadastrado</td></tr>'}
+        </tbody>
+      </table>
+
+      ${implement ? `
+      <!-- Implement Info -->
+      <div class="section-title">Implemento / Maquinário</div>
+      <div class="info-grid">
+        <div class="info-item"><span class="info-label">Implemento:</span> <span class="info-value">${implement.name || '—'}</span></div>
+        <div class="info-item"><span class="info-label">Capacidade tanque:</span> <span class="info-value">${implement.tank_capacity_liters || '—'} L</span></div>
+        ${ra.machine_config ? `<div class="info-item"><span class="info-label">Regulagem maquinário:</span> <span class="info-value">${ra.machine_config}</span></div>` : ''}
+        ${ra.implement_config ? `<div class="info-item"><span class="info-label">Regulagem implemento:</span> <span class="info-value">${ra.implement_config}</span></div>` : ''}
+      </div>
+      ` : ''}
+
+      ${ra.climate_conditions ? `
+      <!-- Climate Conditions -->
+      <div class="section-title">Condições Climáticas Ideais</div>
+      <div class="climate-box">${ra.climate_conditions}</div>
+      ` : ''}
+
+      <!-- Manual Fill Fields -->
+      <div class="section-title">Preenchimento em Campo</div>
+      <div class="manual-fields">
+        ${manualFieldsHtml}
+      </div>
+
+      <!-- QR Code Section -->
+      <div class="qr-section">
+        <img src="${qrUrl}" class="qr-img" alt="QR Code" />
+        <div class="qr-text">
+          <strong>Escaneie para registrar</strong>
+          Após a execução, escaneie o QR Code<br/>
+          para abrir o registro no app AvocadoFlow<br/>
+          e preencher os dados da operação.
+        </div>
+      </div>
+
+      <!-- Signatures -->
+      <div class="signature-section">
+        <div class="signature-line">Assinatura do Operador</div>
+        <div class="signature-line">Conferência / Responsável Técnico</div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        HP Avocado · AvocadoFlow · RA ${ra.code || ''} · Gerado em ${new Date().toLocaleDateString('pt-BR')}
+      </div>
+    </div>
+  `;
 }
