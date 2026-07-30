@@ -9,6 +9,7 @@ const EDITABLE_FIELDS = [
   { key: "date", label: "Data", type: "date" },
   { key: "type", label: "Tipo", type: "text" },
   { key: "status", label: "Status", type: "text" },
+  { key: "machine_id", label: "Trator / Máquina", type: "machine" },
   { key: "implement_id", label: "Implemento", type: "implement" },
   { key: "liters_per_ha", label: "Volume de calda (L/ha)", type: "number" },
   { key: "machine_config", label: "Config. maquinário", type: "text" },
@@ -23,7 +24,12 @@ export default function BulkEditModal({ selectedIds, onApply, onClose }) {
 
   const { data: implementsList = [] } = useQuery({
     queryKey: ["implements"],
-    queryFn: () => base44.entities.Implement.list("sort_order", 100),
+    queryFn: () => base44.entities.Implement.filter({ active: true }, "sort_order", 200),
+  });
+
+  const { data: machinesList = [] } = useQuery({
+    queryKey: ["machines"],
+    queryFn: () => base44.entities.Machine.filter({ active: true }, "sort_order", 200),
   });
 
   const fieldConfig = EDITABLE_FIELDS.find((f) => f.key === selectedField);
@@ -90,6 +96,19 @@ export default function BulkEditModal({ selectedIds, onApply, onClose }) {
                   onChange={setValue}
                   className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
+              ) : fieldConfig.type === "machine" ? (
+                <select
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">Selecione um trator/máquina...</option>
+                  {machinesList.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
               ) : fieldConfig.type === "implement" ? (
                 <select
                   value={value}
