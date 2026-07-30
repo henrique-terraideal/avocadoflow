@@ -640,7 +640,7 @@ function generateFichaHTML(item, isLast) {
   let machineHtml = '';
   for (let i = 0; i < machineItems.length; i += 3) {
     const row = machineItems.slice(i, i + 3);
-    const cells = row.map(m => `
+    let cells = row.map(m => `
       <div class="info-item">
         <span class="info-label">${m.label}</span>
         <span class="info-value">${m.value || '—'}</span>

@@ -129,8 +129,9 @@ export default function ProductsPanel() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">{product.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {product.active_ingredient ? `Princípio: ${product.active_ingredient}` : ""}
+                        {product.active_ingredient ? `P.A.: ${product.active_ingredient}` : ""}
                         {product.target ? ` · Alvo: ${product.target}` : ""}
+                        {product.carencia ? ` · Carência: ${product.carencia}` : ""}
                       </p>
                     </div>
                     <button onClick={() => setEditingId(product.id)} className="text-muted-foreground hover:text-foreground p-1">
@@ -155,6 +156,7 @@ function ProductForm({ product, onSave, onCancel, saving }) {
     name: product?.name || "",
     active_ingredient: product?.active_ingredient || "",
     target: product?.target || "",
+    carencia: product?.carencia || "",
     active: product?.active ?? true,
   });
 
@@ -174,12 +176,22 @@ function ProductForm({ product, onSave, onCancel, saving }) {
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass}>Princípio ativo</label>
-          <Input value={form.active_ingredient} onChange={(e) => setForm(p => ({ ...p, active_ingredient: e.target.value }))} className="rounded-xl" />
+          <Input value={form.active_ingredient} onChange={(e) => setForm(p => ({ ...p, active_ingredient: e.target.value }))} className="rounded-xl" placeholder="Ex: Boro 10%" />
         </div>
         <div>
           <label className={labelClass}>Alvo</label>
-          <Input value={form.target} onChange={(e) => setForm(p => ({ ...p, target: e.target.value }))} className="rounded-xl" />
+          <Input value={form.target} onChange={(e) => setForm(p => ({ ...p, target: e.target.value }))} className="rounded-xl" placeholder="Ex: Nutrição foliar" />
         </div>
+      </div>
+      <div>
+        <label className={labelClass}>Carência (dias)</label>
+        <Input
+          value={form.carencia}
+          onChange={(e) => setForm(p => ({ ...p, carencia: e.target.value }))}
+          className="rounded-xl"
+          placeholder="Ex: 30 dias, Não se aplica"
+        />
+        <p className="text-[10px] text-muted-foreground mt-1">Carência padrão do produto — pode ser ajustada por RA</p>
       </div>
 
       <div className="flex gap-2 pt-1">
