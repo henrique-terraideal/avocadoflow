@@ -24,6 +24,7 @@ export default function Recommendations() {
   const [filterTypes, setFilterTypes] = useState(new Set());
   const [filterOrchards, setFilterOrchards] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [filterDate, setFilterDate] = useState("");
   const fileRef = useRef(null);
 
   const { data: recommendations = [], isLoading } = useQuery({
@@ -102,6 +103,7 @@ export default function Recommendations() {
     return recommendations.filter(ra => {
       if (filterTypes.size > 0 && !filterTypes.has(ra.type)) return false;
       if (filterOrchards.size > 0 && !filterOrchards.has(ra.orchard_code)) return false;
+      if (filterDate && ra.date !== filterDate) return false;
       if (!s) return true;
       const prods = productsByRA[ra.id] || [];
       const productText = prods
@@ -114,7 +116,7 @@ export default function Recommendations() {
         normalize(productText).includes(s)
       );
     });
-  }, [recommendations, productsByRA, search, filterTypes, filterOrchards]);
+  }, [recommendations, productsByRA, search, filterTypes, filterOrchards, filterDate]);
 
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
@@ -195,6 +197,8 @@ export default function Recommendations() {
           orchards={uniqueOrchards}
           activeTypes={filterTypes}
           activeOrchards={filterOrchards}
+          filterDate={filterDate}
+          onDateChange={setFilterDate}
           onToggleType={(t) => {
             const next = new Set(filterTypes);
             next.has(t) ? next.delete(t) : next.add(t);
@@ -205,7 +209,7 @@ export default function Recommendations() {
             next.has(o) ? next.delete(o) : next.add(o);
             setFilterOrchards(next);
           }}
-          onClear={() => { setFilterTypes(new Set()); setFilterOrchards(new Set()); }}
+          onClear={() => { setFilterTypes(new Set()); setFilterOrchards(new Set()); setFilterDate(""); }}
         />
 
         {/* List */}
