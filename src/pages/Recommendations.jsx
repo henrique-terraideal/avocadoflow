@@ -2,12 +2,14 @@ import React, { useState, useRef, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2, Pencil, Leaf, Upload, Loader2, FileSpreadsheet, Search } from "lucide-react";
+import { Plus, Trash2, Pencil, Leaf, Upload, Loader2, FileSpreadsheet, Search, CheckSquare, Square, X, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { RADetails } from "../components/planning/RASelectorField";
 import RAEditorModal from "../components/planning/RAEditorModal";
+import RAFilterBar from "../components/recommendations/RAFilterBar";
+import BulkEditModal from "../components/recommendations/BulkEditModal";
 import BottomNav from "../components/field/BottomNav";
 import QuickActionFAB from "../components/QuickActionFAB";
 
@@ -18,6 +20,10 @@ export default function Recommendations() {
   const [editingRA, setEditingRA] = useState(null);
   const [showEditor, setShowEditor] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [filterTypes, setFilterTypes] = useState(new Set());
+  const [filterOrchards, setFilterOrchards] = useState(new Set());
+  const [showBulkEdit, setShowBulkEdit] = useState(false);
   const fileRef = useRef(null);
 
   const { data: recommendations = [], isLoading } = useQuery({
@@ -44,6 +50,18 @@ export default function Recommendations() {
     return map;
   }, [allProducts]);
 
+  const uniqueTypes = useMemo(() => {
+    const set = new Set();
+    for (const ra of recommendations) { if (ra.type) set.add(ra.type); }
+    return [...set].sort();
+  }, [recommendations]);
+
+  const uniqueOrchards = useMemo(() => {
+    const set = new Set();
+    for (const ra of recommendations) { if (ra.orchard_code) set.add(ra.orchard_code); }
+    return [...set].sort();
+  }, [recommendations]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       await base44.entities.RecommendationProduct.deleteMany({ recommendation_id: id });
@@ -57,6 +75,20 @@ export default function Recommendations() {
     },
   });
 
+  const bulkUpdateMutation = useMutation({
+    mutationFn: async ({ ids, changes }) => {
+      const updates = ids.map((id) => ({ id, ...changes }));
+      await base44.entities.AgronomicRecommendation.bulkUpdate(updates);
+    },
+    onSuccess: (_, { ids }) => {
+      queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
+      toast({ title: `${ids.length} RA${ids.length !== 1 ? "s" : ""} atualizada${ids.length !== 1 ? "s" : ""}!` });
+      setSelectedIds(new Set());
+      setShowBulkEdit(false);
+    },
+  });
+
   const normalize = (str) => {
     if (!str) return "";
     return str
@@ -66,9 +98,11 @@ export default function Recommendations() {
   };
 
   const filtered = useMemo(() => {
-    if (!search) return recommendations;
-    const s = normalize(search);
+    const s = search ? normalize(search) : "";
     return recommendations.filter(ra => {
+      if (filterTypes.size > 0 && !filterTypes.has(ra.type)) return false;
+      if (filterOrchards.size > 0 && !filterOrchards.has(ra.orchard_code)) return false;
+      if (!s) return true;
       const prods = productsByRA[ra.id] || [];
       const productText = prods
         .map(p => `${p.product_name || ""} ${p.active_ingredient || ""} ${p.target || ""}`)
@@ -80,7 +114,7 @@ export default function Recommendations() {
         normalize(productText).includes(s)
       );
     });
-  }, [recommendations, productsByRA, search]);
+  }, [recommendations, productsByRA, search, filterTypes, filterOrchards]);
 
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
@@ -155,6 +189,25 @@ export default function Recommendations() {
           </p>
         </div>
 
+        {/* Filters */}
+        <RAFilterBar
+          types={uniqueTypes}
+          orchards={uniqueOrchards}
+          activeTypes={filterTypes}
+          activeOrchards={filterOrchards}
+          onToggleType={(t) => {
+            const next = new Set(filterTypes);
+            next.has(t) ? next.delete(t) : next.add(t);
+            setFilterTypes(next);
+          }}
+          onToggleOrchard={(o) => {
+            const next = new Set(filterOrchards);
+            next.has(o) ? next.delete(o) : next.add(o);
+            setFilterOrchards(next);
+          }}
+          onClear={() => { setFilterTypes(new Set()); setFilterOrchards(new Set()); }}
+        />
+
         {/* List */}
         {isLoading ? (
           <div className="flex justify-center py-12">
@@ -171,9 +224,21 @@ export default function Recommendations() {
             {filtered.map((ra) => {
               const raProducts = productsByRA[ra.id] || [];
               return (
-                <div key={ra.id} className="bg-card rounded-2xl border border-border p-4">
+                <div key={ra.id} className={`bg-card rounded-2xl border p-4 transition-colors ${selectedIds.has(ra.id) ? "border-primary ring-1 ring-primary/30" : "border-border"}`}>
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2 min-w-0">
+                      <button
+                        onClick={() => {
+                          const next = new Set(selectedIds);
+                          next.has(ra.id) ? next.delete(ra.id) : next.add(ra.id);
+                          setSelectedIds(next);
+                        }}
+                        className="shrink-0 p-0.5"
+                      >
+                        {selectedIds.has(ra.id)
+                          ? <CheckSquare className="w-5 h-5 text-primary" />
+                          : <Square className="w-5 h-5 text-muted-foreground/40" />}
+                      </button>
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                         <Leaf className="w-4 h-4 text-primary" />
                       </div>
@@ -208,6 +273,31 @@ export default function Recommendations() {
         )}
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-20 left-0 right-0 z-40 px-4">
+          <div className="max-w-lg mx-auto bg-primary text-primary-foreground rounded-2xl shadow-lg p-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Layers className="w-5 h-5" />
+              <span className="text-sm font-semibold">{selectedIds.size} selecionada{selectedIds.size !== 1 ? "s" : ""}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowBulkEdit(true)}
+                className="text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors"
+              >
+                Editar
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="p-1.5 rounded-xl hover:bg-white/20"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <QuickActionFAB />
       <BottomNav />
 
@@ -215,6 +305,14 @@ export default function Recommendations() {
         <RAEditorModal
           ra={editingRA}
           onClose={() => { setShowEditor(false); setEditingRA(null); }}
+        />
+      )}
+
+      {showBulkEdit && (
+        <BulkEditModal
+          selectedIds={selectedIds}
+          onApply={(changes) => bulkUpdateMutation.mutate({ ids: [...selectedIds], changes })}
+          onClose={() => setShowBulkEdit(false)}
         />
       )}
     </div>
