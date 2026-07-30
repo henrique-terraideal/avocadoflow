@@ -47,12 +47,14 @@ export default function RAFilterBar({
           value={filterMonth || ""}
           onChange={(e) => onMonthChange(e.target.value)}
           className="w-full h-10 rounded-xl border border-input bg-background pl-9 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          style={{ color: "transparent", caretColor: "transparent" }}
         />
-        {monthLabel && (
-          <span className="pointer-events-none absolute inset-0 flex items-center pl-9 text-sm" style={{ color: "hsl(var(--foreground))" }}>
-            {monthLabel}
-          </span>
-        )}
+        <span
+          className="pointer-events-none absolute inset-0 flex items-center pl-9 text-sm"
+          style={{ color: monthLabel ? "hsl(var(--foreground))" : "hsl(var(--muted-foreground))" }}
+        >
+          {monthLabel || "Filtrar por mês"}
+        </span>
         {filterMonth && (
           <button
             onClick={() => onMonthChange("")}
