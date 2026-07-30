@@ -27,12 +27,13 @@ Deno.serve(async (req) => {
 
     // 1. Load Product catalog
     const catalog = await base44.asServiceRole.entities.Product.list("-created_date", 500);
-    const productMap: Record<string, { active_ingredient: string; target: string }> = {};
+    const productMap: Record<string, { active_ingredient: string; target: string; unit: string }> = {};
     for (const p of catalog) {
       if (p.name) {
         productMap[p.name.trim().toUpperCase()] = {
           active_ingredient: p.active_ingredient || '',
           target: p.target || '',
+          unit: p.unit || '',
         };
       }
     }
@@ -63,19 +64,22 @@ Deno.serve(async (req) => {
 
       const currentPA = rp.active_ingredient || '';
       const currentTarget = rp.target || '';
+      const currentUnit = rp.unit || '';
       const newPA = catalogEntry.active_ingredient || currentPA;
       const newTarget = catalogEntry.target || currentTarget;
+      const newUnit = catalogEntry.unit || currentUnit;
 
-      if (newPA !== currentPA || newTarget !== currentTarget) {
+      if (newPA !== currentPA || newTarget !== currentTarget || newUnit !== currentUnit) {
         await base44.asServiceRole.entities.RecommendationProduct.update(rp.id, {
           active_ingredient: newPA,
           target: newTarget,
+          unit: newUnit,
         });
         productsUpdated++;
         if (productChanges.length < 30) {
           productChanges.push(
             `RA ${rp.recommendation_id.slice(-6)} | ${rp.product_name}: ` +
-            `PA "${currentPA}"->"${newPA}" | Alvo "${currentTarget}"->"${newTarget}"`
+            `PA "${currentPA}"->"${newPA}" | Alvo "${currentTarget}"->"${newTarget}" | UN "${currentUnit}"->"${newUnit}"`
           );
         }
       } else {

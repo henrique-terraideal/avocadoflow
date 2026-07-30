@@ -82,6 +82,7 @@ export default function RASelectorField({ value, onChange, onRASelected, readOnl
         active_ingredient: p.active_ingredient || "",
         target: p.target || "",
         application_mode: p.application_mode || "",
+        unit: p.unit || "",
         dose: p.dose ?? null,
         total_quantity: p.total_quantity ?? null,
         qty_per_tank: haPerTank && p.dose != null ? parseFloat((p.dose * haPerTank).toFixed(3)) : null,
@@ -229,11 +230,11 @@ export function RADetails({ ra, products = [] }) {
               )}
               <div className="text-[10px] text-muted-foreground">
                 {p.application_mode}
-                {p.dose != null ? ` · Dose: ${p.dose}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
-                {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
+                {p.dose != null ? ` · Dose: ${Number(p.dose).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
+                {p.total_quantity != null ? ` · Total: ${Number(p.total_quantity).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}` : ""}
               </div>
               {p.qty_per_tank != null && (
-                <div className="text-[10px] text-blue-600 font-semibold">🧴 {p.qty_per_tank} por tanque</div>
+                <div className="text-[10px] text-blue-600 font-semibold">🧴 {Number(p.qty_per_tank).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}{p.unit ? ` ${p.unit}` : ""} por tanque</div>
               )}
               {p.obs && <div className="text-[10px] text-muted-foreground">{p.obs}</div>}
             </div>

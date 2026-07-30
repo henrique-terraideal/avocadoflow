@@ -51,9 +51,10 @@ export default function RAProductRow({ product, index, products, orchard, onChan
           <option value="">Selecione...</option>
           {products.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}
         </select>
-        {(product.active_ingredient || product.target || selectedProduct?.active_ingredient || selectedProduct?.target) && (
+        {(product.active_ingredient || product.target || selectedProduct?.active_ingredient || selectedProduct?.target || product.unit || selectedProduct?.unit) && (
           <p className="text-[9px] text-muted-foreground mt-0.5">
-            {(product.active_ingredient || selectedProduct?.active_ingredient) ? `Princípio: ${product.active_ingredient || selectedProduct?.active_ingredient}` : ""}
+            {(product.unit || selectedProduct?.unit) ? <span className="font-semibold text-primary">[{product.unit || selectedProduct?.unit}]</span> : ""}
+            {(product.active_ingredient || selectedProduct?.active_ingredient) ? ` Princípio: ${product.active_ingredient || selectedProduct?.active_ingredient}` : ""}
             {(product.target || selectedProduct?.target) ? ` · Alvo: ${product.target || selectedProduct?.target}` : ""}
           </p>
         )}
@@ -72,11 +73,11 @@ export default function RAProductRow({ product, index, products, orchard, onChan
           </select>
         </div>
         <div>
-          <label className={labelClass}>Dose</label>
+          <label className={labelClass}>Dose {product.unit || selectedProduct?.unit ? `(${product.unit || selectedProduct?.unit}/ha)` : ""}</label>
           <Input type="number" step="0.01" value={product.dose} onChange={(e) => onChange({ ...product, dose: e.target.value })} className="rounded-lg h-9" placeholder="0.0" />
         </div>
         <div>
-          <label className={labelClass}>Qtd. Total</label>
+          <label className={labelClass}>Total {product.unit || selectedProduct?.unit ? `(${product.unit || selectedProduct?.unit})` : ""}</label>
           <div className="flex gap-1">
             <Input type="number" step="0.01" value={product.total_quantity} onChange={(e) => onChange({ ...product, total_quantity: e.target.value })} className="rounded-lg h-9" placeholder="0.0" />
             <Button type="button" variant="outline" size="icon" className="shrink-0 h-9 w-9" onClick={handleCalculate} title="Calcular">
@@ -88,7 +89,7 @@ export default function RAProductRow({ product, index, products, orchard, onChan
 
       {qtyPerTank != null && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-1.5 text-xs text-blue-700">
-          🧴 <strong>{qtyPerTank}</strong> por tanque
+          🧴 <strong>{qtyPerTank}</strong> {product.unit || selectedProduct?.unit ? `${product.unit || selectedProduct?.unit}` : ""} por tanque
         </div>
       )}
 

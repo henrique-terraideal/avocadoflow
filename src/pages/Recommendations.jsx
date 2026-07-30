@@ -671,13 +671,13 @@ function generateFichaHTML(item, isLast) {
         ${targetCell}
         <td style="width: 14mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
         <td style="width: 16mm; text-align: center; font-weight: 700;">
-          ${p.dose != null ? `${p.dose}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
+          ${p.dose != null ? `${Number(p.dose).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? ' ' + p.unit : ''}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
         </td>
         <td style="width: 16mm; text-align: center;">
-          ${qtyPerTank ? `<strong style="color: #1a5599;">${qtyPerTank}</strong>` : '—'}
+          ${qtyPerTank ? `<strong style="color: #1a5599;">${Number(qtyPerTank).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? ' ' + p.unit : ''}</strong>` : '—'}
         </td>
         <td style="width: 14mm; text-align: center;">
-          ${p.total_quantity != null ? p.total_quantity : '—'}
+          ${p.total_quantity != null ? `${Number(p.total_quantity).toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? ' ' + p.unit : ''}` : '—'}
         </td>
         <td style="width: 16mm; text-align: center;">
           ${p.carencia ? `<span class="product-carencia">${p.carencia}</span>` : '—'}

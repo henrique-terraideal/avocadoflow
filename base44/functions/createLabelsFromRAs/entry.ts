@@ -21,12 +21,13 @@ Deno.serve(async (req) => {
 
     // === AUTO-SYNC: pull fresh data from Product catalog before generating ===
     const catalog = await base44.asServiceRole.entities.Product.list("-created_date", 500);
-    const productMap: Record<string, { active_ingredient: string; target: string }> = {};
+    const productMap: Record<string, { active_ingredient: string; target: string; unit: string }> = {};
     for (const p of catalog) {
       if (p.name) {
         productMap[p.name.trim().toUpperCase()] = {
           active_ingredient: p.active_ingredient || '',
           target: p.target || '',
+          unit: p.unit || '',
         };
       }
     }
@@ -45,14 +46,18 @@ Deno.serve(async (req) => {
       const newPA = catalogEntry.active_ingredient || currentPA;
       const newTarget = catalogEntry.target || currentTarget;
 
-      if (newPA !== currentPA || newTarget !== currentTarget) {
+      const currentUnit = rp.unit || '';
+      const newUnit = catalogEntry.unit || currentUnit;
+      if (newPA !== currentPA || newTarget !== currentTarget || newUnit !== currentUnit) {
         await base44.asServiceRole.entities.RecommendationProduct.update(rp.id, {
           active_ingredient: newPA,
           target: newTarget,
+          unit: newUnit,
         });
         // Update in-memory copy too so the label uses fresh data
         rp.active_ingredient = newPA;
         rp.target = newTarget;
+        rp.unit = newUnit;
       }
     }
 

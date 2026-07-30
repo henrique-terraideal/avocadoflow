@@ -129,7 +129,8 @@ export default function ProductsPanel() {
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm">{product.name}</p>
                       <p className="text-xs text-muted-foreground truncate">
-                        {product.active_ingredient ? `P.A.: ${product.active_ingredient}` : ""}
+                        {product.unit ? <span className="font-medium text-primary">[{product.unit}]</span> : ""}
+                        {product.active_ingredient ? ` P.A.: ${product.active_ingredient}` : ""}
                         {product.target ? ` · Alvo: ${product.target}` : ""}
                         {product.carencia ? ` · Carência: ${product.carencia}` : ""}
                       </p>
@@ -157,6 +158,7 @@ function ProductForm({ product, onSave, onCancel, saving }) {
     active_ingredient: product?.active_ingredient || "",
     target: product?.target || "",
     carencia: product?.carencia || "",
+    unit: product?.unit || "",
     active: product?.active ?? true,
   });
 
@@ -192,6 +194,22 @@ function ProductForm({ product, onSave, onCancel, saving }) {
           placeholder="Ex: 30 dias, Não se aplica"
         />
         <p className="text-[10px] text-muted-foreground mt-1">Carência padrão do produto — pode ser ajustada por RA</p>
+      </div>
+      <div>
+        <label className={labelClass}>Unidade de medida</label>
+        <select
+          value={form.unit}
+          onChange={(e) => setForm(p => ({ ...p, unit: e.target.value }))}
+          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+        >
+          <option value="">Selecione...</option>
+          <option value="L">L — Litro</option>
+          <option value="mL">mL — Mililitro</option>
+          <option value="kg">kg — Quilograma</option>
+          <option value="g">g — Grama</option>
+          <option value="t">t — Tonelada</option>
+        </select>
+        <p className="text-[10px] text-muted-foreground mt-1">Aparece na ficha de campo e na RA (Dose, Qtd/Tanque, Total)</p>
       </div>
 
       <div className="flex gap-2 pt-1">
