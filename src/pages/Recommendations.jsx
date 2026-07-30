@@ -442,6 +442,27 @@ ${fichasHtml}
           </div>
         ) : (
           <div className="space-y-3">
+            {filtered.length > 0 && (
+              <button
+                onClick={() => {
+                  if (filtered.every(ra => selectedIds.has(ra.id))) {
+                    const next = new Set(selectedIds);
+                    filtered.forEach(ra => next.delete(ra.id));
+                    setSelectedIds(next);
+                  } else {
+                    const next = new Set(selectedIds);
+                    filtered.forEach(ra => next.add(ra.id));
+                    setSelectedIds(next);
+                  }
+                }}
+                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+              >
+                {filtered.every(ra => selectedIds.has(ra.id))
+                  ? <CheckSquare className="w-4 h-4" />
+                  : <Square className="w-4 h-4" />}
+                {filtered.every(ra => selectedIds.has(ra.id)) ? "Desmarcar todas" : `Selecionar todas (${filtered.length})`}
+              </button>
+            )}
             {filtered.map((ra) => {
               const raProducts = productsByRA[ra.id] || [];
               return (
