@@ -25,6 +25,7 @@ export default function Recommendations() {
   const [filterOrchards, setFilterOrchards] = useState(new Set());
   const [showBulkEdit, setShowBulkEdit] = useState(false);
   const [filterMonth, setFilterMonth] = useState("");
+  const [filterStatus, setFilterStatus] = useState("planejada");
   const [printing, setPrinting] = useState(false);
   const fileRef = useRef(null);
 
@@ -101,6 +102,7 @@ export default function Recommendations() {
   const filtered = useMemo(() => {
     const s = search ? normalize(search) : "";
     return recommendations.filter(ra => {
+      if (filterStatus && ra.status !== filterStatus) return false;
       if (filterTypes.size > 0 && !filterTypes.has(ra.type)) return false;
       if (filterOrchards.size > 0 && !filterOrchards.has(ra.orchard_code)) return false;
       if (filterMonth && (!ra.date || !ra.date.startsWith(filterMonth))) return false;
@@ -116,7 +118,7 @@ export default function Recommendations() {
         normalize(productText).includes(s)
       );
     });
-  }, [recommendations, productsByRA, search, filterTypes, filterOrchards, filterMonth]);
+  }, [recommendations, productsByRA, search, filterTypes, filterOrchards, filterMonth, filterStatus]);
 
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
@@ -408,6 +410,50 @@ ${fichasHtml}
           </p>
         </div>
 
+        {/* Status filter */}
+        <div className="flex gap-1.5">
+          <button
+            onClick={() => setFilterStatus("planejada")}
+            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+              filterStatus === "planejada"
+                ? "bg-blue-100 text-blue-700 border-blue-300"
+                : "bg-background border-border text-muted-foreground hover:border-blue-300"
+            }`}
+          >
+            📋 Planejada
+          </button>
+          <button
+            onClick={() => setFilterStatus("pendente")}
+            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+              filterStatus === "pendente"
+                ? "bg-amber-100 text-amber-700 border-amber-300"
+                : "bg-background border-border text-muted-foreground hover:border-amber-300"
+            }`}
+          >
+            ⏳ Pendente
+          </button>
+          <button
+            onClick={() => setFilterStatus("executada")}
+            className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+              filterStatus === "executada"
+                ? "bg-green-100 text-green-700 border-green-300"
+                : "bg-background border-border text-muted-foreground hover:border-green-300"
+            }`}
+          >
+            ✅ Executada
+          </button>
+          <button
+            onClick={() => setFilterStatus("")}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+              filterStatus === ""
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-background border-border text-muted-foreground hover:border-primary/50"
+            }`}
+          >
+            Todas
+          </button>
+        </div>
+
         {/* Filters */}
         <RAFilterBar
           types={uniqueTypes}
@@ -491,6 +537,15 @@ ${fichasHtml}
                             <span className="text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-md shrink-0">
                               {ra.orchard_code}
                             </span>
+                          )}
+                          {ra.status === "planejada" && (
+                            <span className="text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md shrink-0">📋 Planejada</span>
+                          )}
+                          {ra.status === "pendente" && (
+                            <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md shrink-0">⏳ Pendente</span>
+                          )}
+                          {ra.status === "executada" && (
+                            <span className="text-[10px] font-medium bg-green-100 text-green-700 px-1.5 py-0.5 rounded-md shrink-0">✅ Executada</span>
                           )}
                         </div>
                         <p className="text-xs text-muted-foreground">

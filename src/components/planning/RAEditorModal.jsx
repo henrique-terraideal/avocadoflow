@@ -19,7 +19,7 @@ export default function RAEditorModal({ ra, onClose }) {
     date: ra?.date || "",
     type: ra?.type || "",
     orchard_code: ra?.orchard_code || "",
-    status: ra?.status || "PRODUÇÃO",
+    status: ra?.status || "planejada",
     machine_id: ra?.machine_id || "",
     implement_id: ra?.implement_id || "",
     liters_per_ha: ra?.liters_per_ha ?? 1000,

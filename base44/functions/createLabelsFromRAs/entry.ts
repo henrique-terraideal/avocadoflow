@@ -137,6 +137,11 @@ Deno.serve(async (req) => {
         label.qr_data = qrData;
       }
 
+      // Update RA status to "pendente" (linked to label, waiting execution)
+      if (ra.status !== 'pendente' && ra.status !== 'executada') {
+        await base44.asServiceRole.entities.AgronomicRecommendation.update(ra.id, { status: 'pendente' });
+      }
+
       results.push({
         ra: {
           id: ra.id,

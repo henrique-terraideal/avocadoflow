@@ -119,6 +119,18 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
       },
       keepPending,
     });
+
+    // Update RA status to "executada" if linked via additional_details
+    if (mergedDetails.ra_id) {
+      try {
+        await base44.entities.AgronomicRecommendation.update(mergedDetails.ra_id, { status: 'executada' });
+        queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+        queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
+      } catch (e) {
+        console.error('Failed to update RA status:', e);
+      }
+    }
+
     setOpenLabel(null);
     if (keepPending) {
       navigate("/");

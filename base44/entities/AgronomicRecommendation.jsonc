@@ -21,7 +21,7 @@
     },
     "status": {
       "type": "string",
-      "description": "Status (ex: PRODU\u00c7\u00c3O)"
+      "description": "Status da RA: planejada (criada, aguardando vincula\u00e7\u00e3o a label), pendente (vinculada a label, aguardando execu\u00e7\u00e3o), executada (opera\u00e7\u00e3o registrada em campo)"
     },
     "machine_id": {
       "type": "string",
