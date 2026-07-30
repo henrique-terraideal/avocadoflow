@@ -1,0 +1,57 @@
+{
+  "name": "HistoricoMIP",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome da praga ou doen\u00e7a"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "Praga",
+        "Doenca"
+      ],
+      "description": "Tipo: Praga ou Doen\u00e7a"
+    },
+    "semanasSafra23": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Semanas de ocorr\u00eancia na safra 23/24"
+    },
+    "semanasSafra24": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Semanas de ocorr\u00eancia na safra 24/25"
+    },
+    "semanasSafra25": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "description": "Semanas de ocorr\u00eancia na safra 25/26"
+    },
+    "controles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Controles recomendados"
+    },
+    "nota": {
+      "type": "string",
+      "description": "Nota de criticidade"
+    },
+    "fonte": {
+      "type": "string",
+      "description": "Fonte dos dados"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

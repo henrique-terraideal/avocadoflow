@@ -1,0 +1,25 @@
+{
+  "name": "ParametroQualidade",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome do par\u00e2metro de qualidade"
+    },
+    "valor": {
+      "type": "string",
+      "description": "Valor ou meta do par\u00e2metro"
+    },
+    "unidade": {
+      "type": "string",
+      "description": "Unidade de medida"
+    },
+    "categoria": {
+      "type": "string",
+      "description": "Categoria do par\u00e2metro"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}

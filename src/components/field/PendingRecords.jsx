@@ -43,6 +43,18 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
     enabled: isAdmin ? true : !!operatorId,
   });
 
+  // Also fetch records whose planned_date matches — covers activities registered on a different date
+  const { data: plannedDateRecords = [] } = useQuery({
+    queryKey: ["field-records-planned-date", operatorId, isAdmin, selectedDate],
+    queryFn: () => {
+      if (isAdmin) return base44.entities.FieldRecord.filter({ planned_date: selectedDate }, "-created_date", 500);
+      return base44.entities.FieldRecord.filter({ planned_date: selectedDate, operator_id: operatorId }, "-created_date", 100);
+    },
+    enabled: isAdmin ? true : !!operatorId,
+  });
+
+  const allExistingRecords = [...existingRecords, ...plannedDateRecords];
+
   // IDs dos labels que foram parcialmente registrados (continuar depois)
   const [keepPendingIds, setKeepPendingIds] = useState([]);
 
@@ -66,7 +78,7 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
       const labelOpId = url.searchParams.get("op_id");
       if (!isAdmin && labelOpId !== operatorId) return false;
       const actCode = url.searchParams.get("act_code");
-      const alreadyDone = existingRecords.some(
+      const alreadyDone = allExistingRecords.some(
         (r) =>
           r.operator_id === labelOpId &&
           r.orchard_number === label.orchard_number &&

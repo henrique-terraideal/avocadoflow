@@ -1,0 +1,44 @@
+{
+  "name": "POP",
+  "type": "object",
+  "properties": {
+    "titulo": {
+      "type": "string",
+      "description": "T\u00edtulo do procedimento operacional padronizado"
+    },
+    "fase": {
+      "type": "string",
+      "enum": [
+        "Implantacao",
+        "Conducao"
+      ],
+      "description": "Fase do pomar: Implanta\u00e7\u00e3o ou Condu\u00e7\u00e3o"
+    },
+    "categoria": {
+      "type": "string",
+      "description": "Categoria do POP"
+    },
+    "conteudo": {
+      "type": "string",
+      "description": "Conte\u00fado completo do POP"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Rascunho",
+        "Revisao",
+        "Aprovado",
+        "Obsoleto"
+      ],
+      "default": "Rascunho",
+      "description": "Status do POP"
+    },
+    "versao": {
+      "type": "string",
+      "description": "Vers\u00e3o do POP"
+    }
+  },
+  "required": [
+    "titulo"
+  ]
+}

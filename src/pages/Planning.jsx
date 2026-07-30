@@ -100,15 +100,19 @@ export default function Planning() {
     base44.entities.FieldRecord.create({
       operator_name: label.operator_name,
       operator_id: params.get("op_id") || "",
-      operation: label.operation_name,
+      operation: label.operation_code ? `${label.operation_code}. ${label.operation_name}` : label.operation_name,
       orchard_number: label.orchard_number,
       start_time: startTime,
       end_time: endTime,
-      date: today(),
+      date: selectedDate,
       planned_date: label.original_date || label.date,
       observations,
       qr_scanned: false,
       additional_details: Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null,
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
+      queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
+      queryClient.invalidateQueries({ queryKey: ["field-records"] });
     });
     setFillingLabel(null);
   };

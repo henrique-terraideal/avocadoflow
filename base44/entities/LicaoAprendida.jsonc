@@ -1,0 +1,39 @@
+{
+  "name": "LicaoAprendida",
+  "type": "object",
+  "properties": {
+    "descricao": {
+      "type": "string",
+      "description": "Descri\u00e7\u00e3o da li\u00e7\u00e3o aprendida"
+    },
+    "tipo": {
+      "type": "string",
+      "enum": [
+        "Positiva",
+        "Negativa"
+      ],
+      "description": "Tipo da li\u00e7\u00e3o"
+    },
+    "area": {
+      "type": "string",
+      "description": "\u00c1rea: Produ\u00e7\u00e3o Agr\u00edcola, Opera\u00e7\u00e3o/PH, Comercial"
+    },
+    "prioridade": {
+      "type": "string",
+      "enum": [
+        "Resolvida",
+        "Pendente",
+        "Plano de Acao"
+      ],
+      "description": "Prioridade ou status"
+    },
+    "boasPraticas": {
+      "type": "boolean",
+      "default": false,
+      "description": "True se \u00e9 uma boa pr\u00e1tica"
+    }
+  },
+  "required": [
+    "descricao"
+  ]
+}

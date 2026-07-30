@@ -1,0 +1,37 @@
+{
+  "name": "FaseFenologica",
+  "type": "object",
+  "properties": {
+    "nome": {
+      "type": "string",
+      "description": "Nome da fase fenol\u00f3gica"
+    },
+    "semanaInicio": {
+      "type": "number",
+      "description": "Semana inicial"
+    },
+    "semanaFim": {
+      "type": "number",
+      "description": "Semana final"
+    },
+    "cor": {
+      "type": "string",
+      "description": "C\u00f3digo hex para o dashboard"
+    },
+    "ordem": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o"
+    },
+    "fase": {
+      "type": "string",
+      "enum": [
+        "Implantacao",
+        "Conducao"
+      ],
+      "description": "Fase do pomar"
+    }
+  },
+  "required": [
+    "nome"
+  ]
+}
