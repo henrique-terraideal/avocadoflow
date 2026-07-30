@@ -8,6 +8,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
  * Pode ser chamado:
  * 1. Via botao "Sincronizar RAs" no frontend (sem ra_ids = todas planejada/pendente)
  * 2. Automaticamente antes de gerar fichas (com ra_ids especificas)
+ * v1.0
  */
 Deno.serve(async (req) => {
   try {
