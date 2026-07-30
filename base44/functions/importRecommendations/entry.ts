@@ -170,6 +170,14 @@ Deno.serve(async (req) => {
       return 'ÁREA';
     };
 
+    // --- Busca pomares cadastrados para mapear nome → código ---
+    const existingOrchards = await base44.asServiceRole.entities.Orchard.list("sort_order", 200);
+    const orchardLookup = {}; // chave normalizada (nome ou código) → código
+    for (const o of existingOrchards) {
+      if (o.code) orchardLookup[String(o.code).toUpperCase().trim()] = o.code;
+      if (o.name) orchardLookup[String(o.name).toUpperCase().trim()] = o.code;
+    }
+
     // --- Busca produtos cadastrados para copiar active_ingredient e target ---
     const existingProducts = await base44.asServiceRole.entities.Product.list("-created_date", 500);
     const productMap = {};
@@ -204,7 +212,10 @@ Deno.serve(async (req) => {
           code,
           date: parseDate(row.data),
           type: String(row.tipo || '').trim(),
-          orchard_code: String(row.pomar || '').trim(),
+          orchard_code: (() => {
+            const raw = String(row.pomar || '').trim();
+            return orchardLookup[raw.toUpperCase()] || raw;
+          })(),
           status: String(row.status || '').trim(),
           machine_config: '',
           implement_config: '',

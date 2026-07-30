@@ -75,7 +75,9 @@ export default function RAEditorModal({ ra, onClose }) {
       .finally(() => setLoadingProducts(false));
   }, [ra, isEdit]);
 
-  const selectedOrchard = orchards.find(o => o.code === form.orchard_code);
+  const selectedOrchard = orchards.find(o => o.code === form.orchard_code || o.name === form.orchard_code);
+  // Valor canônico para o <select>: se o orchard_code atual é um nome, usa o code correspondente
+  const orchardSelectValue = selectedOrchard ? selectedOrchard.code : form.orchard_code;
 
   const handleProductChange = (index, updated) => {
     setProducts(prev => prev.map((p, i) => i === index ? updated : p));
@@ -176,10 +178,13 @@ export default function RAEditorModal({ ra, onClose }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Pomar</label>
-              <select value={form.orchard_code} onChange={(e) => setForm(p => ({ ...p, orchard_code: e.target.value }))} className={inputClass}>
+              <select value={orchardSelectValue} onChange={(e) => setForm(p => ({ ...p, orchard_code: e.target.value }))} className={inputClass}>
                 <option value="">Selecione...</option>
                 {orchards.map(o => <option key={o.id} value={o.code}>{o.code}{o.name ? ` — ${o.name}` : ""}</option>)}
               </select>
+              {!selectedOrchard && form.orchard_code && (
+                <p className="text-[10px] text-amber-600">Pomar não cadastrado: "{form.orchard_code}"</p>
+              )}
             </div>
             <div>
               <label className={labelClass}>Status</label>
