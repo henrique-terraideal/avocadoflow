@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
 
     let updated = 0;
     let skipped = 0;
-    const details: string[] = [];
+    const affectedRAIds = new Set<string>();
 
     for (const rp of toUpdate) {
       const key = (rp.product_name || '').trim().toUpperCase();
@@ -45,8 +45,21 @@ Deno.serve(async (req) => {
         target: catalogEntry.target || rp.target || '',
       });
       updated++;
-      if (details.length < 20) {
-        details.push(`${rp.product_name}: PA="${catalogEntry.active_ingredient}" | Alvo="${catalogEntry.target}"`);
+      if (rp.recommendation_id) affectedRAIds.add(rp.recommendation_id);
+    }
+
+    // Delete cached PlanningLabels for affected RAs so they regenerate fresh
+    let labelsDeleted = 0;
+    if (affectedRAIds.size > 0) {
+      const allLabels = await base44.asServiceRole.entities.PlanningLabel.list("-created_date", 1000);
+      for (const label of allLabels) {
+        try {
+          const details = JSON.parse(label.additional_details || '{}');
+          if (details.ra_id && affectedRAIds.has(details.ra_id)) {
+            await base44.asServiceRole.entities.PlanningLabel.delete(label.id);
+            labelsDeleted++;
+          }
+        } catch { /* skip */ }
       }
     }
 
@@ -56,7 +69,8 @@ Deno.serve(async (req) => {
       checked: toUpdate.length,
       updated,
       skipped,
-      sample_updates: details,
+      labels_cleared: labelsDeleted,
+      message: `${updated} RecommendationProducts atualizados, ${labelsDeleted} labels em cache deletados`,
     });
   } catch (err: any) {
     return Response.json({ error: err.message, stack: err.stack }, { status: 500 });
