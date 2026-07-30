@@ -383,7 +383,7 @@ export default function NewRecord() {
               queryClient.invalidateQueries({ queryKey: ["pending-labels"] });
             }
 
-            await base44.entities.FieldRecord.create({
+            const createdRecord = await base44.entities.FieldRecord.create({
               ...recordData,
               date: recordData.date || today,
               qr_scanned: true,
@@ -392,6 +392,15 @@ export default function NewRecord() {
             });
             queryClient.invalidateQueries({ queryKey: ["field-records"] });
             queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
+
+            // Mark linked RA as "executada" if all labels registered
+            try {
+              await base44.functions.invoke("markRAExecuted", { record_id: createdRecord.id });
+              queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+              queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
+            } catch (e) {
+              console.warn("markRAExecuted failed:", e);
+            }
             if (options.keepPending) {
               // Reabre o modal com campos zerados para novo registro na mesma atividade
               const current = qrLabel;

@@ -60,11 +60,19 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
 
   const createMutation = useMutation({
     mutationFn: async ({ data, keepPending }) => {
-      await base44.entities.FieldRecord.create(data);
+      const created = await base44.entities.FieldRecord.create(data);
+      // Mark linked RA as "executada" if all labels registered
+      try {
+        await base44.functions.invoke("markRAExecuted", { record_id: created.id });
+      } catch (e) {
+        console.warn("markRAExecuted failed:", e);
+      }
       return { keepPending };
     },
     onSuccess: ({ keepPending }) => {
       queryClient.invalidateQueries({ queryKey: ["field-records"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendations"] });
+      queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
       if (!keepPending) {
         queryClient.invalidateQueries({ queryKey: ["field-records-date"] });
       }

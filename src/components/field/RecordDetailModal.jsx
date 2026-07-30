@@ -11,7 +11,7 @@ function formatDateTime(dt) {
   }
 }
 
-export default function RecordDetailModal({ record, onClose }) {
+export default function RecordDetailModal({ record, onClose, onOpenRA }) {
   if (!record) return null;
 
   const details = [];
@@ -149,10 +149,14 @@ export default function RecordDetailModal({ record, onClose }) {
                       </div>
                     ) : field.isRA ? (
                       <div className="space-y-1.5">
-                        <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-3 py-2">
+                        <div
+                          onClick={() => onOpenRA?.({ ra_id: field.raData.ra_id, ra_code: field.raData.code, orchard: field.raData.orchard, type: field.raData.type })}
+                          className={`flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-3 py-2 ${onOpenRA ? "cursor-pointer hover:bg-primary/20 transition-colors" : ""}`}
+                        >
                           <Leaf className="w-4 h-4 text-primary shrink-0" />
                           <span className="text-sm font-bold text-primary">{field.raData.code}</span>
                           {field.raData.orchard && <span className="text-xs text-muted-foreground">· {field.raData.orchard}</span>}
+                          {onOpenRA && <span className="text-[10px] text-primary/50 ml-1">→ clique para detalhes</span>}
                         </div>
                         {field.raData.type && (
                           <div className="flex items-center gap-2 bg-background rounded-lg px-3 py-1.5">
@@ -187,6 +191,7 @@ export default function RecordDetailModal({ record, onClose }) {
                             <div className="flex items-center gap-2">
                               <Package className="w-3.5 h-3.5 text-primary shrink-0" />
                               <span className="text-xs font-bold">{p.product_name}</span>
+                              {p.unit && <span className="text-[10px] text-primary/70 font-semibold">[{p.unit}]</span>}
                             </div>
                             {(p.active_ingredient || p.target) && (
                               <p className="text-[10px] text-primary/70 font-medium pl-5">
@@ -197,11 +202,11 @@ export default function RecordDetailModal({ record, onClose }) {
                             )}
                             <p className="text-xs text-muted-foreground pl-5">
                               {p.application_mode}
-                              {p.dose != null ? ` · Dose: ${p.dose}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
-                              {p.total_quantity != null ? ` · Total: ${p.total_quantity}` : ""}
+                              {p.dose != null ? ` · Dose: ${Number(p.dose).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}${p.application_mode === "PLANTA" ? "/planta" : "/ha"}` : ""}
+                              {p.total_quantity != null ? ` · Total: ${Number(p.total_quantity).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}${p.unit ? " " + p.unit : ""}` : ""}
                             </p>
                             {p.qty_per_tank != null && (
-                              <p className="text-xs text-blue-600 font-semibold pl-5">🧴 {p.qty_per_tank} por tanque</p>
+                              <p className="text-xs text-blue-600 font-semibold pl-5">🧴 {Number(p.qty_per_tank).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2})}{p.unit ? ` ${p.unit}` : ""} por tanque</p>
                             )}
                             {p.obs && <p className="text-[10px] text-muted-foreground pl-5">{p.obs}</p>}
                           </div>
