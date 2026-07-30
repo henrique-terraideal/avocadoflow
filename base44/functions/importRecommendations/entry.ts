@@ -74,17 +74,20 @@ Deno.serve(async (req) => {
       quant_total: ['quant_total', 'quant. total', 'quant total', 'quantidade_total', 'total', 'qtd_total', 'qt_total', 'quantidade']
     };
 
-    // Constrói mapa reverso: alias normalizada → campo padrão
+    // Constrói mapa reverso: alias normalizada → campo padrão (com e sem acentos)
+    const removeDiacritics = (str) => {
+      return String(str).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    };
     const aliasToField = {};
     for (const [field, aliases] of Object.entries(fieldAliases)) {
       for (const alias of aliases) {
-        aliasToField[alias.toUpperCase().replace(/[\s._-]/g, '')] = field;
+        aliasToField[removeDiacritics(alias).toUpperCase().replace(/[\s._-]/g, '')] = field;
       }
     }
 
     const normalizeKey = (key) => {
       if (!key) return null;
-      const normalized = String(key).toUpperCase().replace(/[\s._-]/g, '');
+      const normalized = removeDiacritics(key).toUpperCase().replace(/[\s._-]/g, '');
       return aliasToField[normalized] || null;
     };
 
