@@ -32,13 +32,13 @@ export default function Recommendations() {
 
   const { data: recommendations = [], isLoading } = useQuery({
     queryKey: ["recommendations"],
-    queryFn: () => base44.entities.AgronomicRecommendation.list("-created_date", 500),
+    queryFn: () => base44.entities.AgronomicRecommendation.list("-created_date", 500)
   });
 
   const { data: allProducts = [] } = useQuery({
     queryKey: ["recommendation-products"],
     queryFn: () => base44.entities.RecommendationProduct.list("-created_date", 1000),
-    enabled: recommendations.length > 0,
+    enabled: recommendations.length > 0
   });
 
   const productsByRA = useMemo(() => {
@@ -55,13 +55,13 @@ export default function Recommendations() {
 
   const uniqueTypes = useMemo(() => {
     const set = new Set();
-    for (const ra of recommendations) { if (ra.type) set.add(ra.type); }
+    for (const ra of recommendations) {if (ra.type) set.add(ra.type);}
     return [...set].sort();
   }, [recommendations]);
 
   const uniqueOrchards = useMemo(() => {
     const set = new Set();
-    for (const ra of recommendations) { if (ra.orchard_code) set.add(ra.orchard_code); }
+    for (const ra of recommendations) {if (ra.orchard_code) set.add(ra.orchard_code);}
     return [...set].sort();
   }, [recommendations]);
 
@@ -75,7 +75,7 @@ export default function Recommendations() {
       queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
       queryClient.invalidateQueries({ queryKey: ["recommendation-products"] });
       toast({ title: "RA removida!" });
-    },
+    }
   });
 
   const bulkUpdateMutation = useMutation({
@@ -89,35 +89,35 @@ export default function Recommendations() {
       toast({ title: `${ids.length} RA${ids.length !== 1 ? "s" : ""} atualizada${ids.length !== 1 ? "s" : ""}!` });
       setSelectedIds(new Set());
       setShowBulkEdit(false);
-    },
+    }
   });
 
   const normalize = (str) => {
     if (!str) return "";
-    return str
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
+    return str.
+    toLowerCase().
+    normalize("NFD").
+    replace(/[\u0300-\u036f]/g, "");
   };
 
   const filtered = useMemo(() => {
     const s = search ? normalize(search) : "";
-    return recommendations.filter(ra => {
+    return recommendations.filter((ra) => {
       if (filterTypes.size > 0 && !filterTypes.has(ra.type)) return false;
       if (filterOrchards.size > 0 && !filterOrchards.has(ra.orchard_code)) return false;
       if (filterMonth && (!ra.date || !ra.date.startsWith(filterMonth))) return false;
       if (filterStatus && filterStatus !== "todas" && (ra.status || "planejada").toLowerCase() !== filterStatus) return false;
       if (!s) return true;
       const prods = productsByRA[ra.id] || [];
-      const productText = prods
-        .map(p => `${p.product_name || ""} ${p.active_ingredient || ""} ${p.target || ""}`)
-        .join(" ");
+      const productText = prods.
+      map((p) => `${p.product_name || ""} ${p.active_ingredient || ""} ${p.target || ""}`).
+      join(" ");
       return (
         normalize(ra.code).includes(s) ||
         normalize(ra.type).includes(s) ||
         normalize(ra.orchard_code).includes(s) ||
-        normalize(productText).includes(s)
-      );
+        normalize(productText).includes(s));
+
     });
   }, [recommendations, productsByRA, search, filterTypes, filterOrchards, filterMonth, filterStatus]);
 
@@ -131,7 +131,7 @@ export default function Recommendations() {
       if (res.data?.error) throw new Error(res.data.error);
       toast({
         title: "Importação concluída!",
-        description: `${res.data.imported} RAs (${res.data.created} novas, ${res.data.updated} atualizadas)${res.data.products_created ? ` · ${res.data.products_created} produtos criados` : ""}`,
+        description: `${res.data.imported} RAs (${res.data.created} novas, ${res.data.updated} atualizadas)${res.data.products_created ? ` · ${res.data.products_created} produtos criados` : ""}`
       });
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["recommendations-active"] });
@@ -153,7 +153,7 @@ export default function Recommendations() {
       const data = res.data;
       toast({
         title: data.products_updated > 0 ? "RAs sincronizadas" : "Tudo atualizado",
-        description: data.message,
+        description: data.message
       });
       queryClient.invalidateQueries({ queryKey: ["recommendations"] });
       queryClient.invalidateQueries({ queryKey: ["recommendation-products"] });
@@ -371,7 +371,7 @@ ${fichasHtml}
 
       toast({
         title: "Fichas geradas!",
-        description: `${results.length} ficha(s) impressa(s). ${results.length} etiqueta(s) criada(s) no Planejamento.`,
+        description: `${results.length} ficha(s) impressa(s). ${results.length} etiqueta(s) criada(s) no Planejamento.`
       });
       setSelectedIds(new Set());
     } catch (err) {
@@ -410,8 +410,8 @@ ${fichasHtml}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar RA..."
-              className="w-full h-10 rounded-xl border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+              className="w-full h-10 rounded-xl border border-input bg-background pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
+            
           </div>
           <Button variant="outline" size="icon" className="rounded-xl shrink-0" onClick={() => fileRef.current?.click()} disabled={importing} title="Importar Excel">
             {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
@@ -420,13 +420,13 @@ ${fichasHtml}
           <Button variant="outline" size="icon" className="rounded-xl shrink-0" onClick={handleSyncRAs} disabled={syncing} title="Sincronizar RAs com cadastros">
             {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
           </Button>
-          <Button size="icon" className="rounded-xl shrink-0" onClick={() => { setEditingRA(null); setShowEditor(true); }} title="Nova RA">
+          <Button size="icon" className="rounded-xl shrink-0" onClick={() => {setEditingRA(null);setShowEditor(true);}} title="Nova RA">
             <Plus className="w-4 h-4" />
           </Button>
         </div>
 
         {/* Import hint */}
-        <div className="bg-muted/30 rounded-xl border border-border p-3 flex items-center gap-2">
+        <div className="bg-muted/30 rounded-xl border border-border p-3 flex items-center gap-2 hidden">
           <FileSpreadsheet className="w-4 h-4 text-muted-foreground shrink-0" />
           <p className="text-xs text-muted-foreground">
             Importe planilhas .xlsx com colunas: RA, DATA, TIPO, POMAR, STATUS, PRODUTO, APLICAÇÃO, DOSE, QUANT. TOTAL, OBS — linhas com o mesmo código de RA são agrupadas automaticamente.
@@ -436,23 +436,23 @@ ${fichasHtml}
         {/* Status filter */}
         <div className="flex items-center gap-1.5">
           {[
-            { key: "planejada", label: "📋 Planejada", active: "bg-blue-100 text-blue-700 border-blue-300" },
-            { key: "pendente",  label: "⏳ Pendente",  active: "bg-amber-100 text-amber-700 border-amber-300" },
-            { key: "executada", label: "✅ Executada", active: "bg-green-100 text-green-700 border-green-300" },
-            { key: "todas",     label: "Todas",         active: "bg-primary text-primary-foreground border-primary" },
-          ].map((s) => (
-            <button
-              key={s.key}
-              onClick={() => setFilterStatus(s.key)}
-              className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg border transition-all ${
-                filterStatus === s.key
-                  ? s.active
-                  : "bg-background border-border text-muted-foreground hover:border-primary/30"
-              }`}
-            >
+          { key: "planejada", label: "📋 Planejada", active: "bg-blue-100 text-blue-700 border-blue-300" },
+          { key: "pendente", label: "⏳ Pendente", active: "bg-amber-100 text-amber-700 border-amber-300" },
+          { key: "executada", label: "✅ Executada", active: "bg-green-100 text-green-700 border-green-300" },
+          { key: "todas", label: "Todas", active: "bg-primary text-primary-foreground border-primary" }].
+          map((s) =>
+          <button
+            key={s.key}
+            onClick={() => setFilterStatus(s.key)}
+            className={`flex-1 text-xs font-semibold px-2 py-1.5 rounded-lg border transition-all ${
+            filterStatus === s.key ?
+            s.active :
+            "bg-background border-border text-muted-foreground hover:border-primary/30"}`
+            }>
+            
               {s.label}
             </button>
-          ))}
+          )}
         </div>
 
         {/* Filters */}
@@ -473,60 +473,60 @@ ${fichasHtml}
             next.has(o) ? next.delete(o) : next.add(o);
             setFilterOrchards(next);
           }}
-          onClear={() => {     setFilterTypes(new Set()); setFilterOrchards(new Set()); setFilterMonth(""); }}
-        />
+          onClear={() => {setFilterTypes(new Set());setFilterOrchards(new Set());setFilterMonth("");}} />
+        
 
         {/* List */}
-        {isLoading ? (
-          <div className="flex justify-center py-12">
+        {isLoading ?
+        <div className="flex justify-center py-12">
             <Loader2 className="w-6 h-6 animate-spin text-primary" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center">
+          </div> :
+        filtered.length === 0 ?
+        <div className="flex flex-col items-center justify-center py-16 text-center">
             <Leaf className="w-16 h-16 text-muted-foreground/30 mb-4" />
             <p className="text-muted-foreground font-medium">Nenhuma recomendação cadastrada</p>
             <p className="text-muted-foreground/70 text-sm mt-1">Crie uma nova RA ou importe de uma planilha</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filtered.length > 0 && (
-              <button
-                onClick={() => {
-                  if (filtered.every(ra => selectedIds.has(ra.id))) {
-                    const next = new Set(selectedIds);
-                    filtered.forEach(ra => next.delete(ra.id));
-                    setSelectedIds(next);
-                  } else {
-                    const next = new Set(selectedIds);
-                    filtered.forEach(ra => next.add(ra.id));
-                    setSelectedIds(next);
-                  }
-                }}
-                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
-              >
-                {filtered.every(ra => selectedIds.has(ra.id))
-                  ? <CheckSquare className="w-4 h-4" />
-                  : <Square className="w-4 h-4" />}
-                {filtered.every(ra => selectedIds.has(ra.id)) ? "Desmarcar todas" : `Selecionar todas (${filtered.length})`}
+          </div> :
+
+        <div className="space-y-3">
+            {filtered.length > 0 &&
+          <button
+            onClick={() => {
+              if (filtered.every((ra) => selectedIds.has(ra.id))) {
+                const next = new Set(selectedIds);
+                filtered.forEach((ra) => next.delete(ra.id));
+                setSelectedIds(next);
+              } else {
+                const next = new Set(selectedIds);
+                filtered.forEach((ra) => next.add(ra.id));
+                setSelectedIds(next);
+              }
+            }}
+            className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+            
+                {filtered.every((ra) => selectedIds.has(ra.id)) ?
+            <CheckSquare className="w-4 h-4" /> :
+            <Square className="w-4 h-4" />}
+                {filtered.every((ra) => selectedIds.has(ra.id)) ? "Desmarcar todas" : `Selecionar todas (${filtered.length})`}
               </button>
-            )}
+          }
             {filtered.map((ra) => {
-              const raProducts = productsByRA[ra.id] || [];
-              return (
-                <div key={ra.id} className={`bg-card rounded-2xl border p-4 transition-colors ${selectedIds.has(ra.id) ? "border-primary ring-1 ring-primary/30" : "border-border"}`}>
+            const raProducts = productsByRA[ra.id] || [];
+            return (
+              <div key={ra.id} className={`bg-card rounded-2xl border p-4 transition-colors ${selectedIds.has(ra.id) ? "border-primary ring-1 ring-primary/30" : "border-border"}`}>
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <button
-                        onClick={() => {
-                          const next = new Set(selectedIds);
-                          next.has(ra.id) ? next.delete(ra.id) : next.add(ra.id);
-                          setSelectedIds(next);
-                        }}
-                        className="shrink-0 p-0.5"
-                      >
-                        {selectedIds.has(ra.id)
-                          ? <CheckSquare className="w-5 h-5 text-primary" />
-                          : <Square className="w-5 h-5 text-muted-foreground/40" />}
+                      onClick={() => {
+                        const next = new Set(selectedIds);
+                        next.has(ra.id) ? next.delete(ra.id) : next.add(ra.id);
+                        setSelectedIds(next);
+                      }}
+                      className="shrink-0 p-0.5">
+                      
+                        {selectedIds.has(ra.id) ?
+                      <CheckSquare className="w-5 h-5 text-primary" /> :
+                      <Square className="w-5 h-5 text-muted-foreground/40" />}
                       </button>
                       <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                         <Leaf className="w-4 h-4 text-primary" />
@@ -534,20 +534,20 @@ ${fichasHtml}
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="font-semibold text-sm truncate">{ra.code}</p>
-                          {ra.orchard_code && (
-                            <span className="text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-md shrink-0">
+                          {ra.orchard_code &&
+                        <span className="text-[10px] font-medium bg-primary/10 text-primary px-1.5 py-0.5 rounded-md shrink-0">
                               {ra.orchard_code}
                             </span>
-                          )}
-                          {ra.status === "planejada" && (
-                            <span className="text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md shrink-0">📋 Planejada</span>
-                          )}
-                          {ra.status === "pendente" && (
-                            <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md shrink-0">⏳ Pendente</span>
-                          )}
-                          {ra.status === "executada" && (
-                            <span className="text-[10px] font-medium bg-green-100 text-green-700 px-1.5 py-0.5 rounded-md shrink-0">✅ Executada</span>
-                          )}
+                        }
+                          {ra.status === "planejada" &&
+                        <span className="text-[10px] font-medium bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md shrink-0">📋 Planejada</span>
+                        }
+                          {ra.status === "pendente" &&
+                        <span className="text-[10px] font-medium bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-md shrink-0">⏳ Pendente</span>
+                        }
+                          {ra.status === "executada" &&
+                        <span className="text-[10px] font-medium bg-green-100 text-green-700 px-1.5 py-0.5 rounded-md shrink-0">✅ Executada</span>
+                        }
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {raProducts.length} produto{raProducts.length !== 1 ? "s" : ""}
@@ -555,7 +555,7 @@ ${fichasHtml}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <button onClick={() => { setEditingRA(ra); setShowEditor(true); }} className="text-muted-foreground hover:text-foreground p-1">
+                      <button onClick={() => {setEditingRA(ra);setShowEditor(true);}} className="text-muted-foreground hover:text-foreground p-1">
                         <Pencil className="w-4 h-4" />
                       </button>
                       <button onClick={() => deleteMutation.mutate(ra.id)} className="text-destructive hover:text-destructive/80 p-1">
@@ -564,15 +564,15 @@ ${fichasHtml}
                     </div>
                   </div>
                   <RADetails ra={ra} products={raProducts} />
-                </div>
-              );
-            })}
+                </div>);
+
+          })}
           </div>
-        )}
+        }
       </div>
 
-      {selectedIds.size > 0 && (
-        <div className="fixed bottom-20 left-0 right-0 z-40 px-4">
+      {selectedIds.size > 0 &&
+      <div className="fixed bottom-20 left-0 right-0 z-40 px-4">
           <div className="max-w-lg mx-auto bg-primary text-primary-foreground rounded-2xl shadow-lg p-3 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2">
               <Layers className="w-5 h-5" />
@@ -580,49 +580,49 @@ ${fichasHtml}
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={handlePrintFichas}
-                disabled={printing}
-                className="text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 disabled:opacity-50"
-              >
+              onClick={handlePrintFichas}
+              disabled={printing}
+              className="text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5 disabled:opacity-50">
+              
                 {printing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Printer className="w-4 h-4" />}
                 Imprimir
               </button>
               <button
-                onClick={() => setShowBulkEdit(true)}
-                className="text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors"
-              >
+              onClick={() => setShowBulkEdit(true)}
+              className="text-sm font-medium bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-xl transition-colors">
+              
                 Editar
               </button>
               <button
-                onClick={() => setSelectedIds(new Set())}
-                className="p-1.5 rounded-xl hover:bg-white/20"
-              >
+              onClick={() => setSelectedIds(new Set())}
+              className="p-1.5 rounded-xl hover:bg-white/20">
+              
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
         </div>
-      )}
+      }
 
       <QuickActionFAB />
       <BottomNav />
 
-      {showEditor && (
-        <RAEditorModal
-          ra={editingRA}
-          onClose={() => { setShowEditor(false); setEditingRA(null); }}
-        />
-      )}
+      {showEditor &&
+      <RAEditorModal
+        ra={editingRA}
+        onClose={() => {setShowEditor(false);setEditingRA(null);}} />
 
-      {showBulkEdit && (
-        <BulkEditModal
-          selectedIds={selectedIds}
-          onApply={(changes) => bulkUpdateMutation.mutate({ ids: [...selectedIds], changes })}
-          onClose={() => setShowBulkEdit(false)}
-        />
-      )}
-    </div>
-  );
+      }
+
+      {showBulkEdit &&
+      <BulkEditModal
+        selectedIds={selectedIds}
+        onApply={(changes) => bulkUpdateMutation.mutate({ ids: [...selectedIds], changes })}
+        onClose={() => setShowBulkEdit(false)} />
+
+      }
+    </div>);
+
 }
 
 // === Ficha A4 HTML Generator ===
@@ -637,7 +637,7 @@ function generateFichaHTML(item, isLast) {
     try {
       const d = new Date(dateStr + 'T12:00:00');
       return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch { return dateStr; }
+    } catch {return dateStr;}
   };
 
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(label.qr_data || '')}`;
@@ -646,8 +646,8 @@ function generateFichaHTML(item, isLast) {
   const isPulverizacao = (ra.type || '').toUpperCase().includes('PULVER');
 
   // Check if any product has active_ingredient or target filled
-  const hasPA = products.some(p => p.active_ingredient && p.active_ingredient.trim());
-  const hasTarget = products.some(p => p.target && p.target.trim());
+  const hasPA = products.some((p) => p.active_ingredient && p.active_ingredient.trim());
+  const hasTarget = products.some((p) => p.target && p.target.trim());
 
   // Dynamic column widths based on how many columns are visible
   const colCount = 7 + (hasPA ? 1 : 0) + (hasTarget ? 1 : 0);
@@ -656,9 +656,9 @@ function generateFichaHTML(item, isLast) {
   const productRows = products.map((p, i) => {
     const tankCapacity = implement?.tank_capacity_liters || 0;
     const litersPerHa = ra.liters_per_ha || 1000;
-    const qtyPerTank = tankCapacity && p.dose != null
-      ? (p.dose * (tankCapacity / litersPerHa)).toFixed(3)
-      : null;
+    const qtyPerTank = tankCapacity && p.dose != null ?
+    (p.dose * (tankCapacity / litersPerHa)).toFixed(3) :
+    null;
 
     const paCell = hasPA ? `<td style="text-align: left; font-style: italic; color: #2a6a4a;">${p.active_ingredient || '—'}</td>` : '';
     const targetCell = hasTarget ? `<td style="text-align: left; color: #555;">${p.target || '—'}</td>` : '';
@@ -689,9 +689,9 @@ function generateFichaHTML(item, isLast) {
   }).join('');
 
   // Orchard info
-  const orchardText = ra.orchard_code
-    ? `${ra.orchard_code}${ra.orchard_name ? ' — ' + ra.orchard_name : ''}${ra.orchard_area ? ' (' + ra.orchard_area + ' ha)' : ''}`
-    : '—';
+  const orchardText = ra.orchard_code ?
+  `${ra.orchard_code}${ra.orchard_name ? ' — ' + ra.orchard_name : ''}${ra.orchard_area ? ' (' + ra.orchard_area + ' ha)' : ''}` :
+  '—';
 
   // Machine/Tractor/Implement info block — pulled from Machine and Implement entities
   const machineItems = [];
@@ -708,7 +708,7 @@ function generateFichaHTML(item, isLast) {
   let machineHtml = '';
   for (let i = 0; i < machineItems.length; i += 3) {
     const row = machineItems.slice(i, i + 3);
-    let cells = row.map(m => `
+    let cells = row.map((m) => `
       <div class="info-item">
         <span class="info-label">${m.label}</span>
         <span class="info-value">${m.value || '—'}</span>
@@ -785,10 +785,10 @@ function generateFichaHTML(item, isLast) {
       ` : ''}
 
       <!-- Product-specific observations -->
-      ${products.some(p => p.obs) ? `
+      ${products.some((p) => p.obs) ? `
       <div class="section-title">Observações dos Produtos</div>
       <div class="obs-box">
-        ${products.filter(p => p.obs).map(p => `<strong>${p.product_name}:</strong> ${p.obs}`).join('<br/>')}
+        ${products.filter((p) => p.obs).map((p) => `<strong>${p.product_name}:</strong> ${p.obs}`).join('<br/>')}
       </div>
       ` : ''}
 
