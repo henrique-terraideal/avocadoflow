@@ -7,13 +7,35 @@ const formatQtBr = (v) => v != null && !isNaN(v) ? Number(v).toLocaleString('pt-
 
 /**
  * Extracts RA data object from a record's additional_details JSON string.
- * The RA data is stored as a value (JSON string) whose parsed object contains "ra_id".
+ * Supports two formats:
+ * - Flat: ra_id is a direct key (from createLabelsFromRAs backend function)
+ * - Nested: ra_id is inside a JSON string value (from RASelectorField in the UI)
  */
 export function extractRAData(additionalDetailsStr) {
   if (!additionalDetailsStr) return null;
   try {
     const parsed = JSON.parse(additionalDetailsStr);
     if (!parsed || typeof parsed !== "object") return null;
+
+    // Case 1: flat format from createLabelsFromRAs — ra_id is a direct top-level key
+    if ("ra_id" in parsed) {
+      return {
+        ra_id: parsed.ra_id,
+        code: parsed.ra_code || parsed.code || "",
+        type: parsed.type || "",
+        orchard: parsed.orchard_code || parsed.orchard || "",
+        climate_conditions: parsed.climate_conditions || "",
+        machine_config: parsed.machine_config || "",
+        machine_name: parsed.machine_name || "",
+        implement_config: parsed.implement_config || "",
+        implement_name: parsed.implement_name || "",
+        tank_capacity_liters: parsed.tank_capacity_liters || null,
+        liters_per_ha: parsed.liters_per_ha || null,
+        products: parsed.products || [],
+      };
+    }
+
+    // Case 2: nested format from RASelectorField — value is JSON string containing ra_id
     for (const value of Object.values(parsed)) {
       try {
         const v = typeof value === "string" ? JSON.parse(value) : value;

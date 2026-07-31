@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -12,15 +12,47 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
   const [selectedOperator, setSelectedOperator] = useState(
     operators.find((o) => o.name === label.operator_name) || null
   );
-  const [selectedOperation, setSelectedOperation] = useState(
-    operations.find((o) => o.name === label.operation_name) || null
-  );
+  const [selectedOperation, setSelectedOperation] = useState(() => {
+    // Try to find operation: by code first (labels from RA), then by name
+    return (
+      (label.operation_code && operations.find((o) => String(o.code) === String(label.operation_code))) ||
+      operations.find((o) => o.name === label.operation_name) ||
+      null
+    );
+  });
   const [selectedOrchard, setSelectedOrchard] = useState(label.orchard_number || null);
   const [selectedDate, setSelectedDate] = useState(label.date || "");
   const [customValues, setCustomValues] = useState(() => {
     try { return label.additional_details ? JSON.parse(label.additional_details) : {}; }
     catch { return {}; }
   });
+
+  // Detect RA data from flat additional_details (labels created from RAs)
+  const selectedRA = useMemo(() => {
+    if (customValues.ra_id) {
+      return {
+        ra_id: customValues.ra_id,
+        code: customValues.ra_code || "",
+        type: customValues.type || "",
+        orchard: customValues.orchard_code || label.orchard_number || "",
+        climate_conditions: customValues.climate_conditions || "",
+        machine_config: customValues.machine_config || "",
+        machine_name: customValues.machine_name || "",
+        implement_config: customValues.implement_config || "",
+        implement_name: customValues.implement_name || "",
+        tank_capacity_liters: customValues.tank_capacity_liters || null,
+        liters_per_ha: customValues.liters_per_ha || null,
+        products: customValues.products || [],
+      };
+    }
+    for (const val of Object.values(customValues)) {
+      try {
+        const parsed = JSON.parse(val);
+        if (parsed && parsed.ra_id) return parsed;
+      } catch {}
+    }
+    return null;
+  }, [customValues, label.orchard_number]);
 
   const { template, customFields } = useOperationTemplate(selectedOperation?.id);
 
@@ -136,6 +168,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
             fields={planningFields}
             values={customValues}
             onChange={setCustomValues}
+            selectedRaData={selectedRA}
           />
         )}
 

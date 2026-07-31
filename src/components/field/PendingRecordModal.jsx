@@ -53,6 +53,23 @@ export default function PendingRecordModal({ label, operators, operations, onSav
 
   // Detecta se uma RA está selecionada nos customValues — se sim, o pomar da RA prevalece
   const selectedRA = useMemo(() => {
+    // Case 1: label from createLabelsFromRAs — ra_id is a top-level key (flat)
+    if (customValues.ra_id) {
+      return {
+        ra_id: customValues.ra_id,
+        code: customValues.ra_code || "",
+        type: customValues.type || "",
+        orchard: customValues.orchard_code || label.orchard_number || "",
+        climate_conditions: customValues.climate_conditions || "",
+        machine_config: customValues.machine_config || "",
+        implement_config: customValues.implement_config || "",
+        implement_name: customValues.implement_name || "",
+        tank_capacity_liters: customValues.tank_capacity_liters || null,
+        liters_per_ha: customValues.liters_per_ha || null,
+        products: customValues.products || [],
+      };
+    }
+    // Case 2: RA selected via RASelectorField — stored as JSON string in a field key
     for (const val of Object.values(customValues)) {
       try {
         const parsed = JSON.parse(val);
@@ -60,7 +77,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
       } catch {}
     }
     return null;
-  }, [customValues]);
+  }, [customValues, label.orchard_number]);
 
   const effectiveOrchard = selectedRA?.orchard || selectedOrchard;
 
@@ -331,6 +348,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
             values={customValues}
             onChange={setCustomValues}
             readOnlyRA={true}
+            selectedRaData={selectedRA}
           />
         )}
 

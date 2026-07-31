@@ -78,7 +78,7 @@ export default function Records() {
   const filteredRecords = useMemo(() => {
     return enrichedRecords.filter((r) => {
       const matchDate = selectedDate ? r.date === selectedDate : true;
-      const matchRA = showOnlyRA ? !!(r.additional_details && r.additional_details.includes("ra_selector")) : true;
+      const matchRA = showOnlyRA ? !!(r.additional_details && (r.additional_details.includes("ra_selector") || r.additional_details.includes("ra_id"))) : true;
       const matchSearch = search
         ? normalize(r.operator_name + " " + r.operation + " " + (r.observations || "")).includes(normalize(search))
         : true;

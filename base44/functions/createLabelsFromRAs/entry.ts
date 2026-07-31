@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
           operator_name: '',
           operator_photo: '',
           operation_code: opCode,
-          operation_name: opCode ? `${opCode} - ${opName}` : opName,
+          operation_name: opName,
           orchard_number: ra.orchard_code || '',
           qr_data: 'PENDING',
           auto_rescheduled: false,

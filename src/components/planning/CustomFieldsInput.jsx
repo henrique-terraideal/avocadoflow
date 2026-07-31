@@ -10,7 +10,7 @@ import RASelectorField from "./RASelectorField";
  * values: { [field_label]: string }
  * onChange: (newValues) => void
  */
-export default function CustomFieldsInput({ fields, values, onChange, onRASelected, readOnlyRA }) {
+export default function CustomFieldsInput({ fields, values, onChange, onRASelected, readOnlyRA, selectedRaData }) {
   if (!fields || fields.length === 0) return null;
 
   const handleChange = (label, value) => {
@@ -28,13 +28,14 @@ export default function CustomFieldsInput({ fields, values, onChange, onRASelect
           onChange={(val) => handleChange(field.field_label, val)}
           onRASelected={onRASelected}
           readOnlyRA={readOnlyRA}
+          selectedRaData={selectedRaData}
         />
       ))}
     </div>
   );
 }
 
-function FieldInput({ field, value, onChange, onRASelected, readOnlyRA }) {
+function FieldInput({ field, value, onChange, onRASelected, readOnlyRA, selectedRaData }) {
   const label = (
     <label className="text-xs font-medium text-muted-foreground mb-1 block">
       {field.field_label}
@@ -124,10 +125,15 @@ function FieldInput({ field, value, onChange, onRASelected, readOnlyRA }) {
   }
 
   if (field.field_type === "ra_selector") {
+    // If readOnlyRA and we have selectedRaData from parent (flat additional_details from RA label),
+    // pass it as stringified value so RASelectorField can render it correctly
+    const effectiveValue = (selectedRaData && !value)
+      ? JSON.stringify(selectedRaData)
+      : value;
     return (
       <div>
         {label}
-        <RASelectorField value={value} onChange={onChange} onRASelected={onRASelected} readOnly={readOnlyRA} />
+        <RASelectorField value={effectiveValue} onChange={onChange} onRASelected={onRASelected} readOnly={readOnlyRA} />
       </div>
     );
   }
