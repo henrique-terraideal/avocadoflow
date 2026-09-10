@@ -25,6 +25,19 @@
       ],
       "description": "Unidade de medida do produto"
     },
+    "dose_bula": {
+      "type": "number",
+      "description": "Dose de bula (dose recomendada pelo fabricante, por ha ou por planta conforme aplica\u00e7\u00e3o)"
+    },
+    "tipo_produto": {
+      "type": "string",
+      "enum": [
+        "L\u00edquido",
+        "Sal Sol\u00favel",
+        "N\u00e3o se aplica"
+      ],
+      "description": "Tipo do produto: L\u00edquido, Sal Sol\u00favel ou N\u00e3o se aplica"
+    },
     "carencia": {
       "type": "string",
       "description": "Per\u00edodo de car\u00eancia padr\u00e3o do produto (ex: '30 dias', 'N\u00e3o se aplica')"

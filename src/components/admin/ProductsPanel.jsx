@@ -137,6 +137,8 @@ export default function ProductsPanel() {
                         {product.active_ingredient ? `P.A.: ${product.active_ingredient}` : ""}
                         {product.target ? ` · Alvo: ${product.target}` : ""}
                         {product.carencia ? ` · Carência: ${product.carencia}` : ""}
+                        {product.dose_bula != null && product.dose_bula !== "" ? ` · Dose bula: ${product.dose_bula}${product.unit ? " " + product.unit : ""}` : ""}
+                        {product.tipo_produto ? ` · ${product.tipo_produto}` : ""}
                       </p>
                     </div>
                     <button onClick={() => setEditingId(product.id)} className="text-muted-foreground hover:text-foreground p-1">
@@ -163,6 +165,8 @@ function ProductForm({ product, onSave, onCancel, saving }) {
     target: product?.target || "",
     carencia: product?.carencia || "",
     unit: product?.unit || "",
+    dose_bula: product?.dose_bula ?? "",
+    tipo_produto: product?.tipo_produto || "",
     active: product?.active ?? true,
   });
 
@@ -213,6 +217,32 @@ function ProductForm({ product, onSave, onCancel, saving }) {
           <option value="g">g (Grama)</option>
           <option value="t">t (Tonelada)</option>
         </select>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Dose de bula</label>
+          <Input
+            type="number"
+            step="any"
+            value={form.dose_bula}
+            onChange={(e) => setForm(p => ({ ...p, dose_bula: e.target.value === "" ? "" : Number(e.target.value) }))}
+            className="rounded-xl"
+            placeholder="Ex: 2.5"
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Tipo de produto</label>
+          <select
+            value={form.tipo_produto || ""}
+            onChange={(e) => setForm(p => ({ ...p, tipo_produto: e.target.value }))}
+            className="w-full h-9 rounded-xl border border-input bg-background px-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="">—</option>
+            <option value="Líquido">Líquido</option>
+            <option value="Sal Solúvel">Sal Solúvel</option>
+            <option value="Não se aplica">Não se aplica</option>
+          </select>
+        </div>
       </div>
 
       <div className="flex gap-2 pt-1">
