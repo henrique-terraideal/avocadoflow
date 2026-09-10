@@ -58,7 +58,6 @@
     "operator_name",
     "operation",
     "orchard_number",
-    "start_time",
-    "end_time"
+    "start_time"
   ]
 }
