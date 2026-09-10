@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { PlusCircle, List, Settings, ClipboardList, UserCircle, Leaf, BarChart3 } from "lucide-react";
+import { PlusCircle, List, Settings, ClipboardList, UserCircle, Leaf } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 
 export default function BottomNav() {
@@ -12,7 +12,6 @@ export default function BottomNav() {
   }, []);
 
   const NAV_ITEMS = [
-    ...(isAdmin ? [{ to: "/relatorios", icon: BarChart3, label: "Dados" }] : []),
     { to: "/registros", icon: List, label: "Registros" },
     ...(isAdmin ? [{ to: "/planejamento", icon: ClipboardList, label: "Planejar" }] : []),
     { to: "/", icon: PlusCircle, label: "Novo", elevated: true },
