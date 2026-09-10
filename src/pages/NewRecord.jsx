@@ -135,17 +135,6 @@ export default function NewRecord() {
         if (!opMatch) return false;
         if (label.date && label.date > today) return false;
         if (label.concluded) return false;
-        // Já concluída por registro em campo (compatibilidade com dados antigos)
-        const done = fieldRecords.some(
-          (r) =>
-            r.operator_id === selectedOperator.id &&
-            r.orchard_number === (parsed.orchard || label.orchard_number) &&
-            r.start_time &&
-            r.end_time &&
-            parsed.actCode &&
-            (r.operation || "").startsWith(`${parsed.actCode}.`)
-        );
-        if (done) return false;
         return true;
       })
       .sort((a, b) => (a.label.date || "").localeCompare(b.label.date || ""));
