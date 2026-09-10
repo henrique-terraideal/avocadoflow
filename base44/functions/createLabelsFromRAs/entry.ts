@@ -84,6 +84,12 @@ Deno.serve(async (req) => {
     // Fetch Orchards for area/plant info
     const orchards = await base44.asServiceRole.entities.Orchard.filter({ active: true });
 
+    // Fetch Tipos de Operação (operation types with EPIs/lembretes/aviso critico)
+    let tiposOperacao: any[] = [];
+    try {
+      tiposOperacao = await base44.asServiceRole.entities.TipoOperacao.list("-created_date", 500);
+    } catch (_) {}
+
     const results = [];
 
     for (const ra of selectedRAs) {
@@ -96,6 +102,17 @@ Deno.serve(async (req) => {
 
       // Find orchard info
       const orchard = orchards.find(o => o.code === ra.orchard_code);
+
+      // Find TipoOperacao linked (by operation_type_id, fallback by name)
+      let tipoOperacao: any = null;
+      if (ra.operation_type_id) {
+        tipoOperacao = tiposOperacao.find((t) => t.id === ra.operation_type_id) || null;
+      }
+      if (!tipoOperacao && ra.type) {
+        const normalize = (s: string) => String(s).toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+        const typeNorm = normalize(ra.type);
+        tipoOperacao = tiposOperacao.find((t) => normalize(t.name) === typeNorm) || null;
+      }
 
       // Find machine (tractor) via machine_id
       const machine = ra.machine_id ? machines_list.find(m => m.id === ra.machine_id) : null;
@@ -231,6 +248,14 @@ Deno.serve(async (req) => {
           id: operation.id,
           code: operation.code,
           name: operation.name,
+        } : null,
+        tipo_operacao: tipoOperacao ? {
+          id: tipoOperacao.id,
+          name: tipoOperacao.name,
+          epis_predefinidos: tipoOperacao.epis_predefinidos || '[]',
+          epis_adicionais: tipoOperacao.epis_adicionais || '',
+          lembretes: tipoOperacao.lembretes || '',
+          aviso_critico: tipoOperacao.aviso_critico || '',
         } : null,
       });
     }

@@ -13,7 +13,11 @@
     },
     "type": {
       "type": "string",
-      "description": "Tipo da recomenda\u00e7\u00e3o (ex: FERTIADUBA\u00c7\u00c3O, ADUBA\u00c7\u00c3O DE COBERTURA)"
+      "description": "Tipo da recomenda\u00e7\u00e3o (ex: FERTIADUBA\u00c7\u00c3O, ADUBA\u00c7\u00c3O DE COBERTURA) \u2014 c\u00f3pia denormalizada do nome do TipoOperacao vinculado"
+    },
+    "operation_type_id": {
+      "type": "string",
+      "description": "ID do TipoOperacao vinculado (refer\u00eancia \u00e0 entity TipoOperacao)"
     },
     "orchard_code": {
       "type": "string",

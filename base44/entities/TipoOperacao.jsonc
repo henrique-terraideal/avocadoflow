@@ -1,0 +1,38 @@
+{
+  "name": "TipoOperacao",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Nome do tipo de opera\u00e7\u00e3o (ex: FERTIADUBA\u00c7\u00c3O, PULVERIZA\u00c7\u00c3O)"
+    },
+    "epis_predefinidos": {
+      "type": "string",
+      "description": "JSON array dos EPIs pr\u00e9-definidos selecionados (ex: [\"Luva nitr\u00edlica\",\"\u00d3culos de prote\u00e7\u00e3o\"])"
+    },
+    "epis_adicionais": {
+      "type": "string",
+      "description": "EPIs adicionais em texto livre (um por linha ou separados por v\u00edrgula)"
+    },
+    "lembretes": {
+      "type": "string",
+      "description": "Lembretes da opera\u00e7\u00e3o em texto livre"
+    },
+    "aviso_critico": {
+      "type": "string",
+      "description": "Aviso cr\u00edtico da opera\u00e7\u00e3o (ex: Realizar Tripla Lavagem e descartar as embalagens no dep\u00f3sito de vasilhames)"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Se o tipo de opera\u00e7\u00e3o est\u00e1 ativo"
+    },
+    "sort_order": {
+      "type": "number",
+      "description": "Ordem de exibi\u00e7\u00e3o"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

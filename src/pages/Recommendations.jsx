@@ -342,6 +342,67 @@ export default function Recommendations() {
       line-height: 1.4;
     }
 
+    .safety-banner {
+      background: #1a5a2a;
+      border-radius: 2mm;
+      padding: 4mm;
+      margin: 3mm 0;
+      display: flex;
+      align-items: center;
+      gap: 3mm;
+      page-break-inside: avoid;
+    }
+    .safety-banner .shield {
+      font-size: 18pt;
+      flex-shrink: 0;
+    }
+    .safety-banner .safety-text {
+      font-size: 10.5pt;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1.3;
+      letter-spacing: 0.2px;
+    }
+
+    .epi-section, .lembrete-section {
+      margin: 3mm 0;
+      page-break-inside: avoid;
+    }
+    .epi-list, .lembrete-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .epi-list li, .lembrete-list li {
+      font-size: 8.5pt;
+      padding: 1mm 0;
+      padding-left: 5mm;
+      position: relative;
+      color: #333;
+    }
+    .epi-list li::before {
+      content: "🦺";
+      position: absolute;
+      left: 0;
+    }
+    .lembrete-list li::before {
+      content: "📌";
+      position: absolute;
+      left: 0;
+    }
+    .epi-box {
+      background: #eef5ef;
+      border: 0.5mm solid #1a7a3a;
+      border-radius: 2mm;
+      padding: 3mm;
+    }
+    .lembrete-box {
+      background: #f5f5f5;
+      border: 0.5mm solid #bbb;
+      border-radius: 2mm;
+      padding: 3mm;
+    }
+
     .climate-box {
       background: #f5f5f5;
       border: 0.5mm solid #ddd;
@@ -716,6 +777,17 @@ function generateFichaHTML(item, isLast) {
     `;
   }).join('');
 
+  // Parse EPIs from tipo_operacao
+  const tipoOp = item.tipo_operacao;
+  let episList = [];
+  if (tipoOp) {
+    try { episList = JSON.parse(tipoOp.epis_predefinidos || '[]'); } catch { episList = []; }
+    const adicionais = (tipoOp.epis_adicionais || '').split(/[\n,]/).map((s) => s.trim()).filter(Boolean);
+    episList = [...episList, ...adicionais];
+  }
+  const lembretes = tipoOp?.lembretes || '';
+  const avisoCritico = tipoOp?.aviso_critico || '';
+
   // Orchard info
   const orchardText = ra.orchard_code ?
   `${ra.orchard_code}${ra.orchard_name ? ' — ' + ra.orchard_name : ''}${ra.orchard_area ? ' (' + ra.orchard_area + ' ha)' : ''}` :
@@ -820,12 +892,42 @@ function generateFichaHTML(item, isLast) {
       </div>
       ` : ''}
 
-      <!-- Critical Message -->
+      <!-- EPIs Obrigatórios -->
+      ${episList.length > 0 ? `
+      <div class="epi-section">
+        <div class="section-title">EPIs Obrigatórios</div>
+        <div class="epi-box">
+          <ul class="epi-list">
+            ${episList.map((e) => `<li>${e}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Lembretes -->
+      ${lembretes ? `
+      <div class="lembrete-section">
+        <div class="section-title">Lembretes</div>
+        <div class="lembrete-box">
+          <ul class="lembrete-list">
+            ${lembretes.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => `<li>${l}</li>`).join('')}
+          </ul>
+        </div>
+      </div>
+      ` : ''}
+
+      <!-- Aviso Crítico -->
+      ${avisoCritico ? `
       <div class="critical-box">
         <div class="critical-icon">⚠️</div>
-        <div class="critical-text">
-          Realizar Tripla Lavagem e descartar as embalagens no depósito de vasilhames
-        </div>
+        <div class="critical-text">${avisoCritico}</div>
+      </div>
+      ` : ''}
+
+      <!-- Frase de Segurança (fixa em todas as fichas) -->
+      <div class="safety-banner">
+        <div class="shield">🛡️</div>
+        <div class="safety-text">Foque completamente na sua segurança; sua vida é nosso maior patrimônio.</div>
       </div>
 
       <!-- Tanques Utilizados -->

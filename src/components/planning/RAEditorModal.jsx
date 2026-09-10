@@ -18,6 +18,7 @@ export default function RAEditorModal({ ra, onClose }) {
     code: ra?.code || "",
     date: ra?.date || "",
     type: ra?.type || "",
+    operation_type_id: ra?.operation_type_id || "",
     orchard_code: ra?.orchard_code || "",
     status: ra?.status || "planejada",
     machine_id: ra?.machine_id || "",
@@ -46,6 +47,11 @@ export default function RAEditorModal({ ra, onClose }) {
   const { data: implements_ = [] } = useQuery({
     queryKey: ["implements"],
     queryFn: () => base44.entities.Implement.filter({ active: true }, "sort_order", 200),
+  });
+
+  const { data: tiposOperacao = [] } = useQuery({
+    queryKey: ["tipos-operacao"],
+    queryFn: () => base44.entities.TipoOperacao.filter({ active: true }, "name", 500),
   });
 
   const { data: machines = [] } = useQuery({
@@ -181,8 +187,23 @@ export default function RAEditorModal({ ra, onClose }) {
           </div>
 
           <div>
-            <label className={labelClass}>Tipo</label>
-            <Input value={form.type} onChange={(e) => setForm(p => ({ ...p, type: e.target.value }))} className="rounded-xl" placeholder="FERTIADUBAÇÃO" />
+            <label className={labelClass}>Tipo de operação</label>
+            <select
+              value={form.operation_type_id}
+              onChange={(e) => {
+                const selected = tiposOperacao.find((t) => t.id === e.target.value);
+                setForm(p => ({ ...p, operation_type_id: e.target.value, type: selected?.name || "" }));
+              }}
+              className={inputClass}
+            >
+              <option value="">{form.type ? `Outro: "${form.type}"` : "Selecione..."}</option>
+              {tiposOperacao.map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+            {form.type && !form.operation_type_id && (
+              <p className="text-[10px] text-amber-600 mt-0.5">Tipo não cadastrado no catálogo — cadastre em Admin para EPIs/avisos na ficha</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
