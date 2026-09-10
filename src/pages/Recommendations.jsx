@@ -315,17 +315,17 @@ export default function Recommendations() {
     .tank-table th {
       background: #1a7a3a;
       color: white;
-      font-size: 8.5pt;
-      font-weight: 800;
+      font-size: 7pt;
+      font-weight: 700;
       text-transform: uppercase;
-      padding: 2.5mm;
+      padding: 1mm;
       text-align: center;
       border: 0.5mm solid #1a7a3a;
       letter-spacing: 0.3px;
     }
     .tank-cell {
       width: 25%;
-      height: 16mm;
+      height: 8mm;
       border: 0.5mm solid #1a7a3a;
       text-align: center;
       vertical-align: middle;
