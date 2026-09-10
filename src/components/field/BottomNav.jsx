@@ -14,9 +14,9 @@ export default function BottomNav() {
   const NAV_ITEMS = [
     { to: "/registros", icon: List, label: "Registros" },
     ...(isAdmin ? [{ to: "/planejamento", icon: ClipboardList, label: "Planejar" }] : []),
+    ...(isAdmin ? [{ to: "/reuniao", icon: CalendarRange, label: "Reunião" }] : []),
     { to: "/", icon: PlusCircle, label: "Novo", elevated: true },
     ...(isAdmin ? [
-      { to: "/reuniao", icon: CalendarRange, label: "Reunião" },
       { to: "/recomendacoes", icon: Leaf, label: "RAs" },
       { to: "/admin", icon: Settings, label: "Admin" },
     ] : []),
