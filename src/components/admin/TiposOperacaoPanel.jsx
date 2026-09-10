@@ -6,15 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Plus, Trash2, Pencil, Check, X, Loader2, ShieldAlert, Search, HardHat } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-const EPI_PRESETS = [
-  "Luva nitrílica",
-  "Óculos de proteção",
-  "Máscara/Respirador",
-  "Botas",
-  "Avental",
-  "Capacete",
-];
-
 const normalize = (str) => {
   if (!str) return "";
   return str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -187,28 +178,15 @@ function parseEpis(tipo) {
 function TipoForm({ tipo, onSave, onCancel, saving }) {
   const [form, setForm] = useState({
     name: tipo?.name || "",
-    epis_predefinidos: (() => { try { return JSON.parse(tipo?.epis_predefinidos || "[]"); } catch { return []; } })(),
     epis_adicionais: tipo?.epis_adicionais || "",
     lembretes: tipo?.lembretes || "",
     aviso_critico: tipo?.aviso_critico || "",
     active: tipo?.active ?? true,
   });
 
-  const toggleEpi = (epi) => {
-    setForm((p) => ({
-      ...p,
-      epis_predefinidos: p.epis_predefinidos.includes(epi)
-        ? p.epis_predefinidos.filter((e) => e !== epi)
-        : [...p.epis_predefinidos, epi],
-    }));
-  };
-
   const handleSubmit = () => {
     if (!form.name.trim()) return;
-    onSave({
-      ...form,
-      epis_predefinidos: JSON.stringify(form.epis_predefinidos),
-    });
+    onSave({ ...form });
   };
 
   const labelClass = "text-xs font-medium text-muted-foreground mb-1 block";
@@ -221,37 +199,12 @@ function TipoForm({ tipo, onSave, onCancel, saving }) {
       </div>
 
       <div>
-        <label className={labelClass}>EPIs obrigatórios (checklist)</label>
-        <div className="grid grid-cols-2 gap-2">
-          {EPI_PRESETS.map((epi) => (
-            <button
-              key={epi}
-              type="button"
-              onClick={() => toggleEpi(epi)}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                form.epis_predefinidos.includes(epi)
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-background text-muted-foreground hover:border-primary/30"
-              }`}
-            >
-              <span className={`w-4 h-4 rounded flex items-center justify-center border ${
-                form.epis_predefinidos.includes(epi) ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40"
-              }`}>
-                {form.epis_predefinidos.includes(epi) && <Check className="w-3 h-3" />}
-              </span>
-              {epi}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>EPIs adicionais (texto livre)</label>
+        <label className={labelClass}>EPIs obrigatórios</label>
         <textarea
           value={form.epis_adicionais}
           onChange={(e) => setForm((p) => ({ ...p, epis_adicionais: e.target.value }))}
           className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
-          rows={2}
+          rows={3}
           placeholder="Um por linha ou separados por vírgula"
         />
       </div>
