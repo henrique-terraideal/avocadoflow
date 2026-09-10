@@ -137,7 +137,7 @@ export default function ProductsPanel() {
                         {product.active_ingredient ? `P.A.: ${product.active_ingredient}` : ""}
                         {product.target ? ` · Alvo: ${product.target}` : ""}
                         {product.carencia ? ` · Carência: ${product.carencia}` : ""}
-                        {product.dose_bula != null && product.dose_bula !== "" ? ` · Dose bula: ${product.dose_bula}${product.unit ? " " + product.unit : ""}` : ""}
+                        {product.dose_bula ? ` · Dose bula: ${product.dose_bula}${product.unit ? " " + product.unit : ""}` : ""}
                         {product.tipo_produto ? ` · ${product.tipo_produto}` : ""}
                       </p>
                     </div>
@@ -222,12 +222,11 @@ function ProductForm({ product, onSave, onCancel, saving }) {
         <div>
           <label className={labelClass}>Dose de bula</label>
           <Input
-            type="number"
-            step="any"
+            type="text"
             value={form.dose_bula}
-            onChange={(e) => setForm(p => ({ ...p, dose_bula: e.target.value === "" ? "" : Number(e.target.value) }))}
+            onChange={(e) => setForm(p => ({ ...p, dose_bula: e.target.value }))}
             className="rounded-xl"
-            placeholder="Ex: 2.5"
+            placeholder="Ex: 2.5 L/ha, 30 mL/100L"
           />
         </div>
         <div>

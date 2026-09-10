@@ -26,8 +26,8 @@
       "description": "Unidade de medida do produto"
     },
     "dose_bula": {
-      "type": "number",
-      "description": "Dose de bula (dose recomendada pelo fabricante, por ha ou por planta conforme aplica\u00e7\u00e3o)"
+      "type": "string",
+      "description": "Dose de bula (dose recomendada pelo fabricante, em texto livre)"
     },
     "tipo_produto": {
       "type": "string",

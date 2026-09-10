@@ -737,11 +737,10 @@ function generateFichaHTML(item, isLast) {
   // Check if any product has active_ingredient or target filled
   const hasPA = products.some((p) => p.active_ingredient && p.active_ingredient.trim());
   const hasTarget = products.some((p) => p.target && p.target.trim());
-  const hasDoseBula = products.some((p) => p.dose_bula != null && p.dose_bula !== '');
   const hasTipoProduto = products.some((p) => p.tipo_produto && p.tipo_produto.trim() && p.tipo_produto !== 'Não se aplica');
 
   // Dynamic column widths based on how many columns are visible
-  const colCount = 7 + (hasPA ? 1 : 0) + (hasTarget ? 1 : 0) + (hasDoseBula ? 1 : 0) + (hasTipoProduto ? 1 : 0);
+  const colCount = 7 + (hasPA ? 1 : 0) + (hasTarget ? 1 : 0) + (hasTipoProduto ? 1 : 0);
 
   // Products table rows
   const productRows = products.map((p, i) => {
@@ -754,13 +753,13 @@ function generateFichaHTML(item, isLast) {
     const paCell = hasPA ? `<td style="text-align: left; font-style: italic; color: #2a6a4a;">${p.active_ingredient || '—'}</td>` : '';
     const targetCell = hasTarget ? `<td style="text-align: left; color: #555;">${p.target || '—'}</td>` : '';
     const tipoCell = hasTipoProduto ? `<td style="text-align: center; color: #555;">${p.tipo_produto || '—'}</td>` : '';
-    const doseBulaCell = hasDoseBula ? `<td style="text-align: center; color: #777;">${p.dose_bula != null ? `${formatQtBr(p.dose_bula)}${p.unit ? ' ' + p.unit : ''}` : '—'}</td>` : '';
 
     return `
       <tr>
         <td style="width: 6mm; text-align: center; font-weight: 700; color: #1a7a3a;">${i + 1}</td>
         <td style="width: 40mm;">
           <div class="product-name">${p.product_name || '—'}</div>
+          ${p.dose_bula ? `<div style="font-size: 6.5pt; color: #888; font-weight: 400; margin-top: 0.5mm;">Bula: ${p.dose_bula}${p.unit ? ' ' + p.unit : ''}</div>` : ''}
         </td>
         ${paCell}
         ${targetCell}
@@ -769,7 +768,6 @@ function generateFichaHTML(item, isLast) {
         <td style="width: 16mm; text-align: center; font-weight: 700;">
           ${p.dose != null ? `${formatQtBr(p.dose)}${p.unit ? ' ' + p.unit : ''}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
         </td>
-        ${doseBulaCell}
         <td style="width: 16mm; text-align: center;">
           ${qtyPerTank ? `<strong style="color: #1a5599;">${formatQtBr(qtyPerTank)}${p.unit ? ' ' + p.unit : ''}</strong>` : '—'}
         </td>
@@ -862,8 +860,7 @@ function generateFichaHTML(item, isLast) {
             ${hasTarget ? '<th style="width: 18mm;">Alvo</th>' : ''}
             ${hasTipoProduto ? '<th style="width: 14mm; text-align: center;">Tipo</th>' : ''}
             <th style="width: 14mm; text-align: center;">Modo</th>
-            <th style="width: 16mm; text-align: center;">Dose</th>
-            ${hasDoseBula ? '<th style="width: 16mm; text-align: center;">Dose Bula</th>' : ''}
+            <th style="width: 16mm; text-align: center;">Dose de aplicação</th>
             <th style="width: 16mm; text-align: center;">Qtd/Tanque</th>
             <th style="width: 14mm; text-align: center;">Total</th>
             <th style="width: 16mm; text-align: center;">Carência</th>
@@ -900,27 +897,28 @@ function generateFichaHTML(item, isLast) {
       </div>
       ` : ''}
 
-      <!-- EPIs Obrigatórios -->
-      ${episList.length > 0 ? `
-      <div class="epi-section">
-        <div class="section-title">EPIs Obrigatórios</div>
-        <div class="epi-box">
-          <ul class="epi-list">
-            ${episList.map((e) => `<li>${e}</li>`).join('')}
-          </ul>
+      ${episList.length > 0 || lembretes ? `
+      <div style="display: flex; gap: 4mm; margin: 3mm 0; page-break-inside: avoid;">
+        ${episList.length > 0 ? `
+        <div style="flex: 1; min-width: 0;">
+          <div class="section-title">EPIs Obrigatórios</div>
+          <div class="epi-box">
+            <ul class="epi-list">
+              ${episList.map((e) => `<li>${e}</li>`).join('')}
+            </ul>
+          </div>
         </div>
-      </div>
-      ` : ''}
-
-      <!-- Lembretes -->
-      ${lembretes ? `
-      <div class="lembrete-section">
-        <div class="section-title">Lembretes</div>
-        <div class="lembrete-box">
-          <ul class="lembrete-list">
-            ${lembretes.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => `<li>${l}</li>`).join('')}
-          </ul>
+        ` : ''}
+        ${lembretes ? `
+        <div style="flex: 1; min-width: 0;">
+          <div class="section-title">Lembretes</div>
+          <div class="lembrete-box">
+            <ul class="lembrete-list">
+              ${lembretes.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => `<li>${l}</li>`).join('')}
+            </ul>
+          </div>
         </div>
+        ` : ''}
       </div>
       ` : ''}
 
