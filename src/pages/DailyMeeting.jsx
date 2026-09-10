@@ -2,11 +2,12 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { ChevronLeft, ChevronRight, Loader2, Monitor, Users } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Monitor, Users, Plus } from "lucide-react";
 import { startOfWeek, addDays, subWeeks, addWeeks, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MeetingCard, { STATUS_STYLES } from "@/components/daily-meeting/MeetingCard";
 import MeetingCardModal from "@/components/daily-meeting/MeetingCardModal";
+import NewLabelModal from "@/components/planning/NewLabelModal";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
@@ -16,6 +17,7 @@ export default function DailyMeeting() {
     format(startOfWeek(new Date(), { weekStartsOn: 1 }), "yyyy-MM-dd")
   );
   const [editingLabel, setEditingLabel] = useState(null);
+  const [newLabel, setNewLabel] = useState(null);
 
   const weekStart = new Date(weekStartStr + "T12:00:00");
   const days = [0, 1, 2, 3, 4].map((i) => addDays(weekStart, i));
@@ -55,6 +57,25 @@ export default function DailyMeeting() {
     queryClient.invalidateQueries({ queryKey: ["meeting-labels"] });
     queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
     queryClient.invalidateQueries({ queryKey: ["home-pending-labels"] });
+  };
+
+  const openNewLabel = (operator, date) => setNewLabel({ operator, date });
+
+  const handleCreateLabel = (label) => {
+    base44.entities.PlanningLabel.create({
+      date: label.date,
+      operator_name: label.operatorName,
+      operator_photo: label.operatorPhoto || "",
+      operation_code: label.operationCode,
+      operation_name: label.operationName,
+      orchard_number: label.orchardNumber,
+      qr_data: label.qrData,
+      additional_details: label.additionalDetails || null,
+    }).then(() => {
+      queryClient.invalidateQueries({ queryKey: ["meeting-labels"] });
+      queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+      queryClient.invalidateQueries({ queryKey: ["home-pending-labels"] });
+    });
   };
 
   const updateLabel = useMutation({
@@ -203,9 +224,15 @@ export default function DailyMeeting() {
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`min-h-[120px] rounded-xl border p-1.5 space-y-1.5 transition-colors
+                            onClick={() => openNewLabel(op, ds)}
+                            className={`group relative min-h-[120px] rounded-xl border p-1.5 space-y-1.5 transition-colors cursor-pointer hover:bg-muted/40
                               ${snapshot.isDraggingOver ? "border-primary bg-primary/5" : "border-border bg-muted/20"}`}
                           >
+                            {cards.length === 0 && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <Plus className="w-5 h-5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            )}
                             {cards.map((label, idx) => (
                               <Draggable key={label.id} draggableId={label.id} index={idx}>
                                 {(p) => (
@@ -213,7 +240,7 @@ export default function DailyMeeting() {
                                     ref={p.innerRef}
                                     {...p.draggableProps}
                                     {...p.dragHandleProps}
-                                    onClick={() => setEditingLabel(label)}
+                                    onClick={(e) => { e.stopPropagation(); setEditingLabel(label); }}
                                     className="focus:outline-none"
                                   >
                                     <MeetingCard label={label} status={statusOf(label)} onDuplicate={duplicateLabel} />
@@ -245,9 +272,15 @@ export default function DailyMeeting() {
                         <div
                           ref={provided.innerRef}
                           {...provided.droppableProps}
-                          className={`min-h-[120px] rounded-xl border-2 border-dashed p-1.5 space-y-1.5 transition-colors
+                          onClick={() => openNewLabel(null, ds)}
+                          className={`group relative min-h-[120px] rounded-xl border-2 border-dashed p-1.5 space-y-1.5 transition-colors cursor-pointer hover:bg-muted/30
                             ${snapshot.isDraggingOver ? "border-primary bg-primary/5" : "border-border bg-muted/10"}`}
                         >
+                          {cards.length === 0 && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                              <Plus className="w-5 h-5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          )}
                           {cards.map((label, idx) => (
                             <Draggable key={label.id} draggableId={label.id} index={idx}>
                               {(p) => (
@@ -255,7 +288,7 @@ export default function DailyMeeting() {
                                   ref={p.innerRef}
                                   {...p.draggableProps}
                                   {...p.dragHandleProps}
-                                  onClick={() => setEditingLabel(label)}
+                                  onClick={(e) => { e.stopPropagation(); setEditingLabel(label); }}
                                   className="focus:outline-none"
                                 >
                                   <MeetingCard label={label} status={statusOf(label)} onDuplicate={duplicateLabel} />
@@ -274,6 +307,26 @@ export default function DailyMeeting() {
           </DragDropContext>
         )}
       </div>
+
+      <button
+        onClick={() => openNewLabel(null, today)}
+        className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:bg-primary/90 transition-colors"
+        title="Nova operação"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
+
+      {newLabel && (
+        <NewLabelModal
+          operators={operators}
+          operations={operations}
+          defaultOperator={newLabel.operator}
+          defaultDate={newLabel.date}
+          enableDate
+          onAdd={handleCreateLabel}
+          onClose={() => setNewLabel(null)}
+        />
+      )}
 
       {editingLabel && (
         <MeetingCardModal

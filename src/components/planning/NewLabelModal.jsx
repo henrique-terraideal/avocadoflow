@@ -2,7 +2,7 @@ import React from "react";
 import { X } from "lucide-react";
 import PlanningForm from "./PlanningForm";
 
-export default function NewLabelModal({ operators, operations, onAdd, onClose }) {
+export default function NewLabelModal({ operators, operations, onAdd, onClose, defaultOperator, defaultDate, enableDate }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       {/* Backdrop */}
@@ -23,6 +23,9 @@ export default function NewLabelModal({ operators, operations, onAdd, onClose })
           <PlanningForm
             operators={operators}
             operations={operations}
+            defaultOperator={defaultOperator}
+            defaultDate={defaultDate}
+            enableDate={enableDate}
             onAdd={(label) => { onAdd(label); onClose(); }}
             onCancel={onClose}
           />

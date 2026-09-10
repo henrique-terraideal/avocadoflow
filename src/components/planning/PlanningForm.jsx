@@ -8,8 +8,11 @@ import CustomFieldsInput from "./CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 import { useMemo } from "react";
 
-export default function PlanningForm({ operators, operations, onAdd, onCancel }) {
-  const [selectedOperator, setSelectedOperator] = useState(null);
+const todayStr = () => new Date().toISOString().split("T")[0];
+
+export default function PlanningForm({ operators, operations, onAdd, onCancel, defaultOperator, defaultDate, enableDate }) {
+  const [selectedOperator, setSelectedOperator] = useState(defaultOperator || null);
+  const [selectedDate, setSelectedDate] = useState(defaultDate || todayStr());
   const [selectedOperation, setSelectedOperation] = useState(null);
   const [selectedOrchard, setSelectedOrchard] = useState(null);
   const [customValues, setCustomValues] = useState({});
@@ -48,7 +51,7 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
     .filter((f) => f.is_required)
     .every((f) => customValues[f.field_label]?.trim());
 
-  const canAdd = selectedOperator && selectedOperation && effectiveOrchard && requiredFieldsFilled;
+  const canAdd = selectedOperation && effectiveOrchard && requiredFieldsFilled && selectedDate;
 
   const handleOperationChange = (op) => {
     setSelectedOperation(op || null);
@@ -60,8 +63,8 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
     if (!canAdd) return;
     const base = window.location.origin;
     const params = new URLSearchParams({
-      op_id: selectedOperator.id,
-      op_name: selectedOperator.name,
+      op_id: selectedOperator?.id || "",
+      op_name: selectedOperator?.name || "",
       act_id: selectedOperation.id,
       act_code: selectedOperation.code,
       act_name: selectedOperation.name,
@@ -69,8 +72,9 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
     });
     const qrData = `${base}/?${params.toString()}`;
     onAdd({
-      operatorName: selectedOperator.name,
-      operatorPhoto: selectedOperator.photo_url || null,
+      date: selectedDate,
+      operatorName: selectedOperator?.name || "",
+      operatorPhoto: selectedOperator?.photo_url || null,
       operationCode: selectedOperation.code,
       operationName: selectedOperation.name,
       orchardNumber: effectiveOrchard,
@@ -81,6 +85,18 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel })
 
   return (
     <div className="space-y-5">
+      {/* Data */}
+      {enableDate && (
+        <div>
+          <p className="text-sm font-semibold mb-2 text-foreground">Data</p>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-full rounded-xl border-2 border-border bg-muted/30 px-3 py-2.5 text-sm font-medium focus:border-primary outline-none"
+          />
+        </div>
+      )}
       {/* Operador */}
       <div>
         <p className="text-sm font-semibold mb-2 text-foreground">Operador</p>
