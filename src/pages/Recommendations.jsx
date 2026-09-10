@@ -302,6 +302,34 @@ export default function Recommendations() {
       align-items: center;
       gap: 3mm;
     }
+
+    .tank-section {
+      margin: 3mm 0;
+      page-break-inside: avoid;
+    }
+    .tank-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    .tank-table th {
+      background: #1a7a3a;
+      color: white;
+      font-size: 8.5pt;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 2.5mm;
+      text-align: center;
+      border: 0.5mm solid #1a7a3a;
+      letter-spacing: 0.3px;
+    }
+    .tank-cell {
+      width: 25%;
+      height: 16mm;
+      border: 0.5mm solid #1a7a3a;
+      text-align: center;
+      vertical-align: middle;
+    }
     .critical-icon {
       font-size: 16pt;
       flex-shrink: 0;
@@ -798,6 +826,38 @@ function generateFichaHTML(item, isLast) {
         <div class="critical-text">
           Realizar Tripla Lavagem e descartar as embalagens no depósito de vasilhames
         </div>
+      </div>
+
+      <!-- Tanques Utilizados -->
+      <div class="tank-section">
+        <div class="section-title">Tanques Utilizados</div>
+        <table class="tank-table">
+          <thead>
+            <tr>
+              <th colspan="4">Risque com X os tanques preparados durante a operação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+            </tr>
+            <tr>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+            </tr>
+            <tr>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+              <td class="tank-cell"></td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <!-- QR Code Section -->
