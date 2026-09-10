@@ -12,6 +12,7 @@ import AdminGuard from './components/admin/AdminGuard';
 import Planning from './pages/Planning';
 import Recommendations from './pages/Recommendations';
 import Profile from './pages/Profile';
+import DailyMeeting from './pages/DailyMeeting';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -44,6 +45,7 @@ const AuthenticatedApp = () => {
       <Route path="/planejamento" element={<Planning />} />
       <Route path="/recomendacoes" element={<Recommendations />} />
       <Route path="/admin" element={<AdminGuard><Admin /></AdminGuard>} />
+      <Route path="/reuniao" element={<AdminGuard><DailyMeeting /></AdminGuard>} />
       <Route path="/perfil" element={<Profile />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
