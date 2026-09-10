@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
     const matchingRecord = allRecords.find(r => {
       try {
         const d = JSON.parse(r.additional_details || '{}');
-        return d.ra_id === ra_id;
+        return d.ra_id === ra_id && r.created_by_id === user.id;
       } catch { return false; }
     });
 

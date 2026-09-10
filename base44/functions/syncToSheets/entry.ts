@@ -8,8 +8,17 @@ Deno.serve(async (req) => {
     const body = await req.json();
 
     const record = body.data;
-    if (!record) {
+    if (!record || !record.id) {
       return Response.json({ error: 'No record data provided' }, { status: 400 });
+    }
+
+    // Fetch the real record from the DB to prevent arbitrary data injection into the sheet.
+    let realRecord;
+    try {
+      realRecord = await base44.asServiceRole.entities.FieldRecord.get(record.id);
+    } catch (_) {}
+    if (!realRecord) {
+      return Response.json({ error: 'Record not found' }, { status: 404 });
     }
 
     const { accessToken } = await base44.asServiceRole.connectors.getConnection("googlesheets");
@@ -22,15 +31,15 @@ Deno.serve(async (req) => {
     const spreadsheetId = configs[0].value;
 
     const row = [
-      record.date || new Date().toISOString().split("T")[0],
-      record.operator_name || "",
-      record.operation || "",
-      record.orchard_number || "",
-      record.start_time || "",
-      record.end_time || "",
-      record.observations || "",
+      realRecord.date || new Date().toISOString().split("T")[0],
+      realRecord.operator_name || "",
+      realRecord.operation || "",
+      realRecord.orchard_number || "",
+      realRecord.start_time || "",
+      realRecord.end_time || "",
+      realRecord.observations || "",
       new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-      record.id || "", // coluna I: ID interno para rastrear e deletar depois
+      realRecord.id || "", // coluna I: ID interno para rastrear e deletar depois
     ];
 
     // OVERWRITE: preenche a próxima linha vazia (funciona mesmo se linhas foram removidas manualmente)
