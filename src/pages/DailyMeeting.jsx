@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { ChevronLeft, ChevronRight, CalendarDays, Loader2, Monitor } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Monitor, Users } from "lucide-react";
 import { startOfWeek, addDays, subWeeks, addWeeks, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MeetingCard, { STATUS_STYLES } from "@/components/daily-meeting/MeetingCard";
@@ -46,6 +46,17 @@ export default function DailyMeeting() {
 
   const statusOf = (l) => (l.concluded ? "executada" : l.date < today ? "pendente" : "planejada");
 
+  const cardsForUnassigned = (dayStr) =>
+    weekLabels.filter((l) => !operators.some((o) => o.name === l.operator_name) && l.date === dayStr);
+
+  const duplicateLabel = async (label) => {
+    const { id, created_date, updated_date, created_by_id, ...rest } = label;
+    await base44.entities.PlanningLabel.create({ ...rest, concluded: false, draft_data: null });
+    queryClient.invalidateQueries({ queryKey: ["meeting-labels"] });
+    queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+    queryClient.invalidateQueries({ queryKey: ["home-pending-labels"] });
+  };
+
   const updateLabel = useMutation({
     mutationFn: ({ id, data }) => base44.entities.PlanningLabel.update(id, data),
     onSuccess: () => {
@@ -64,10 +75,24 @@ export default function DailyMeeting() {
     const [dstOpId, dstDate] = destination.droppableId.split("|");
     const [srcOpId, srcDate] = source.droppableId.split("|");
     if (srcOpId === dstOpId && srcDate === dstDate) return;
-    const op = operators.find((o) => o.id === dstOpId);
-    if (!op) return;
     const label = allLabels.find((l) => l.id === draggableId);
     if (!label) return;
+    if (dstOpId === "__unassigned__") {
+      let qr = label.qr_data;
+      try {
+        const url = new URL(label.qr_data);
+        url.searchParams.set("op_id", "");
+        url.searchParams.set("op_name", "");
+        qr = url.toString();
+      } catch {}
+      updateLabel.mutate({
+        id: label.id,
+        data: { operator_name: "", operator_photo: "", date: dstDate, qr_data: qr },
+      });
+      return;
+    }
+    const op = operators.find((o) => o.id === dstOpId);
+    if (!op) return;
     let qr = label.qr_data;
     try {
       const url = new URL(label.qr_data);
@@ -191,7 +216,7 @@ export default function DailyMeeting() {
                                     onClick={() => setEditingLabel(label)}
                                     className="focus:outline-none"
                                   >
-                                    <MeetingCard label={label} status={statusOf(label)} />
+                                    <MeetingCard label={label} status={statusOf(label)} onDuplicate={duplicateLabel} />
                                   </div>
                                 )}
                               </Draggable>
@@ -204,6 +229,47 @@ export default function DailyMeeting() {
                   ))}
                 </React.Fragment>
               ))}
+              {/* Linha "Sem dono" */}
+              <React.Fragment key="__unassigned__">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/40 border-2 border-dashed border-border sticky left-0 z-10">
+                  <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <span className="font-semibold text-sm text-muted-foreground">Sem dono</span>
+                </div>
+                {dayStrs.map((ds) => (
+                  <Droppable key={"__unassigned__|" + ds} droppableId={"__unassigned__|" + ds}>
+                    {(provided, snapshot) => {
+                      const cards = cardsForUnassigned(ds);
+                      return (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className={`min-h-[120px] rounded-xl border-2 border-dashed p-1.5 space-y-1.5 transition-colors
+                            ${snapshot.isDraggingOver ? "border-primary bg-primary/5" : "border-border bg-muted/10"}`}
+                        >
+                          {cards.map((label, idx) => (
+                            <Draggable key={label.id} draggableId={label.id} index={idx}>
+                              {(p) => (
+                                <div
+                                  ref={p.innerRef}
+                                  {...p.draggableProps}
+                                  {...p.dragHandleProps}
+                                  onClick={() => setEditingLabel(label)}
+                                  className="focus:outline-none"
+                                >
+                                  <MeetingCard label={label} status={statusOf(label)} onDuplicate={duplicateLabel} />
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      );
+                    }}
+                  </Droppable>
+                ))}
+              </React.Fragment>
             </div>
           </DragDropContext>
         )}
