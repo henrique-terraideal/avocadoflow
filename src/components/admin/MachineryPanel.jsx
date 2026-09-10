@@ -144,7 +144,7 @@ function MachineryCard({ item, label, entityName, onEdit, onDelete }) {
               </div>
             </div>
           )}
-          {item.adjustment_standard && (
+          {!isImplement && item.adjustment_standard && (
             <div>
               <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Padrão de Regulagem e Calibração</p>
               <p className="text-sm text-foreground whitespace-pre-wrap">{item.adjustment_standard}</p>
@@ -191,7 +191,7 @@ function MachineryForm({ entityName, label, queryKey, item, onClose }) {
     const cleanSpecs = specs.filter(s => s.label.trim());
     const data = {
       name: name.trim(),
-      adjustment_standard: adjustmentStandard.trim(),
+      ...(!isImplement && { adjustment_standard: adjustmentStandard.trim() }),
       specs: cleanSpecs.length > 0 ? JSON.stringify(cleanSpecs) : "",
       active,
       sort_order: item?.sort_order || 0,
@@ -270,16 +270,18 @@ function MachineryForm({ entityName, label, queryKey, item, onClose }) {
         </>
       )}
 
-      <div>
-        <label className={labelClass}>Padrão de Regulagem e Calibração</label>
-        <textarea
-          value={adjustmentStandard}
-          onChange={(e) => setAdjustmentStandard(e.target.value)}
-          placeholder="Instruções de regulagem, calibração, pressão de bicos..."
-          rows={3}
-          className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-        />
-      </div>
+      {!isImplement && (
+        <div>
+          <label className={labelClass}>Padrão de Regulagem e Calibração</label>
+          <textarea
+            value={adjustmentStandard}
+            onChange={(e) => setAdjustmentStandard(e.target.value)}
+            placeholder="Instruções de regulagem, calibração, pressão de bicos..."
+            rows={3}
+            className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+          />
+        </div>
+      )}
 
       <div>
         <div className="flex items-center justify-between mb-2">
