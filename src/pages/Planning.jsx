@@ -50,7 +50,10 @@ export default function Planning() {
 
   const { data: labels = [] } = useQuery({
     queryKey: ["planning-labels", selectedDate],
-    queryFn: () => base44.entities.PlanningLabel.filter({ date: selectedDate }, "-created_date", 200),
+    queryFn: async () => {
+      const all = await base44.entities.PlanningLabel.filter({ date: selectedDate }, "-created_date", 200);
+      return all.filter((l) => !l.concluded);
+    },
   });
 
   const createMutation = useMutation({

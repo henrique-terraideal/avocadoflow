@@ -400,7 +400,11 @@ export default function NewRecord() {
               }}
               activities={pendingActivities}
               selectedActivityId={selectedLabelId}
-              onSelectActivity={setSelectedLabelId}
+              onSelectActivity={(id) => {
+                setSelectedLabelId(id);
+                setLocalOpenRecordId(null);
+                setLocalStartedAt(null);
+              }}
             />
           )}
         </div>
