@@ -54,6 +54,7 @@
     },
     "climate_conditions": {
       "type": "string",
+      "default": "Temp: 15\u201330\u00b0C | Vento: 0\u201310 km/h | Umidade: 60\u201390%",
       "description": "Condi\u00e7\u00f5es clim\u00e1ticas ideais formatadas"
     },
     "active": {
