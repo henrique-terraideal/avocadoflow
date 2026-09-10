@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock, AlertCircle } from "lucide-react";
+import { Check, X, Clock, Trash2 } from "lucide-react";
 import CustomFieldsInput from "@/components/planning/CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 
@@ -11,7 +11,7 @@ function nowTime() {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-export default function MeetingCardModal({ label, operators, operations, onClose, onSaved }) {
+export default function MeetingCardModal({ label, operators, operations, onClose, onSaved, onDelete }) {
   const queryClient = useQueryClient();
 
   const [selectedOperator, setSelectedOperator] = useState(
@@ -171,9 +171,20 @@ export default function MeetingCardModal({ label, operators, operations, onClose
             <h2 className="text-lg font-bold">Detalhes da Atividade</h2>
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${statusColor}`}>{statusLabel}</span>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1">
+            {onDelete && (
+              <button
+                onClick={() => { if (confirm("Excluir esta operação?")) onDelete(label); }}
+                className="text-destructive hover:bg-destructive/10 p-1.5 rounded-lg transition-colors"
+                title="Excluir"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         <div className="px-5 py-4 space-y-4">

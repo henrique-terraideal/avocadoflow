@@ -285,6 +285,14 @@ export default function DailyMeeting() {
             updateLabel.mutate(payload);
             setEditingLabel(null);
           }}
+          onDelete={(label) => {
+            base44.entities.PlanningLabel.delete(label.id).then(() => {
+              queryClient.invalidateQueries({ queryKey: ["meeting-labels"] });
+              queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+              queryClient.invalidateQueries({ queryKey: ["home-pending-labels"] });
+            });
+            setEditingLabel(null);
+          }}
         />
       )}
     </div>
