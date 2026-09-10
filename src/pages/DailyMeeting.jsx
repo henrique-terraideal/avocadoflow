@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { ChevronLeft, ChevronRight, Loader2, Monitor, Users, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Monitor, Users, Plus, Trash2 } from "lucide-react";
 import { startOfWeek, addDays, subWeeks, addWeeks, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MeetingCard, { STATUS_STYLES } from "@/components/daily-meeting/MeetingCard";
@@ -93,6 +93,16 @@ export default function DailyMeeting() {
   const onDragEnd = (result) => {
     const { source, destination, draggableId } = result;
     if (!destination) return;
+    if (destination.droppableId === "__trash__") {
+      const label = allLabels.find((l) => l.id === draggableId);
+      if (!label) return;
+      base44.entities.PlanningLabel.delete(label.id).then(() => {
+        queryClient.invalidateQueries({ queryKey: ["meeting-labels"] });
+        queryClient.invalidateQueries({ queryKey: ["planning-labels"] });
+        queryClient.invalidateQueries({ queryKey: ["home-pending-labels"] });
+      });
+      return;
+    }
     const [dstOpId, dstDate] = destination.droppableId.split("|");
     const [srcOpId, srcDate] = source.droppableId.split("|");
     if (srcOpId === dstOpId && srcDate === dstDate) return;
@@ -304,6 +314,21 @@ export default function DailyMeeting() {
                 ))}
               </React.Fragment>
             </div>
+
+            <Droppable droppableId="__trash__">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`fixed bottom-6 right-24 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-all
+                    ${snapshot.isDraggingOver ? "bg-destructive text-destructive-foreground scale-110 ring-4 ring-destructive/30" : "bg-destructive/90 text-white hover:bg-destructive"}`}
+                  title="Arraste para a lixeira"
+                >
+                  <Trash2 className="w-6 h-6" />
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
           </DragDropContext>
         )}
       </div>
