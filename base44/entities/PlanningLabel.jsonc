@@ -48,6 +48,11 @@
     "draft_data": {
       "type": "string",
       "description": "JSON com dados parciais preenchidos no modal de hor\u00e1rios (rascunho n\u00e3o finalizado). Limpo quando o registro \u00e9 finalizado."
+    },
+    "concluded": {
+      "type": "boolean",
+      "default": false,
+      "description": "Se a atividade planejada foi conclu\u00edda (registro finalizado em campo)"
     }
   },
   "required": [
