@@ -34,7 +34,7 @@ export default function BottomNav() {
               <Link
                 key={item.to}
                 to={item.to}
-                className="flex-1 flex flex-col items-center justify-end"
+                className="flex-1 flex flex-col items-center justify-center py-3"
               >
                 <div
                   className={`flex items-center justify-center w-12 h-12 rounded-full shadow-lg transition-colors mb-1
