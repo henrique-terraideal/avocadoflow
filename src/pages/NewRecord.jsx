@@ -66,6 +66,7 @@ export default function NewRecord() {
   // Estado local do registro em andamento (evita flicker entre ações e refetch)
   const [localOpenRecordId, setLocalOpenRecordId] = useState(null);
   const [localStartedAt, setLocalStartedAt] = useState(null);
+  const [localStartedEpoch, setLocalStartedEpoch] = useState(null);
   const [now, setNow] = useState(Date.now());
 
   const { data: operators = [], isLoading: loadingOperators } = useQuery({
@@ -180,12 +181,14 @@ export default function NewRecord() {
   }, [isStarted]);
 
   const elapsedMs = useMemo(() => {
-    if (!isStarted || !currentStart) return 0;
+    if (!isStarted) return 0;
+    if (localStartedEpoch) return Math.max(0, now - localStartedEpoch);
+    if (!currentStart) return 0;
     const [h, m] = currentStart.split(":").map(Number);
     const start = new Date();
     start.setHours(h, m, 0, 0);
-    return now - start.getTime();
-  }, [isStarted, currentStart, now]);
+    return Math.max(0, now - start.getTime());
+  }, [isStarted, currentStart, now, localStartedEpoch]);
 
   // Template / campos de registro da operação selecionada
   const operationId = useMemo(() => {
@@ -239,6 +242,7 @@ export default function NewRecord() {
       });
       setLocalOpenRecordId(record.id);
       setLocalStartedAt(start);
+      setLocalStartedEpoch(Date.now());
       setNow(Date.now());
       invalidateAll();
     } catch (err) {
@@ -254,6 +258,7 @@ export default function NewRecord() {
       await base44.entities.FieldRecord.update(currentRecordId, { end_time: nowTime() });
       setLocalOpenRecordId(null);
       setLocalStartedAt(null);
+      setLocalStartedEpoch(null);
       invalidateAll();
       toast({ title: "Intervalo pausado", description: "A atividade segue pendente. Toque Iniciar para retomar." });
     } catch (err) {
@@ -300,6 +305,7 @@ export default function NewRecord() {
       }
       setLocalOpenRecordId(null);
       setLocalStartedAt(null);
+      setLocalStartedEpoch(null);
       setShowComplete(false);
       invalidateAll();
       if (details.ra_id) {
@@ -397,6 +403,7 @@ export default function NewRecord() {
                 setSelectedLabelId(null);
                 setLocalOpenRecordId(null);
                 setLocalStartedAt(null);
+                setLocalStartedEpoch(null);
               }}
               activities={pendingActivities}
               selectedActivityId={selectedLabelId}
@@ -404,6 +411,7 @@ export default function NewRecord() {
                 setSelectedLabelId(id);
                 setLocalOpenRecordId(null);
                 setLocalStartedAt(null);
+                setLocalStartedEpoch(null);
               }}
             />
           )}
