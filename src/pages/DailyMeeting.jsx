@@ -118,7 +118,7 @@ export default function DailyMeeting() {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-6 py-4 rounded-b-3xl">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-[1700px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Monitor className="w-6 h-6" />
             <div>
@@ -144,7 +144,7 @@ export default function DailyMeeting() {
       </div>
 
       {/* Legenda */}
-      <div className="max-w-7xl mx-auto px-6 pt-4 flex items-center gap-4 text-xs">
+      <div className="max-w-[1700px] mx-auto px-6 pt-4 flex items-center gap-4 text-xs">
         {Object.entries(STATUS_STYLES).map(([key, s]) => (
           <div key={key} className="flex items-center gap-1.5">
             <span className={`${s.bar} w-3 h-3 rounded-full`} />
@@ -155,7 +155,7 @@ export default function DailyMeeting() {
       </div>
 
       {/* Matriz */}
-      <div className="max-w-7xl mx-auto px-6 py-4 overflow-x-auto">
+      <div className="max-w-[1700px] mx-auto px-6 py-4 overflow-x-auto">
         {isLoading ? (
           <div className="flex justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -163,8 +163,8 @@ export default function DailyMeeting() {
         ) : (
           <DragDropContext onDragEnd={onDragEnd}>
             <div
-              className="grid gap-1.5 min-w-max"
-              style={{ gridTemplateColumns: "170px repeat(5, minmax(230px, 1fr))" }}
+              className="grid gap-1.5 w-full min-w-[860px]"
+              style={{ gridTemplateColumns: "150px repeat(5, minmax(0, 1fr))" }}
             >
               {/* Header row */}
               <div />
