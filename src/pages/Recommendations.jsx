@@ -737,9 +737,11 @@ function generateFichaHTML(item, isLast) {
   // Check if any product has active_ingredient or target filled
   const hasPA = products.some((p) => p.active_ingredient && p.active_ingredient.trim());
   const hasTarget = products.some((p) => p.target && p.target.trim());
+  const hasDoseBula = products.some((p) => p.dose_bula != null && p.dose_bula !== '');
+  const hasTipoProduto = products.some((p) => p.tipo_produto && p.tipo_produto.trim() && p.tipo_produto !== 'Não se aplica');
 
   // Dynamic column widths based on how many columns are visible
-  const colCount = 7 + (hasPA ? 1 : 0) + (hasTarget ? 1 : 0);
+  const colCount = 7 + (hasPA ? 1 : 0) + (hasTarget ? 1 : 0) + (hasDoseBula ? 1 : 0) + (hasTipoProduto ? 1 : 0);
 
   // Products table rows
   const productRows = products.map((p, i) => {
@@ -751,6 +753,8 @@ function generateFichaHTML(item, isLast) {
 
     const paCell = hasPA ? `<td style="text-align: left; font-style: italic; color: #2a6a4a;">${p.active_ingredient || '—'}</td>` : '';
     const targetCell = hasTarget ? `<td style="text-align: left; color: #555;">${p.target || '—'}</td>` : '';
+    const tipoCell = hasTipoProduto ? `<td style="text-align: center; color: #555;">${p.tipo_produto || '—'}</td>` : '';
+    const doseBulaCell = hasDoseBula ? `<td style="text-align: center; color: #777;">${p.dose_bula != null ? `${formatQtBr(p.dose_bula)}${p.unit ? ' ' + p.unit : ''}` : '—'}</td>` : '';
 
     return `
       <tr>
@@ -760,10 +764,12 @@ function generateFichaHTML(item, isLast) {
         </td>
         ${paCell}
         ${targetCell}
+        ${tipoCell}
         <td style="width: 14mm; text-align: center;">${p.application_mode || 'ÁREA'}</td>
         <td style="width: 16mm; text-align: center; font-weight: 700;">
           ${p.dose != null ? `${formatQtBr(p.dose)}${p.unit ? ' ' + p.unit : ''}${p.application_mode === 'PLANTA' ? '/pl' : '/ha'}` : '—'}
         </td>
+        ${doseBulaCell}
         <td style="width: 16mm; text-align: center;">
           ${qtyPerTank ? `<strong style="color: #1a5599;">${formatQtBr(qtyPerTank)}${p.unit ? ' ' + p.unit : ''}</strong>` : '—'}
         </td>
@@ -854,8 +860,10 @@ function generateFichaHTML(item, isLast) {
             <th style="width: 40mm;">Produto Comercial</th>
             ${hasPA ? '<th style="width: 22mm;">Princípio Ativo</th>' : ''}
             ${hasTarget ? '<th style="width: 18mm;">Alvo</th>' : ''}
+            ${hasTipoProduto ? '<th style="width: 14mm; text-align: center;">Tipo</th>' : ''}
             <th style="width: 14mm; text-align: center;">Modo</th>
             <th style="width: 16mm; text-align: center;">Dose</th>
+            ${hasDoseBula ? '<th style="width: 16mm; text-align: center;">Dose Bula</th>' : ''}
             <th style="width: 16mm; text-align: center;">Qtd/Tanque</th>
             <th style="width: 14mm; text-align: center;">Total</th>
             <th style="width: 16mm; text-align: center;">Carência</th>

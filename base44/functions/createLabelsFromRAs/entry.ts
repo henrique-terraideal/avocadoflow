@@ -22,13 +22,15 @@ Deno.serve(async (req) => {
 
     // === AUTO-SYNC: pull fresh data from Product catalog before generating ===
     const catalog = await base44.asServiceRole.entities.Product.list("-created_date", 500);
-    const productMap: Record<string, { active_ingredient: string; target: string; unit: string }> = {};
+    const productMap: Record<string, { active_ingredient: string; target: string; unit: string; dose_bula: number | null; tipo_produto: string }> = {};
     for (const p of catalog) {
       if (p.name) {
         productMap[p.name.trim().toUpperCase()] = {
           active_ingredient: p.active_ingredient || '',
           target: p.target || '',
           unit: p.unit || '',
+          dose_bula: p.dose_bula ?? null,
+          tipo_produto: p.tipo_produto || '',
         };
       }
     }
@@ -60,6 +62,9 @@ Deno.serve(async (req) => {
         rp.target = newTarget;
         rp.unit = newUnit;
       }
+      // Attach catalog-only fields (not stored on RP) for use in label/ficha
+      rp.dose_bula = catalogEntry.dose_bula ?? null;
+      rp.tipo_produto = catalogEntry.tipo_produto || '';
     }
 
     // Fetch Operations for mapping
@@ -146,6 +151,8 @@ Deno.serve(async (req) => {
           target: p.target || '',
           application_mode: p.application_mode || 'AREA',
           dose: p.dose,
+          dose_bula: p.dose_bula ?? null,
+          tipo_produto: p.tipo_produto || '',
           total_quantity: p.total_quantity,
           unit: p.unit || '',
           carencia: p.carencia || '',
