@@ -192,7 +192,7 @@ export default function Recommendations() {
       width: 210mm;
       min-height: 297mm;
       max-width: 210mm;
-      padding: 12mm 15mm;
+      padding: 7mm 12mm;
       page-break-after: always;
       position: relative;
     }
@@ -206,8 +206,8 @@ export default function Recommendations() {
       justify-content: space-between;
       align-items: center;
       border-bottom: 3px solid #1a7a3a;
-      padding-bottom: 3mm;
-      margin-bottom: 4mm;
+      padding-bottom: 2mm;
+      margin-bottom: 2.5mm;
     }
     .header-left { font-size: 16pt; font-weight: 900; color: #1a7a3a; letter-spacing: -0.5px; }
     .header-right { text-align: right; }
@@ -218,47 +218,47 @@ export default function Recommendations() {
       background: #f0f7f1;
       border: 1.5px solid #1a7a3a;
       border-radius: 2mm;
-      padding: 3.5mm;
-      margin-bottom: 3mm;
+      padding: 2.5mm;
+      margin-bottom: 2mm;
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
     }
     .ra-info-left { flex: 1; }
     .ra-info-right { text-align: right; }
-    .ra-code { font-size: 13pt; font-weight: 900; color: #1a7a3a; margin-bottom: 1.5mm; }
-    .ra-type { font-size: 9.5pt; font-weight: 600; color: #333; }
-    .ra-orchard { font-size: 9pt; color: #555; margin-top: 1mm; }
-    .ra-date { font-size: 9pt; color: #555; }
+    .ra-code { font-size: 12pt; font-weight: 900; color: #1a7a3a; margin-bottom: 1mm; }
+    .ra-type { font-size: 9pt; font-weight: 600; color: #333; }
+    .ra-orchard { font-size: 8.5pt; color: #555; margin-top: 0.5mm; }
+    .ra-date { font-size: 8.5pt; color: #555; }
 
     .section-title {
-      font-size: 9.5pt;
+      font-size: 8.5pt;
       font-weight: 800;
       color: #1a7a3a;
       text-transform: uppercase;
       border-bottom: 1px solid #ccc;
-      padding-bottom: 1.5mm;
-      margin-top: 4mm;
-      margin-bottom: 2.5mm;
+      padding-bottom: 1mm;
+      margin-top: 2.5mm;
+      margin-bottom: 1.5mm;
     }
 
     .products-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 3mm;
+      margin-bottom: 2mm;
     }
     .products-table th {
       background: #1a7a3a;
       color: white;
       font-size: 7.5pt;
       font-weight: 700;
-      padding: 2.5mm 1.5mm;
+      padding: 1.5mm 1.2mm;
       text-align: left;
       border: 0.5mm solid #1a7a3a;
     }
     .products-table td {
-      font-size: 8pt;
-      padding: 2.5mm 1.5mm;
+      font-size: 7.5pt;
+      padding: 1.2mm;
       border: 0.5mm solid #ddd;
       vertical-align: top;
     }
@@ -271,12 +271,12 @@ export default function Recommendations() {
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 2.5mm;
-      margin-bottom: 3mm;
+      gap: 1.5mm;
+      margin-bottom: 1.5mm;
     }
     .info-item {
-      font-size: 8.5pt;
-      padding: 1.5mm 0;
+      font-size: 7.5pt;
+      padding: 0.6mm 0;
     }
     .info-label { font-weight: 700; color: #333; display: block; font-size: 7.5pt; text-transform: uppercase; color: #888; }
     .info-value { color: #1a1a1a; font-weight: 600; }
@@ -285,26 +285,26 @@ export default function Recommendations() {
       background: #fffde8;
       border: 0.5mm solid #e0c200;
       border-radius: 2mm;
-      padding: 3mm;
-      margin-bottom: 3mm;
-      font-size: 8.5pt;
+      padding: 2mm;
+      margin-bottom: 2mm;
+      font-size: 7.5pt;
       color: #555;
     }
     .obs-box strong { color: #333; }
 
     .critical-box {
       background: #fff0f0;
-      border: 1mm solid #c33;
+      border: 0.7mm solid #c33;
       border-radius: 2mm;
-      padding: 3.5mm;
-      margin: 3mm 0;
+      padding: 2.5mm;
+      margin: 2mm 0;
       display: flex;
       align-items: center;
       gap: 3mm;
     }
 
     .tank-section {
-      margin: 3mm 0;
+      margin: 2mm 0;
       page-break-inside: avoid;
     }
     .tank-table {
@@ -325,17 +325,17 @@ export default function Recommendations() {
     }
     .tank-cell {
       width: 25%;
-      height: 8mm;
+      height: 5mm;
       border: 0.5mm solid #1a7a3a;
       text-align: center;
       vertical-align: middle;
     }
     .critical-icon {
-      font-size: 16pt;
+      font-size: 13pt;
       flex-shrink: 0;
     }
     .critical-text {
-      font-size: 9pt;
+      font-size: 8pt;
       font-weight: 700;
       color: #c33;
       text-transform: uppercase;
@@ -345,19 +345,19 @@ export default function Recommendations() {
     .safety-banner {
       background: #1a5a2a;
       border-radius: 2mm;
-      padding: 4mm;
-      margin: 3mm 0;
+      padding: 2.5mm;
+      margin: 2mm 0;
       display: flex;
       align-items: center;
-      gap: 3mm;
+      gap: 2mm;
       page-break-inside: avoid;
     }
     .safety-banner .shield {
-      font-size: 18pt;
+      font-size: 14pt;
       flex-shrink: 0;
     }
     .safety-banner .safety-text {
-      font-size: 10.5pt;
+      font-size: 9pt;
       font-weight: 800;
       color: #fff;
       line-height: 1.3;
@@ -365,7 +365,7 @@ export default function Recommendations() {
     }
 
     .epi-section, .lembrete-section {
-      margin: 3mm 0;
+      margin: 1.5mm 0;
       page-break-inside: avoid;
     }
     .epi-list, .lembrete-list {
@@ -374,9 +374,10 @@ export default function Recommendations() {
       margin: 0;
     }
     .epi-list li, .lembrete-list li {
-      font-size: 8.5pt;
-      padding: 1mm 0;
-      padding-left: 5mm;
+      font-size: 7pt;
+      line-height: 1.25;
+      padding: 0.3mm 0;
+      padding-left: 4mm;
       position: relative;
       color: #333;
     }
@@ -394,42 +395,43 @@ export default function Recommendations() {
       background: #eef5ef;
       border: 0.5mm solid #1a7a3a;
       border-radius: 2mm;
-      padding: 3mm;
+      padding: 1.8mm;
     }
     .lembrete-box {
       background: #f5f5f5;
       border: 0.5mm solid #bbb;
       border-radius: 2mm;
-      padding: 3mm;
+      padding: 1.8mm;
     }
 
     .climate-box {
       background: #f5f5f5;
       border: 0.5mm solid #ddd;
       border-radius: 2mm;
-      padding: 3mm;
-      margin-bottom: 3mm;
-      font-size: 8pt;
+      padding: 2mm;
+      margin-bottom: 1.5mm;
+      font-size: 7.5pt;
       color: #555;
     }
 
     .qr-section {
       display: flex;
       align-items: center;
-      gap: 5mm;
-      margin-top: 4mm;
-      padding-top: 4mm;
+      gap: 4mm;
+      margin-top: 2.5mm;
+      padding-top: 2.5mm;
       border-top: 1px dashed #ccc;
+      page-break-inside: avoid;
     }
-    .qr-img { width: 28mm; height: 28mm; }
-    .qr-text { font-size: 8pt; color: #777; }
-    .qr-text strong { display: block; font-size: 9pt; color: #1a7a3a; margin-bottom: 1mm; }
+    .qr-img { width: 22mm; height: 22mm; }
+    .qr-text { font-size: 7pt; color: #777; }
+    .qr-text strong { display: block; font-size: 8pt; color: #1a7a3a; margin-bottom: 0.5mm; }
 
     .footer {
       position: absolute;
-      bottom: 8mm;
-      left: 15mm;
-      right: 15mm;
+      bottom: 3mm;
+      left: 12mm;
+      right: 12mm;
       font-size: 7pt;
       color: #999;
       text-align: center;
@@ -440,7 +442,19 @@ export default function Recommendations() {
 </head>
 <body>
 ${fichasHtml}
-<script>window.onload=function(){window.print();}<\/script>
+<script>
+window.addEventListener('load', function () {
+  var MM_PER_PX = 25.4 / 96;
+  document.querySelectorAll('.ficha-page').forEach(function (page) {
+    var heightMm = page.scrollHeight * MM_PER_PX;
+    if (heightMm > 297.5) {
+      var factor = Math.max(0.62, 296 / heightMm);
+      page.style.zoom = factor.toFixed(3);
+    }
+  });
+  setTimeout(function () { window.print(); }, 150);
+});
+<\/script>
 </body>
 </html>`;
 
@@ -898,7 +912,7 @@ function generateFichaHTML(item, isLast) {
       ` : ''}
 
       ${episList.length > 0 || lembretes ? `
-      <div style="display: flex; gap: 4mm; margin: 3mm 0; page-break-inside: avoid;">
+      <div style="display: flex; gap: 4mm; margin: 1.5mm 0; page-break-inside: avoid;">
         ${episList.length > 0 ? `
         <div style="flex: 1; min-width: 0;">
           <div class="section-title">EPIs Obrigatórios</div>
