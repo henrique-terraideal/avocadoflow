@@ -12,6 +12,7 @@ import QuickActionFAB from "../components/QuickActionFAB";
 import RecordDetailModal from "../components/field/RecordDetailModal";
 import RADetailModal, { extractRAData } from "../components/field/RADetailModal";
 import RecordsFilterBar from "../components/field/RecordsFilterBar";
+import { formatPeriods, formatOrchards } from "@/lib/periods";
 
 const normalize = (str) => {
   if (!str) return "";
@@ -166,7 +167,7 @@ export default function Records() {
                         <div className="flex items-center gap-2">
                           <div className="flex items-center gap-1 text-xs text-muted-foreground">
                             <Clock className="w-3 h-3" />
-                            {record.start_time} → {record.end_time}
+                            {formatPeriods(record)}
                           </div>
                           {isAdmin && (
                             <Button
@@ -187,7 +188,7 @@ export default function Records() {
                         </div>
                         <div className="flex items-center gap-1">
                           <TreePine className="w-3.5 h-3.5" />
-                          {record.orchard_number}
+                          {formatOrchards(record)}
                         </div>
                       </div>
                       {record.planned_date && record.planned_date !== record.date && (

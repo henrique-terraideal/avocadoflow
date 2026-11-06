@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { X, Check, Loader2, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CustomFieldsInput from "../planning/CustomFieldsInput";
+import PeriodSelector from "./PeriodSelector";
 
 /**
  * Modal de conclusão: coleta campos personalizados (se houver) e resolve
@@ -20,13 +21,14 @@ export default function CompleteActivityModal({ label, customFields, onClose, on
     }
   });
   const [dateChoice, setDateChoice] = useState(dateConflict ? null : "today");
+  const [periods, setPeriods] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
   const requiredFields = customFields.filter((f) => f.is_required);
   const requiredFilled = requiredFields.every((f) =>
     customValues[f.field_label]?.toString().trim()
   );
-  const canConfirm = requiredFilled && dateChoice !== null;
+  const canConfirm = requiredFilled && dateChoice !== null && periods.length > 0;
 
   // RA data (se existir) para repassar ao CustomFieldsInput (ra_selector read-only)
   let selectedRaData = null;
@@ -39,7 +41,7 @@ export default function CompleteActivityModal({ label, customFields, onClose, on
     if (!canConfirm || submitting) return;
     setSubmitting(true);
     try {
-      await onConfirm(customValues, dateChoice);
+      await onConfirm(customValues, dateChoice, periods);
     } finally {
       setSubmitting(false);
     }
@@ -90,6 +92,13 @@ export default function CompleteActivityModal({ label, customFields, onClose, on
             </div>
           </div>
         )}
+
+        <div>
+          <p className="text-sm font-semibold mb-1.5">
+            Período <span className="text-destructive">*</span>
+          </p>
+          <PeriodSelector value={periods} onChange={setPeriods} invalid={periods.length === 0} />
+        </div>
 
         {customFields.length > 0 && (
           <CustomFieldsInput

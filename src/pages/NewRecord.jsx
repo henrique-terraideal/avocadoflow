@@ -233,6 +233,7 @@ export default function NewRecord() {
         operator_id: selectedOperator.id,
         operation: `${selectedParsed.actCode}. ${selectedParsed.actName}`,
         orchard_number: selectedParsed.orchard,
+        orchard_numbers: selectedLabel.orchard_numbers || String(selectedParsed.orchard || "").split(",").map((s) => s.trim()).filter(Boolean),
         start_time: start,
         date: today,
         planned_date: selectedLabel.date,
@@ -269,16 +270,10 @@ export default function NewRecord() {
 
   const handleConcluirClick = () => {
     if (!isStarted || !currentRecordId || busy) return;
-    const hasFields = registrationFields.length > 0;
-    const dateConflict = !!selectedLabel.date && selectedLabel.date !== today;
-    if (hasFields || dateConflict) {
-      setShowComplete(true);
-    } else {
-      finalize({}, "today");
-    }
+    setShowComplete(true);
   };
 
-  const finalize = async (customValues, dateChoice) => {
+  const finalize = async (customValues, dateChoice, periods) => {
     if (!currentRecordId || !selectedLabel || !selectedOperator) return;
     setBusy(true);
     try {
@@ -290,6 +285,7 @@ export default function NewRecord() {
           : today;
       await base44.entities.FieldRecord.update(currentRecordId, {
         end_time: nowTime(),
+        periods,
         date: recordDate,
         additional_details: JSON.stringify(details),
       });
@@ -593,7 +589,7 @@ export default function NewRecord() {
           label={selectedLabel}
           customFields={registrationFields}
           onClose={() => setShowComplete(false)}
-          onConfirm={(customValues, dateChoice) => finalize(customValues, dateChoice)}
+          onConfirm={(customValues, dateChoice, periods) => finalize(customValues, dateChoice, periods)}
         />
       )}
 

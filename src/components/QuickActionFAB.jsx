@@ -6,6 +6,8 @@ import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 import CustomFieldsInput from "./planning/CustomFieldsInput";
+import OrchardMultiSelect from "./field/OrchardMultiSelect";
+import { joinOrchards } from "@/lib/periods";
 import { format, addDays, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useLocation } from "react-router-dom";
@@ -14,7 +16,7 @@ const today = () => new Date().toISOString().split("T")[0];
 
 function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }) {
   const [selectedOperator, setSelectedOperator] = useState(null);
-  const [selectedOrchard, setSelectedOrchard] = useState(null);
+  const [selectedOrchards, setSelectedOrchards] = useState([]);
   const [customValues, setCustomValues] = useState({});
   const [selectedDate, setSelectedDate] = useState(today());
   const [saving, setSaving] = useState(false);
@@ -34,7 +36,12 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
     return null;
   }, [customValues]);
 
-  const effectiveOrchard = selectedRA?.orchard || (skipOrchard ? template?.default_orchard || "N/A" : selectedOrchard);
+  const effectiveOrchards = selectedRA?.orchard
+    ? [selectedRA.orchard]
+    : skipOrchard
+      ? [template?.default_orchard || "N/A"]
+      : selectedOrchards;
+  const effectiveOrchard = joinOrchards(effectiveOrchards);
 
   // Filter fields to show in planning stage
   const planningFields = customFields.filter(
@@ -45,7 +52,7 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
   filter((f) => f.is_required).
   every((f) => customValues[f.field_label]?.trim?.());
 
-  const canSave = selectedOperator && effectiveOrchard && requiredFieldsFilled;
+  const canSave = selectedOperator && effectiveOrchards.length > 0 && requiredFieldsFilled;
 
   const handleSave = async () => {
     if (!canSave) return;
@@ -67,6 +74,7 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
       operation_code: operation.code,
       operation_name: operation.name,
       orchard_number: effectiveOrchard,
+      orchard_numbers: effectiveOrchards,
       qr_data: qrData,
       additional_details: Object.keys(customValues).length > 0 ? JSON.stringify(customValues) : null
     });
@@ -155,7 +163,7 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
             values={customValues}
             onChange={setCustomValues}
             onRASelected={(ra) => {
-              if (ra?.orchard_code) setSelectedOrchard(ra.orchard_code);
+              if (ra?.orchard_code) setSelectedOrchards([ra.orchard_code]);
             }} />
 
           }
@@ -171,22 +179,12 @@ function QuickActionModal({ operation, operators, orchards, onClose, onSuccess }
                   </span>
               }
               </div>
-              <div className="grid grid-cols-5 gap-1.5">
-                {orchards.map((o) =>
-              <button
-                key={o}
-                onClick={() => !selectedRA && setSelectedOrchard(o)}
+              <OrchardMultiSelect
+                values={effectiveOrchards}
+                onChange={setSelectedOrchards}
+                orchards={orchards}
                 disabled={!!selectedRA}
-                className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                      ${effectiveOrchard === o ?
-                "border-primary bg-primary text-primary-foreground" :
-                "border-border bg-muted/30 hover:border-primary/40"}
-                      ${selectedRA ? "opacity-50 cursor-not-allowed" : ""}`}>
-                
-                    {o}
-                  </button>
-              )}
-              </div>
+              />
             </div> :
           template?.default_orchard ?
           <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">

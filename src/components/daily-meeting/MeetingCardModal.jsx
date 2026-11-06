@@ -5,11 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Clock, Trash2 } from "lucide-react";
 import CustomFieldsInput from "@/components/planning/CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
-
-function nowTime() {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
+import OrchardMultiSelect from "@/components/field/OrchardMultiSelect";
+import PeriodSelector from "@/components/field/PeriodSelector";
+import { joinOrchards } from "@/lib/periods";
 
 export default function MeetingCardModal({ label, operators, operations, onClose, onSaved, onDelete }) {
   const queryClient = useQueryClient();
@@ -21,7 +19,11 @@ export default function MeetingCardModal({ label, operators, operations, onClose
     (label.operation_code && operations.find((o) => String(o.code) === String(label.operation_code))) ||
       operations.find((o) => o.name === label.operation_name) || null
   );
-  const [selectedOrchard, setSelectedOrchard] = useState(label.orchard_number || "");
+  const [selectedOrchards, setSelectedOrchards] = useState(
+    Array.isArray(label.orchard_numbers) && label.orchard_numbers.length > 0
+      ? label.orchard_numbers
+      : (label.orchard_number ? label.orchard_number.split(",").map((s) => s.trim()).filter(Boolean) : [])
+  );
   const [selectedDate, setSelectedDate] = useState(label.date || "");
   const [concluded, setConcluded] = useState(!!label.concluded);
 
@@ -31,8 +33,7 @@ export default function MeetingCardModal({ label, operators, operations, onClose
   });
 
   const draftData = (() => { try { return label.draft_data ? JSON.parse(label.draft_data) : null; } catch { return null; } })();
-  const [startTime, setStartTime] = useState(draftData?.startTime || "");
-  const [endTime, setEndTime] = useState(draftData?.endTime || "");
+  const [periods, setPeriods] = useState(draftData?.periods || []);
   const [observations, setObservations] = useState(draftData?.observations || "");
   const [regValues, setRegValues] = useState(() => {
     let base = {};
@@ -59,7 +60,8 @@ export default function MeetingCardModal({ label, operators, operations, onClose
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
   const skipOrchard = template?.skip_orchard || false;
-  const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
+  const effectiveOrchards = skipOrchard ? [template?.default_orchard || "N/A"] : selectedOrchards;
+  const effectiveOrchard = joinOrchards(effectiveOrchards);
 
   const requiredPlanningFilled = planningFields
     .filter((f) => f.is_required)
@@ -68,8 +70,8 @@ export default function MeetingCardModal({ label, operators, operations, onClose
     .filter((f) => f.is_required)
     .every((f) => regValues[f.field_label]?.toString().trim());
 
-  const canSaveDetails = selectedOperator && selectedOperation && effectiveOrchard && selectedDate && requiredPlanningFilled;
-  const canRegister = startTime && endTime && requiredRegFilled && canSaveDetails;
+  const canSaveDetails = selectedOperator && selectedOperation && effectiveOrchards.length > 0 && selectedDate && requiredPlanningFilled;
+  const canRegister = periods.length > 0 && requiredRegFilled && canSaveDetails;
 
   const buildQrData = () => {
     const base = window.location.origin;
@@ -95,6 +97,7 @@ export default function MeetingCardModal({ label, operators, operations, onClose
         operation_code: selectedOperation.code,
         operation_name: selectedOperation.name,
         orchard_number: effectiveOrchard,
+        orchard_numbers: effectiveOrchards,
         qr_data: buildQrData(),
         date: selectedDate,
         concluded,
@@ -116,8 +119,8 @@ export default function MeetingCardModal({ label, operators, operations, onClose
         operator_id: selectedOperator.id,
         operation: `${selectedOperation.code}. ${selectedOperation.name}`,
         orchard_number: effectiveOrchard,
-        start_time: startTime,
-        end_time: endTime,
+        orchard_numbers: effectiveOrchards,
+        periods,
         date: selectedDate,
         planned_date: label.original_date || label.date,
         observations,
@@ -135,6 +138,7 @@ export default function MeetingCardModal({ label, operators, operations, onClose
           operation_code: selectedOperation.code,
           operation_name: selectedOperation.name,
           orchard_number: effectiveOrchard,
+          orchard_numbers: effectiveOrchards,
           qr_data: buildQrData(),
           date: selectedDate,
           concluded: true,
@@ -219,10 +223,11 @@ export default function MeetingCardModal({ label, operators, operations, onClose
                     {template?.default_orchard || "N/A"}
                   </div>
                 ) : (
-                  <select value={selectedOrchard} onChange={(e) => setSelectedOrchard(e.target.value)} className={inputClass}>
-                    <option value="">Selecione...</option>
-                    {orchards.map((o) => <option key={o} value={o}>{o}</option>)}
-                  </select>
+                  <OrchardMultiSelect
+                    values={selectedOrchards}
+                    onChange={setSelectedOrchards}
+                    orchards={orchards}
+                  />
                 )}
               </div>
             </div>
@@ -235,25 +240,11 @@ export default function MeetingCardModal({ label, operators, operations, onClose
           {/* Registro em campo */}
           <div className="space-y-3 border-t border-border pt-4">
             <p className="text-sm font-bold text-foreground">Registro em Campo</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className={labelClass}>Início</label>
-                <div className="flex gap-1.5">
-                  <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="flex-1 h-10 rounded-xl border border-input bg-background px-3 text-sm font-semibold text-center focus:outline-none focus:ring-2 focus:ring-ring" />
-                  <button onClick={() => setStartTime(nowTime())} className="h-10 px-3 rounded-xl border border-input bg-muted hover:bg-muted/80" title="Agora">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className={labelClass}>Término</label>
-                <div className="flex gap-1.5">
-                  <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="flex-1 h-10 rounded-xl border border-input bg-background px-3 text-sm font-semibold text-center focus:outline-none focus:ring-2 focus:ring-ring" />
-                  <button onClick={() => setEndTime(nowTime())} className="h-10 px-3 rounded-xl border border-input bg-muted hover:bg-muted/80" title="Agora">
-                    <Clock className="w-4 h-4 text-muted-foreground" />
-                  </button>
-                </div>
-              </div>
+            <div>
+              <label className={labelClass}>
+                Período <span className="text-destructive">*</span>
+              </label>
+              <PeriodSelector value={periods} onChange={setPeriods} invalid={periods.length === 0} />
             </div>
 
             {registrationFields.length > 0 && (

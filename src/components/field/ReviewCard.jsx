@@ -1,13 +1,14 @@
 import React from "react";
 import { User, Wrench, TreePine, Clock } from "lucide-react";
 import { motion } from "framer-motion";
+import { formatPeriods, formatOrchards } from "@/lib/periods";
 
 export default function ReviewCard({ data }) {
   const items = [
     { icon: User, label: "Operador", value: data.operator_name },
     { icon: Wrench, label: "Operação", value: data.operation },
-    { icon: TreePine, label: "Pomar", value: data.orchard_number },
-    { icon: Clock, label: "Horário", value: `${data.start_time} → ${data.end_time}` },
+    { icon: TreePine, label: "Pomar", value: formatOrchards(data) },
+    { icon: Clock, label: "Período", value: formatPeriods(data) },
   ];
 
   return (

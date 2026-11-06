@@ -84,7 +84,7 @@ export default function PendingRecords({ operatorId, isAdmin, operators, operati
         (r) =>
           r.operator_id === labelOpId &&
           r.orchard_number === label.orchard_number &&
-          r.start_time && r.end_time &&
+          ((Array.isArray(r.periods) && r.periods.length > 0) || (r.start_time && r.end_time)) &&
           actCode && r.operation?.includes(actCode)
       );
       return !alreadyDone;

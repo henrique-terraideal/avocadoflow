@@ -3,6 +3,7 @@ import { User, Wrench, TreePine, Clock, X, Calendar, MapPin, ScanLine, FileText,
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import RADetailModal from "./RADetailModal";
+import { formatPeriods, formatOrchards } from "@/lib/periods";
 
 const formatQtBr = (v) => v != null && !isNaN(v) ? Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—';
 
@@ -66,8 +67,8 @@ export default function RecordDetailModal({ record, onClose }) {
   const items = [
     { icon: User, label: "Operador", value: record.operator_name },
     { icon: Wrench, label: "Operação", value: record.operation },
-    { icon: TreePine, label: "Pomar", value: record.orchard_number },
-    { icon: Clock, label: "Horário", value: `${record.start_time} → ${record.end_time}` },
+    { icon: TreePine, label: "Pomar", value: formatOrchards(record) },
+    { icon: Clock, label: "Período", value: formatPeriods(record) },
     { icon: Calendar, label: "Data", value: record.date ? format(new Date(record.date + "T12:00:00"), "dd/MM/yyyy") : "—" },
   ];
 

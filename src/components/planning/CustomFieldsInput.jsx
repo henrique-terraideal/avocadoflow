@@ -106,6 +106,20 @@ function FieldInput({ field, value, onChange, onRASelected, readOnlyRA, selected
     );
   }
 
+  if (field.field_type === "time") {
+    return (
+      <div>
+        {label}
+        <input
+          type="time"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm font-semibold text-center focus:outline-none focus:ring-2 focus:ring-ring"
+        />
+      </div>
+    );
+  }
+
   if (field.field_type === "machine_selector") {
     return (
       <div>

@@ -58,7 +58,10 @@ Deno.serve(async (req) => {
       }, '-created_date', 50);
 
       const finalized = records.some(
-        (r) => r.start_time && r.end_time && actCode && r.operation?.includes(actCode)
+        (r) =>
+          actCode &&
+          r.operation?.includes(actCode) &&
+          ((r.periods && r.periods.length > 0) || (r.start_time && r.end_time))
       );
 
       if (!finalized) {

@@ -6,6 +6,9 @@ import { Check, X, Clock, Pencil, ChevronDown, RefreshCw, CheckCircle2, Calendar
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import OperationFilter from "./OperationFilter";
+import OrchardMultiSelect from "./OrchardMultiSelect";
+import PeriodSelector from "./PeriodSelector";
+import { joinOrchards } from "@/lib/periods";
 import { AnimatePresence, motion } from "framer-motion";
 import CustomFieldsInput from "../planning/CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
@@ -32,9 +35,10 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const [selectedOperation, setSelectedOperation] = useState(
     operations.find((o) => o.code === initActCode) || null
   );
-  const [selectedOrchard, setSelectedOrchard] = useState(initOrchard);
-  const [startTime, setStartTime] = useState("");
-  const [endTime, setEndTime] = useState("");
+  const [selectedOrchards, setSelectedOrchards] = useState(
+    initOrchard ? initOrchard.split(",").map((s) => s.trim()).filter(Boolean) : []
+  );
+  const [periods, setPeriods] = useState([]);
   const [observations, setObservations] = useState("");
   const todayStr = new Date().toISOString().split("T")[0];
   const [showDetails, setShowDetails] = useState(false);
@@ -79,7 +83,8 @@ export default function PendingRecordModal({ label, operators, operations, onSav
     return null;
   }, [customValues, label.orchard_number]);
 
-  const effectiveOrchard = selectedRA?.orchard || selectedOrchard;
+  const effectiveOrchards = selectedRA?.orchard ? [selectedRA.orchard] : selectedOrchards;
+  const effectiveOrchard = joinOrchards(effectiveOrchards);
 
   const { template, customFields } = useOperationTemplate(selectedOperation?.id);
 
@@ -107,7 +112,7 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
-  const canSave = selectedOperator && selectedOperation && effectiveOrchard && startTime && endTime && recordDateChoice !== null && requiredRegistrationFilled;
+  const canSave = selectedOperator && selectedOperation && effectiveOrchards.length > 0 && periods.length > 0 && recordDateChoice !== null && requiredRegistrationFilled;
 
   const buildData = () => {
     const useOriginal = recordDateChoice === "original";
@@ -116,8 +121,8 @@ export default function PendingRecordModal({ label, operators, operations, onSav
       operator_id: selectedOperator.id,
       operation: `${selectedOperation.code}. ${selectedOperation.name}`,
       orchard_number: effectiveOrchard,
-      start_time: startTime,
-      end_time: endTime,
+      orchard_numbers: effectiveOrchards,
+      periods,
       observations,
       planned_date: label.date,
       customValues,
@@ -284,61 +289,23 @@ export default function PendingRecordModal({ label, operators, operations, onSav
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {orchards.map((o) => (
-                    <button
-                      key={o}
-                      onClick={() => !selectedRA && setSelectedOrchard(o)}
-                      disabled={!!selectedRA}
-                      className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                        ${effectiveOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}
-                        ${selectedRA ? "opacity-50 cursor-not-allowed" : ""}`}
-                    >
-                      {o}
-                    </button>
-                  ))}
-                </div>
+                <OrchardMultiSelect
+                  values={effectiveOrchards}
+                  onChange={setSelectedOrchards}
+                  orchards={orchards}
+                  disabled={!!selectedRA}
+                />
               </div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Horários — sempre visíveis */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <p className="text-sm font-semibold mb-1.5">Início</p>
-            <div className="flex gap-1.5">
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="flex-1 h-12 rounded-xl border border-input bg-background px-3 text-base font-semibold text-center focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                onClick={() => setStartTime(nowTime())}
-                className="h-12 px-3 rounded-xl border border-input bg-muted hover:bg-muted/80 transition-colors"
-              >
-                <Clock className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm font-semibold mb-1.5">Término</p>
-            <div className="flex gap-1.5">
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="flex-1 h-12 rounded-xl border border-input bg-background px-3 text-base font-semibold text-center focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                onClick={() => setEndTime(nowTime())}
-                className="h-12 px-3 rounded-xl border border-input bg-muted hover:bg-muted/80 transition-colors"
-              >
-                <Clock className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
+        {/* Período — sempre visível */}
+        <div>
+          <p className="text-sm font-semibold mb-1.5">
+            Período <span className="text-destructive">*</span>
+          </p>
+          <PeriodSelector value={periods} onChange={setPeriods} invalid={periods.length === 0} />
         </div>
 
         {/* Campos de registro em campo */}

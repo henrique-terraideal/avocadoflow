@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import OperationFilter from "../field/OperationFilter";
 import CustomFieldsInput from "./CustomFieldsInput";
+import OrchardMultiSelect from "../field/OrchardMultiSelect";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
+import { joinOrchards } from "@/lib/periods";
 import DateInput from "@/components/ui/DateInput";
 
 export default function EditLabelModal({ label, operators, operations, onSave, onClose }) {
@@ -20,7 +22,11 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
       null
     );
   });
-  const [selectedOrchard, setSelectedOrchard] = useState(label.orchard_number || null);
+  const [selectedOrchards, setSelectedOrchards] = useState(
+    Array.isArray(label.orchard_numbers) && label.orchard_numbers.length > 0
+      ? label.orchard_numbers
+      : (label.orchard_number ? label.orchard_number.split(",").map((s) => s.trim()).filter(Boolean) : [])
+  );
   const [selectedDate, setSelectedDate] = useState(label.date || "");
   const [customValues, setCustomValues] = useState(() => {
     try { return label.additional_details ? JSON.parse(label.additional_details) : {}; }
@@ -64,7 +70,8 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
   const skipOrchard = template?.skip_orchard || false;
-  const effectiveOrchard = skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard;
+  const effectiveOrchards = skipOrchard ? [template?.default_orchard || "N/A"] : selectedOrchards;
+  const effectiveOrchard = joinOrchards(effectiveOrchards);
 
   // Filtra campos que devem aparecer no planejamento
   const planningFields = customFields.filter(
@@ -75,7 +82,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
     .filter((f) => f.is_required)
     .every((f) => customValues[f.field_label]?.trim());
 
-  const canSave = selectedOperator && selectedOperation && effectiveOrchard && selectedDate && requiredFieldsFilled;
+  const canSave = selectedOperator && selectedOperation && effectiveOrchards.length > 0 && selectedDate && requiredFieldsFilled;
 
   const handleSave = () => {
     if (!canSave) return;
@@ -95,6 +102,7 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
       operation_code: selectedOperation.code,
       operation_name: selectedOperation.name,
       orchard_number: effectiveOrchard,
+      orchard_numbers: effectiveOrchards,
       qr_data: qrData,
       date: selectedDate,
       additional_details: Object.keys(customValues).length > 0 ? JSON.stringify(customValues) : null,
@@ -176,18 +184,11 @@ export default function EditLabelModal({ label, operators, operations, onSave, o
         {!skipOrchard ? (
           <div>
             <p className="text-sm font-semibold mb-2">Pomar</p>
-            <div className="grid grid-cols-5 gap-1.5">
-              {orchards.map((o) => (
-                <button
-                  key={o}
-                  onClick={() => setSelectedOrchard(o)}
-                  className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                    ${selectedOrchard === o ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted/30"}`}
-                >
-                  {o}
-                </button>
-              ))}
-            </div>
+            <OrchardMultiSelect
+              values={effectiveOrchards}
+              onChange={setSelectedOrchards}
+              orchards={orchards}
+            />
           </div>
         ) : template?.default_orchard ? (
           <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">
