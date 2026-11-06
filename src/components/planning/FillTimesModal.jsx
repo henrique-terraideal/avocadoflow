@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import CustomFieldsInput from "./CustomFieldsInput";
 import PeriodSelector from "../field/PeriodSelector";
+import { validateHourMeters, persistMachineHourMeter } from "@/lib/hourMeter";
 
 export default function FillTimesModal({ label, customFields, onSave, onSaveDraft, onClose }) {
   // Parse draft data if it exists (partial save from a previous session)
@@ -38,10 +39,12 @@ export default function FillTimesModal({ label, customFields, onSave, onSaveDraf
     .filter((f) => f.is_required)
     .every((f) => customValues[f.field_label]?.toString().trim());
 
-  const canSave = periods.length > 0 && requiredRegistrationFilled;
+  const hourMeterError = validateHourMeters(customFields, customValues);
+  const canSave = periods.length > 0 && requiredRegistrationFilled && !hourMeterError;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return;
+    await persistMachineHourMeter(customFields, customValues);
     onSave({ periods, observations, customValues });
   };
 
@@ -97,6 +100,10 @@ export default function FillTimesModal({ label, customFields, onSave, onSaveDraf
             className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
+
+        {hourMeterError && (
+          <p className="text-xs font-medium text-destructive">{hourMeterError}</p>
+        )}
 
         <div className="flex gap-2 pt-1">
           <Button variant="outline" size="lg" onClick={onClose} className="flex-1 rounded-xl h-12">

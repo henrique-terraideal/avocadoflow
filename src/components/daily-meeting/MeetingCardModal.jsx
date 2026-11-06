@@ -8,6 +8,7 @@ import { useOperationTemplate } from "@/hooks/useOperationTemplate";
 import OrchardMultiSelect from "@/components/field/OrchardMultiSelect";
 import PeriodSelector from "@/components/field/PeriodSelector";
 import { joinOrchards } from "@/lib/periods";
+import { validateHourMeters, persistMachineHourMeter } from "@/lib/hourMeter";
 
 export default function MeetingCardModal({ label, operators, operations, onClose, onSaved, onDelete }) {
   const queryClient = useQueryClient();
@@ -70,8 +71,12 @@ export default function MeetingCardModal({ label, operators, operations, onClose
     .filter((f) => f.is_required)
     .every((f) => regValues[f.field_label]?.toString().trim());
 
+  const allFields = [...planningFields, ...registrationFields];
+  const mergedValues = { ...customValues, ...regValues };
+  const hourMeterError = validateHourMeters(allFields, mergedValues);
+
   const canSaveDetails = selectedOperator && selectedOperation && effectiveOrchards.length > 0 && selectedDate && requiredPlanningFilled;
-  const canRegister = periods.length > 0 && requiredRegFilled && canSaveDetails;
+  const canRegister = periods.length > 0 && requiredRegFilled && canSaveDetails && !hourMeterError;
 
   const buildQrData = () => {
     const base = window.location.origin;
@@ -130,6 +135,7 @@ export default function MeetingCardModal({ label, operators, operations, onClose
       if (merged.ra_id) {
         try { await base44.functions.invoke("markRAExecuted", { ra_id: merged.ra_id }); } catch {}
       }
+      await persistMachineHourMeter(allFields, merged);
       onSaved({
         id: label.id,
         data: {
@@ -248,7 +254,10 @@ export default function MeetingCardModal({ label, operators, operations, onClose
             </div>
 
             {registrationFields.length > 0 && (
-              <CustomFieldsInput fields={registrationFields} values={regValues} onChange={setRegValues} />
+              <CustomFieldsInput fields={registrationFields} values={regValues} onChange={setRegValues} contextValues={customValues} />
+            )}
+            {hourMeterError && (
+              <p className="text-xs font-medium text-destructive">{hourMeterError}</p>
             )}
 
             <div>

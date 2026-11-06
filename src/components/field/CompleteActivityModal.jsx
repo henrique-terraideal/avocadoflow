@@ -4,6 +4,7 @@ import { X, Check, Loader2, CalendarDays } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CustomFieldsInput from "../planning/CustomFieldsInput";
 import PeriodSelector from "./PeriodSelector";
+import { validateHourMeters, persistMachineHourMeter } from "@/lib/hourMeter";
 
 /**
  * Modal de conclusão: coleta campos personalizados (se houver) e resolve
@@ -28,7 +29,8 @@ export default function CompleteActivityModal({ label, customFields, onClose, on
   const requiredFilled = requiredFields.every((f) =>
     customValues[f.field_label]?.toString().trim()
   );
-  const canConfirm = requiredFilled && dateChoice !== null && periods.length > 0;
+  const hourMeterError = validateHourMeters(customFields, customValues);
+  const canConfirm = requiredFilled && dateChoice !== null && periods.length > 0 && !hourMeterError;
 
   // RA data (se existir) para repassar ao CustomFieldsInput (ra_selector read-only)
   let selectedRaData = null;
@@ -42,6 +44,7 @@ export default function CompleteActivityModal({ label, customFields, onClose, on
     setSubmitting(true);
     try {
       await onConfirm(customValues, dateChoice, periods);
+      await persistMachineHourMeter(customFields, customValues);
     } finally {
       setSubmitting(false);
     }
@@ -108,6 +111,10 @@ export default function CompleteActivityModal({ label, customFields, onClose, on
             readOnlyRA={true}
             selectedRaData={selectedRaData}
           />
+        )}
+
+        {hourMeterError && (
+          <p className="text-xs font-medium text-destructive">{hourMeterError}</p>
         )}
 
         <div className="flex gap-2 pt-1">

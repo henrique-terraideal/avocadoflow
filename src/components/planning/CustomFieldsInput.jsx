@@ -1,17 +1,53 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, Mic, Video, Loader2, CheckCircle, RotateCcw, Square } from "lucide-react";
 import RASelectorField from "./RASelectorField";
+import { parseHourMeter, hourMeterDelta, hourMeterIsInvalid } from "@/lib/hourMeter";
 
 /**
  * Renderiza os campos customizados de um template.
  * values: { [field_label]: string }
  * onChange: (newValues) => void
  */
-export default function CustomFieldsInput({ fields, values, onChange, onRASelected, readOnlyRA, selectedRaData }) {
-  if (!fields || fields.length === 0) return null;
+export default function CustomFieldsInput({ fields, values, onChange, onRASelected, readOnlyRA, selectedRaData, contextValues }) {
+  const fieldList = fields || [];
+  const lookupValues = contextValues || values || {};
+  const machineField = fieldList.find((f) => f.field_type === "machine_selector");
+  const machineName = machineField ? lookupValues[machineField.field_label] : null;
+
+  const { data: machines = [] } = useQuery({
+    queryKey: ["machines-active"],
+    queryFn: () => base44.entities.Machine.filter({ active: true }, "sort_order", 200),
+    enabled: !!machineName,
+  });
+
+  const lastReading = machineName ? machines.find((m) => m.name === machineName)?.last_hour_meter : null;
+
+  // Preenche o horímetro inicial com o último valor final registrado da máquina
+  useEffect(() => {
+    const reading = Number(lastReading);
+    if (lastReading === null || lastReading === undefined || !Number.isFinite(reading)) return;
+    const hmFields = fieldList.filter((f) => f.field_type === "hour_meter");
+    if (hmFields.length === 0) return;
+    const next = { ...(values || {}) };
+    let changed = false;
+    hmFields.forEach((f) => {
+      const { start, end } = parseHourMeter(next[f.field_label]);
+      if (String(start).trim() !== "") return;
+      const e = parseFloat(end);
+      next[f.field_label] = JSON.stringify({
+        start: String(reading),
+        end,
+        delta: !isNaN(e) && e >= reading ? (e - reading).toFixed(1) : "",
+      });
+      changed = true;
+    });
+    if (changed) onChange(next);
+  }, [machineName, lastReading]);
+
+  if (fieldList.length === 0) return null;
 
   const handleChange = (label, value) => {
     onChange({ ...values, [label]: value });
@@ -20,7 +56,7 @@ export default function CustomFieldsInput({ fields, values, onChange, onRASelect
   return (
     <div className="space-y-3">
       <p className="text-sm font-semibold text-foreground">Detalhes da Atividade</p>
-      {fields.map((field) => (
+      {fieldList.map((field) => (
         <FieldInput
           key={field.id}
           field={field}
@@ -529,26 +565,17 @@ function MultipleChoiceField({ field, value, onChange }) {
 }
 
 function HourMeterField({ value, onChange }) {
-  let hm = { start: "", end: "" };
-  try { hm = value ? JSON.parse(value) : { start: "", end: "" }; } catch {}
+  const hm = parseHourMeter(value);
+  const invalid = hourMeterIsInvalid(value);
 
   const handleChange = (field, val) => {
     const updated = { ...hm, [field]: val };
-    const s = parseFloat(updated.start);
-    const e = parseFloat(updated.end);
-    if (!isNaN(s) && !isNaN(e) && e >= s) {
-      updated.delta = (e - s).toFixed(1);
-    } else {
-      updated.delta = "";
-    }
+    const delta = hourMeterDelta(JSON.stringify(updated));
+    updated.delta = delta || "";
     onChange(JSON.stringify(updated));
   };
 
-  const delta = hm.delta || (() => {
-    const s = parseFloat(hm.start);
-    const e = parseFloat(hm.end);
-    return (!isNaN(s) && !isNaN(e) && e >= s) ? (e - s).toFixed(1) : null;
-  })();
+  const delta = hourMeterDelta(value);
 
   return (
     <div className="space-y-2">
@@ -572,10 +599,15 @@ function HourMeterField({ value, onChange }) {
             value={hm.end || ""}
             onChange={(e) => handleChange("end", e.target.value)}
             placeholder="0.0"
-            className="h-11 rounded-xl"
+            className={`h-11 rounded-xl ${invalid ? "border-destructive focus-visible:ring-destructive" : ""}`}
           />
         </div>
       </div>
+      {invalid && (
+        <p className="text-xs font-medium text-destructive">
+          O horímetro final não pode ser menor que o inicial.
+        </p>
+      )}
       <div className={`flex items-center justify-between px-3 py-2 rounded-xl border ${delta !== null && delta !== "" ? "bg-primary/10 border-primary/30" : "bg-muted/40 border-border"}`}>
         <p className="text-xs text-muted-foreground font-medium">Δ Horas trabalhadas</p>
         <p className={`text-sm font-bold ${delta !== null && delta !== "" ? "text-primary" : "text-muted-foreground"}`}>

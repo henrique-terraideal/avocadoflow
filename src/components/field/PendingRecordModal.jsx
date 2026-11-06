@@ -9,6 +9,7 @@ import OperationFilter from "./OperationFilter";
 import OrchardMultiSelect from "./OrchardMultiSelect";
 import PeriodSelector from "./PeriodSelector";
 import { joinOrchards } from "@/lib/periods";
+import { validateHourMeters, persistMachineHourMeter } from "@/lib/hourMeter";
 import { AnimatePresence, motion } from "framer-motion";
 import CustomFieldsInput from "../planning/CustomFieldsInput";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
@@ -112,7 +113,9 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   const orchards = orchardList.map((o) => o.code);
   const sortedOperations = [...operations].sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99));
 
-  const canSave = selectedOperator && selectedOperation && effectiveOrchards.length > 0 && periods.length > 0 && recordDateChoice !== null && requiredRegistrationFilled;
+  const hourMeterError = validateHourMeters(customFields, customValues);
+
+  const canSave = selectedOperator && selectedOperation && effectiveOrchards.length > 0 && periods.length > 0 && recordDateChoice !== null && requiredRegistrationFilled && !hourMeterError;
 
   const buildData = () => {
     const useOriginal = recordDateChoice === "original";
@@ -132,12 +135,14 @@ export default function PendingRecordModal({ label, operators, operations, onSav
   };
 
   // Fecha a atividade (some dos pendentes)
-  const handleClose = () => {
+  const handleClose = async () => {
+    await persistMachineHourMeter(customFields, customValues);
     onSave(buildData(), { keepPending: false });
   };
 
   // Mantém a atividade pendente (registra mas não fecha)
-  const handleKeepPending = () => {
+  const handleKeepPending = async () => {
+    await persistMachineHourMeter(customFields, customValues);
     onSave(buildData(), { keepPending: true });
   };
 
@@ -330,6 +335,10 @@ export default function PendingRecordModal({ label, operators, operations, onSav
             className="w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
+
+        {hourMeterError && (
+          <p className="text-xs font-medium text-destructive">{hourMeterError}</p>
+        )}
 
         {/* Opções de registro */}
         <AnimatePresence mode="wait">
