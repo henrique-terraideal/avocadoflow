@@ -69,6 +69,7 @@ export default function DailyMeeting() {
       operation_code: label.operationCode,
       operation_name: label.operationName,
       orchard_number: label.orchardNumber,
+      orchard_numbers: label.orchardNumbers || [],
       qr_data: label.qrData,
       additional_details: label.additionalDetails || null,
     }).then(() => {

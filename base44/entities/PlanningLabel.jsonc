@@ -25,7 +25,14 @@
     },
     "orchard_number": {
       "type": "string",
-      "description": "N\u00famero/c\u00f3digo do pomar"
+      "description": "N\u00famero/c\u00f3digo do pomar (lista separada por v\u00edrgula quando agrupada)"
+    },
+    "orchard_numbers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de pomares da atividade agrupada"
     },
     "qr_data": {
       "type": "string",

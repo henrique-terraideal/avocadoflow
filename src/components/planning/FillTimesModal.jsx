@@ -1,12 +1,8 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Check, X, Clock } from "lucide-react";
+import { Check, X } from "lucide-react";
 import CustomFieldsInput from "./CustomFieldsInput";
-
-function nowTime() {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
+import PeriodSelector from "../field/PeriodSelector";
 
 export default function FillTimesModal({ label, customFields, onSave, onSaveDraft, onClose }) {
   // Parse draft data if it exists (partial save from a previous session)
@@ -15,8 +11,7 @@ export default function FillTimesModal({ label, customFields, onSave, onSaveDraf
     catch { return null; }
   })();
 
-  const [startTime, setStartTime] = useState(draftData?.startTime || "");
-  const [endTime, setEndTime] = useState(draftData?.endTime || "");
+  const [periods, setPeriods] = useState(draftData?.periods || []);
   const [observations, setObservations] = useState(draftData?.observations || "");
 
   // Pre-fill custom values from existing additional_details, then overlay draft values
@@ -43,15 +38,15 @@ export default function FillTimesModal({ label, customFields, onSave, onSaveDraf
     .filter((f) => f.is_required)
     .every((f) => customValues[f.field_label]?.toString().trim());
 
-  const canSave = startTime && endTime && requiredRegistrationFilled;
+  const canSave = periods.length > 0 && requiredRegistrationFilled;
 
   const handleSave = () => {
     if (!canSave) return;
-    onSave({ startTime, endTime, observations, customValues });
+    onSave({ periods, observations, customValues });
   };
 
   const handleSaveDraft = () => {
-    onSaveDraft({ startTime, endTime, observations, customValues });
+    onSaveDraft({ periods, observations, customValues });
   };
 
   return (
@@ -61,7 +56,7 @@ export default function FillTimesModal({ label, customFields, onSave, onSaveDraf
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold">Preencher Horários</h2>
+          <h2 className="text-lg font-bold">Registrar Atividade</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="w-5 h-5" />
           </button>
@@ -74,44 +69,12 @@ export default function FillTimesModal({ label, customFields, onSave, onSaveDraf
           <p className="text-muted-foreground">🌳 Pomar {label.orchard_number}</p>
         </div>
 
-        {/* Horários */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <p className="text-sm font-semibold mb-1.5">Início</p>
-            <div className="flex gap-1.5">
-              <input
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="flex-1 h-12 rounded-xl border border-input bg-background px-3 text-base font-semibold text-center focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                onClick={() => setStartTime(nowTime())}
-                className="h-12 px-3 rounded-xl border border-input bg-muted hover:bg-muted/80 transition-colors"
-                title="Agora"
-              >
-                <Clock className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
-          <div>
-            <p className="text-sm font-semibold mb-1.5">Término</p>
-            <div className="flex gap-1.5">
-              <input
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                className="flex-1 h-12 rounded-xl border border-input bg-background px-3 text-base font-semibold text-center focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                onClick={() => setEndTime(nowTime())}
-                className="h-12 px-3 rounded-xl border border-input bg-muted hover:bg-muted/80 transition-colors"
-                title="Agora"
-              >
-                <Clock className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </div>
-          </div>
+        {/* Período */}
+        <div>
+          <p className="text-sm font-semibold mb-1.5">
+            Período <span className="text-destructive">*</span>
+          </p>
+          <PeriodSelector value={periods} onChange={setPeriods} invalid={periods.length === 0} />
         </div>
 
         {/* Campos de registro em campo */}

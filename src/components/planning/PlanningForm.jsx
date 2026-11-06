@@ -5,7 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Lock } from "lucide-react";
 import OperationFilter from "../field/OperationFilter";
 import CustomFieldsInput from "./CustomFieldsInput";
+import OrchardMultiSelect from "../field/OrchardMultiSelect";
 import { useOperationTemplate } from "@/hooks/useOperationTemplate";
+import { joinOrchards } from "@/lib/periods";
 import { useMemo } from "react";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -14,7 +16,7 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel, d
   const [selectedOperator, setSelectedOperator] = useState(defaultOperator || null);
   const [selectedDate, setSelectedDate] = useState(defaultDate || todayStr());
   const [selectedOperation, setSelectedOperation] = useState(null);
-  const [selectedOrchard, setSelectedOrchard] = useState(null);
+  const [selectedOrchards, setSelectedOrchards] = useState([]);
   const [customValues, setCustomValues] = useState({});
 
   const { template, customFields } = useOperationTemplate(selectedOperation?.id);
@@ -39,7 +41,12 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel, d
 
   // Determina se precisa mostrar seleção de pomar
   const skipOrchard = template?.skip_orchard || false;
-  const effectiveOrchard = selectedRA?.orchard || (skipOrchard ? (template?.default_orchard || "N/A") : selectedOrchard);
+  const effectiveOrchards = selectedRA?.orchard
+    ? [selectedRA.orchard]
+    : skipOrchard
+      ? [template?.default_orchard || "N/A"]
+      : selectedOrchards;
+  const effectiveOrchardLabel = joinOrchards(effectiveOrchards);
 
   // Filtra campos que devem aparecer no planejamento
   const planningFields = customFields.filter(
@@ -51,12 +58,12 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel, d
     .filter((f) => f.is_required)
     .every((f) => customValues[f.field_label]?.trim());
 
-  const canAdd = selectedOperation && effectiveOrchard && requiredFieldsFilled && selectedDate;
+  const canAdd = selectedOperation && effectiveOrchards.length > 0 && requiredFieldsFilled && selectedDate;
 
   const handleOperationChange = (op) => {
     setSelectedOperation(op || null);
     setCustomValues({});
-    if (!skipOrchard) setSelectedOrchard(null);
+    setSelectedOrchards([]);
   };
 
   const handleAdd = () => {
@@ -68,7 +75,7 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel, d
       act_id: selectedOperation.id,
       act_code: selectedOperation.code,
       act_name: selectedOperation.name,
-      orchard: effectiveOrchard,
+      orchard: effectiveOrchardLabel,
     });
     const qrData = `${base}/?${params.toString()}`;
     onAdd({
@@ -77,7 +84,8 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel, d
       operatorPhoto: selectedOperator?.photo_url || null,
       operationCode: selectedOperation.code,
       operationName: selectedOperation.name,
-      orchardNumber: effectiveOrchard,
+      orchardNumber: effectiveOrchardLabel,
+      orchardNumbers: effectiveOrchards,
       qrData,
       additionalDetails: Object.keys(customValues).length > 0 ? JSON.stringify(customValues) : null,
     });
@@ -143,7 +151,7 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel, d
           values={customValues}
           onChange={setCustomValues}
           onRASelected={(ra) => {
-            if (ra?.orchard_code) setSelectedOrchard(ra.orchard_code);
+            if (ra?.orchard_code) setSelectedOrchards([ra.orchard_code]);
           }}
         />
       )}
@@ -159,22 +167,12 @@ export default function PlanningForm({ operators, operations, onAdd, onCancel, d
               </span>
             )}
           </div>
-          <div className="grid grid-cols-5 gap-1.5">
-            {orchards.map((o) => (
-              <button
-                key={o}
-                onClick={() => !selectedRA && setSelectedOrchard(o)}
-                disabled={!!selectedRA}
-                className={`py-2.5 rounded-xl text-sm font-bold border-2 transition-all
-                  ${effectiveOrchard === o
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-muted/30 hover:border-primary/40"}
-                  ${selectedRA ? "opacity-50 cursor-not-allowed" : ""}`}
-              >
-                {o}
-              </button>
-            ))}
-          </div>
+          <OrchardMultiSelect
+            values={effectiveOrchards}
+            onChange={setSelectedOrchards}
+            orchards={orchards}
+            disabled={!!selectedRA}
+          />
         </div>
       ) : template?.default_orchard ? (
         <div className="flex items-center gap-2 bg-muted/40 rounded-xl px-4 py-3">

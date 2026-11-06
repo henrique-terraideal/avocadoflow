@@ -84,7 +84,7 @@ export default function Planning() {
     setShowBulkReschedule(false);
   };
 
-  const handleFillTimes = ({ startTime, endTime, observations, customValues }) => {
+  const handleFillTimes = ({ periods, observations, customValues }) => {
     const label = fillingLabel;
     const params = new URLSearchParams(new URL(label.qr_data).search);
 
@@ -105,8 +105,8 @@ export default function Planning() {
       operator_id: params.get("op_id") || "",
       operation: label.operation_code ? `${label.operation_code}. ${label.operation_name}` : label.operation_name,
       orchard_number: label.orchard_number,
-      start_time: startTime,
-      end_time: endTime,
+      orchard_numbers: label.orchard_numbers || [],
+      periods,
       date: selectedDate,
       planned_date: label.original_date || label.date,
       observations,
@@ -120,7 +120,7 @@ export default function Planning() {
     setFillingLabel(null);
   };
 
-  const handleSaveDraft = ({ startTime, endTime, observations, customValues }) => {
+  const handleSaveDraft = ({ periods, observations, customValues }) => {
     const label = fillingLabel;
     let mergedDetails = {};
     try { mergedDetails = label.additional_details ? JSON.parse(label.additional_details) : {}; }
@@ -132,7 +132,7 @@ export default function Planning() {
       id: label.id,
       data: {
         additional_details: Object.keys(mergedDetails).length > 0 ? JSON.stringify(mergedDetails) : null,
-        draft_data: JSON.stringify({ startTime, endTime, observations, customValues }),
+        draft_data: JSON.stringify({ periods, observations, customValues }),
       },
     });
     setFillingLabel(null);
@@ -146,6 +146,7 @@ export default function Planning() {
       operation_code: label.operationCode,
       operation_name: label.operationName,
       orchard_number: label.orchardNumber,
+      orchard_numbers: label.orchardNumbers || [],
       qr_data: label.qrData,
       additional_details: label.additionalDetails || null,
     });

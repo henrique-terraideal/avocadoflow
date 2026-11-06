@@ -16,15 +16,34 @@
     },
     "orchard_number": {
       "type": "string",
-      "description": "N\u00famero do pomar"
+      "description": "N\u00famero do pomar (lista de pomares separada por v\u00edrgula quando agrupada)"
+    },
+    "orchard_numbers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lista de pomares da atividade agrupada"
+    },
+    "periods": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "Manh\u00e3",
+          "Tarde",
+          "Noite"
+        ]
+      },
+      "description": "Per\u00edodos do dia em que a atividade foi realizada (pode ter mais de um)"
     },
     "start_time": {
       "type": "string",
-      "description": "Hora de in\u00edcio (HH:MM)"
+      "description": "Hora de in\u00edcio (HH:MM) \u2014 legado, usado apenas pelo cron\u00f4metro em campo"
     },
     "end_time": {
       "type": "string",
-      "description": "Hora de t\u00e9rmino (HH:MM)"
+      "description": "Hora de t\u00e9rmino (HH:MM) \u2014 legado, usado apenas pelo cron\u00f4metro em campo"
     },
     "date": {
       "type": "string",
@@ -57,8 +76,7 @@
   "required": [
     "operator_name",
     "operation",
-    "orchard_number",
-    "start_time"
+    "orchard_number"
   ],
   "rls": {
     "create": null,

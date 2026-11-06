@@ -22,6 +22,7 @@
         "select_list",
         "multiple_choice",
         "hour_meter",
+        "time",
         "machine_selector",
         "implement_selector",
         "ra_selector"
