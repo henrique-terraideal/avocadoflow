@@ -4,7 +4,14 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Camera, Mic, Video, Loader2, CheckCircle, RotateCcw, Square } from "lucide-react";
 import RASelectorField from "./RASelectorField";
-import { parseHourMeter, hourMeterDelta, hourMeterIsInvalid } from "@/lib/hourMeter";
+import {
+  parseHourMeter,
+  hourMeterDelta,
+  hourMeterIsInvalid,
+  findRAId,
+  selectedMachineName,
+  fetchMachineLastReading,
+} from "@/lib/hourMeter";
 
 /**
  * Renderiza os campos customizados de um template.
@@ -14,16 +21,15 @@ import { parseHourMeter, hourMeterDelta, hourMeterIsInvalid } from "@/lib/hourMe
 export default function CustomFieldsInput({ fields, values, onChange, onRASelected, readOnlyRA, selectedRaData, contextValues }) {
   const fieldList = fields || [];
   const lookupValues = contextValues || values || {};
-  const machineField = fieldList.find((f) => f.field_type === "machine_selector");
-  const machineName = machineField ? lookupValues[machineField.field_label] : null;
+  const machineKey = selectedMachineName(fieldList, lookupValues) || "";
+  const raKey = findRAId(lookupValues) || "";
 
-  const { data: machines = [] } = useQuery({
-    queryKey: ["machines-active"],
-    queryFn: () => base44.entities.Machine.filter({ active: true }, "sort_order", 200),
-    enabled: !!machineName,
+  // Último horímetro final registrado para a máquina da atividade (campo ou RA)
+  const { data: lastReading = null } = useQuery({
+    queryKey: ["machine-last-hour-meter", machineKey, raKey],
+    queryFn: () => fetchMachineLastReading(fieldList, lookupValues),
+    enabled: !!machineKey || !!raKey,
   });
-
-  const lastReading = machineName ? machines.find((m) => m.name === machineName)?.last_hour_meter : null;
 
   // Preenche o horímetro inicial com o último valor final registrado da máquina
   useEffect(() => {
@@ -45,7 +51,8 @@ export default function CustomFieldsInput({ fields, values, onChange, onRASelect
       changed = true;
     });
     if (changed) onChange(next);
-  }, [machineName, lastReading]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [machineKey, raKey, lastReading]);
 
   if (fieldList.length === 0) return null;
 

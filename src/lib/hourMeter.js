@@ -64,9 +64,48 @@ export function selectedMachineName(fields, values) {
   return field ? values[field.field_label] : null;
 }
 
+// ID da RA vinculada (campo "ra_id" direto ou JSON de um campo ra_selector)
+export function findRAId(values) {
+  const v = values || {};
+  if (v.ra_id) return v.ra_id;
+  for (const val of Object.values(v)) {
+    if (typeof val !== "string" || !val.includes("ra_id")) continue;
+    try {
+      const parsed = JSON.parse(val);
+      if (parsed?.ra_id) return parsed.ra_id;
+    } catch {}
+  }
+  return null;
+}
+
+async function machineFromRA(values) {
+  const raId = findRAId(values);
+  if (!raId) return null;
+  const ra = await base44.entities.AgronomicRecommendation.get(raId).catch(() => null);
+  if (!ra?.machine_id) return null;
+  return await base44.entities.Machine.get(ra.machine_id).catch(() => null);
+}
+
+// Máquina da atividade: campo "Seleção de Trator" ou a máquina vinculada à RA
+export async function resolveMachine(fields, values) {
+  const byField = selectedMachineName(fields, values);
+  if (byField) {
+    const list = await base44.entities.Machine.filter({ name: byField }, "sort_order", 5);
+    if (list?.[0]) return list[0];
+  }
+  return await machineFromRA(values);
+}
+
+// Último horímetro final registrado para a máquina da atividade
+export async function fetchMachineLastReading(fields, values) {
+  const machine = await resolveMachine(fields, values);
+  const reading = Number(machine?.last_hour_meter);
+  return Number.isFinite(reading) ? reading : null;
+}
+
 // Guarda o horímetro final no cadastro da máquina para a próxima utilização
 export async function persistMachineHourMeter(fields, values) {
-  const machineName = selectedMachineName(fields, values);
+  const machineName = (await resolveMachine(fields, values))?.name;
   const reading = lastHourMeterReading(fields, values);
   if (!machineName || reading === null) return;
   try {
