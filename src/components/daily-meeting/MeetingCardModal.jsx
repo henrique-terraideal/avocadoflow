@@ -268,8 +268,12 @@ export default function MeetingCardModal({ label, operators, operations, onClose
 
           <div className="flex gap-2 pt-1 pb-2">
             <Button variant="outline" onClick={onClose} className="flex-1 rounded-xl h-11">Cancelar</Button>
-            <Button onClick={handleSaveDetails} disabled={!canSaveDetails} className="flex-1 rounded-xl h-11 gap-1">
-              <Check className="w-4 h-4" /> Salvar
+            <Button
+              onClick={handleSaveDetails}
+              disabled={!canSaveDetails}
+              className="flex-1 rounded-xl h-11 gap-1 bg-amber-400 hover:bg-amber-500 text-amber-950"
+            >
+              <Check className="w-4 h-4" /> Pendente
             </Button>
             <Button onClick={handleRegister} disabled={!canRegister || saving} className="flex-1 rounded-xl h-11 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white">
               {saving ? <Clock className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
