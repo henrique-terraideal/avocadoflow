@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { buildSheetRows } from '../../shared/periodRows.ts';
 
 // Sincroniza TODOS os registros do app para a planilha.
 // Limpa a aba (mantendo cabeçalho) e reescreve tudo do zero.
@@ -22,18 +23,13 @@ Deno.serve(async (req) => {
     // Busca todos os registros ordenados por data
     const records = await base44.asServiceRole.entities.FieldRecord.list("date", 1000);
 
-    // Monta as linhas
-    const rows = records.map((record) => [
-      record.date || "",
-      record.operator_name || "",
-      record.operation || "",
-      record.orchard_number || (record.orchard_numbers || []).join(", "),
-      (record.periods || []).join(", ") || record.start_time || "",
-      record.end_time || "",
-      record.observations || "",
-      new Date(record.created_date).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-      record.id || "",
-    ]);
+    // Monta as linhas (uma por período de cada registro)
+    const rows = records.flatMap((record) =>
+      buildSheetRows(
+        record,
+        new Date(record.created_date).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+      )
+    );
 
     // Limpa tudo abaixo do cabeçalho (linha 2 em diante)
     const clearUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Registros!A2:I?clear`;

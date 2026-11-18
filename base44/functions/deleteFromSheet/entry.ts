@@ -37,9 +37,12 @@ Deno.serve(async (req) => {
 
     const { values = [] } = await getRes.json();
 
-    // Encontra o índice da linha (0-based) que contém o record_id
-    const rowIndex = values.findIndex((row) => row[0] === record_id);
-    if (rowIndex === -1) {
+    // Encontra os índices (0-based) de todas as linhas do registro — um registro
+    // com vários períodos ocupa uma linha por período
+    const rowIndexes = values
+      .map((row, index) => (row[0] === record_id ? index : -1))
+      .filter((index) => index >= 0);
+    if (rowIndexes.length === 0) {
       // Registro não encontrado na planilha — ok, não há nada para deletar
       return Response.json({ success: true, not_found: true });
     }
@@ -65,16 +68,19 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        requests: [{
-          deleteDimension: {
-            range: {
-              sheetId,
-              dimension: "ROWS",
-              startIndex: rowIndex,
-              endIndex: rowIndex + 1,
+        // Deleta de baixo para cima para não deslocar os índices das demais linhas
+        requests: rowIndexes
+          .sort((a, b) => b - a)
+          .map((index) => ({
+            deleteDimension: {
+              range: {
+                sheetId,
+                dimension: "ROWS",
+                startIndex: index,
+                endIndex: index + 1,
+              },
             },
-          },
-        }],
+          })),
       }),
     });
 

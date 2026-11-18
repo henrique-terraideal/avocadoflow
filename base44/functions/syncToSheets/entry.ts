@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { buildSheetRows } from '../../shared/periodRows.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -30,17 +31,11 @@ Deno.serve(async (req) => {
     }
     const spreadsheetId = configs[0].value;
 
-    const row = [
-      realRecord.date || new Date().toISOString().split("T")[0],
-      realRecord.operator_name || "",
-      realRecord.operation || "",
-      realRecord.orchard_number || (realRecord.orchard_numbers || []).join(", "),
-      (realRecord.periods || []).join(", ") || realRecord.start_time || "",
-      realRecord.end_time || "",
-      realRecord.observations || "",
-      new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }),
-      realRecord.id || "", // coluna I: ID interno para rastrear e deletar depois
-    ];
+    // Uma linha por período, com hora de início e fim (coluna I: ID interno para rastrear e deletar depois)
+    const rows = buildSheetRows(
+      { ...realRecord, date: realRecord.date || new Date().toISOString().split("T")[0] },
+      new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })
+    );
 
     // OVERWRITE: preenche a próxima linha vazia (funciona mesmo se linhas foram removidas manualmente)
     const appendUrl = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/Registros:append?valueInputOption=USER_ENTERED&insertDataOption=OVERWRITE`;
@@ -51,7 +46,7 @@ Deno.serve(async (req) => {
         "Authorization": `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ values: [row] }),
+      body: JSON.stringify({ values: rows }),
     });
 
     if (!response.ok) {
