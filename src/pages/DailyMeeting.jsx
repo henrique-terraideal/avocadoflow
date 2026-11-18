@@ -2,12 +2,13 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { ChevronLeft, ChevronRight, Loader2, Monitor, Users, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Monitor, Users, Plus, Trash2, ArrowLeft, UserCog } from "lucide-react";
 import { Link } from "react-router-dom";
 import { startOfWeek, addDays, subWeeks, addWeeks, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MeetingCard, { STATUS_STYLES } from "@/components/daily-meeting/MeetingCard";
 import MeetingCardModal from "@/components/daily-meeting/MeetingCardModal";
+import OperatorVisibilityModal from "@/components/daily-meeting/OperatorVisibilityModal";
 import NewLabelModal from "@/components/planning/NewLabelModal";
 
 const todayStr = () => new Date().toISOString().split("T")[0];
@@ -19,6 +20,7 @@ export default function DailyMeeting() {
   );
   const [editingLabel, setEditingLabel] = useState(null);
   const [newLabel, setNewLabel] = useState(null);
+  const [showOperators, setShowOperators] = useState(false);
 
   const weekStart = new Date(weekStartStr + "T12:00:00");
   const days = [0, 1, 2, 3, 4].map((i) => addDays(weekStart, i));
@@ -28,6 +30,10 @@ export default function DailyMeeting() {
   const { data: operators = [], isLoading: loadingOperators } = useQuery({
     queryKey: ["operators"],
     queryFn: () => base44.entities.Operator.filter({ active: true }),
+  });
+  const { data: inactiveOperators = [] } = useQuery({
+    queryKey: ["operators-inactive"],
+    queryFn: () => base44.entities.Operator.filter({ active: false }),
   });
   const { data: operations = [] } = useQuery({
     queryKey: ["operations"],
@@ -44,13 +50,19 @@ export default function DailyMeeting() {
     [allLabels, weekLabelSet]
   );
 
+  // Operadores fora do quadro só aparecem nas semanas em que já têm atividades planejadas.
+  const boardOperators = useMemo(() => {
+    const withLabels = new Set(weekLabels.map((l) => l.operator_name));
+    return [...operators, ...inactiveOperators.filter((o) => withLabels.has(o.name))];
+  }, [operators, inactiveOperators, weekLabels]);
+
   const cardsFor = (opName, dayStr) =>
     weekLabels.filter((l) => l.operator_name === opName && l.date === dayStr);
 
   const statusOf = (l) => (l.concluded ? "executada" : l.date < today ? "pendente" : "planejada");
 
   const cardsForUnassigned = (dayStr) =>
-    weekLabels.filter((l) => !operators.some((o) => o.name === l.operator_name) && l.date === dayStr);
+    weekLabels.filter((l) => !boardOperators.some((o) => o.name === l.operator_name) && l.date === dayStr);
 
   const duplicateLabel = async (label) => {
     const { id, created_date, updated_date, created_by_id, ...rest } = label;
@@ -124,7 +136,7 @@ export default function DailyMeeting() {
       });
       return;
     }
-    const op = operators.find((o) => o.id === dstOpId);
+    const op = boardOperators.find((o) => o.id === dstOpId);
     if (!op) return;
     let qr = label.qr_data;
     try {
@@ -168,6 +180,14 @@ export default function DailyMeeting() {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowOperators(true)}
+              className="flex items-center gap-1.5 px-3 h-9 rounded-xl bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors text-sm font-medium"
+              title="Adicionar ou retirar operadores do quadro"
+            >
+              <UserCog className="w-4 h-4" />
+              Operadores
+            </button>
             <button onClick={goPrev} className="p-2 rounded-xl bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors">
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -224,7 +244,7 @@ export default function DailyMeeting() {
               })}
 
               {/* Operator rows */}
-              {operators.map((op) => (
+              {boardOperators.map((op) => (
                 <React.Fragment key={op.id}>
                   <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border sticky left-0 z-10 shadow-sm">
                     {op.photo_url ? (
@@ -366,7 +386,7 @@ export default function DailyMeeting() {
       {editingLabel && (
         <MeetingCardModal
           label={editingLabel}
-          operators={operators}
+          operators={boardOperators}
           operations={operations}
           onClose={() => setEditingLabel(null)}
           onSaved={(payload) => {
@@ -383,6 +403,8 @@ export default function DailyMeeting() {
           }}
         />
       )}
+
+      {showOperators && <OperatorVisibilityModal onClose={() => setShowOperators(false)} />}
     </div>
   );
 }
