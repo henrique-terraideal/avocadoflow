@@ -7,6 +7,7 @@ import OperatorsPanel from "../components/admin/OperatorsPanel";
 import OperationsPanel from "../components/admin/OperationsPanel";
 import SheetsConfig from "../components/admin/SheetsConfig";
 import SheetCleanup from "../components/admin/SheetCleanup";
+import LegacyPeriodMigration from "../components/admin/LegacyPeriodMigration";
 import UsersPanel from "../components/admin/UsersPanel";
 import OrchardsPanel from "../components/admin/OrchardsPanel";
 import OperationTemplatePanel from "../components/admin/OperationTemplatePanel";
@@ -65,6 +66,7 @@ export default function Admin() {
             <div className="space-y-4">
               <SheetsConfig />
               <SheetCleanup />
+              <LegacyPeriodMigration />
             </div>
           )}
         </div>
