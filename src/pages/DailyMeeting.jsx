@@ -2,7 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import { ChevronLeft, ChevronRight, Loader2, Monitor, Users, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, Monitor, Users, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 import { startOfWeek, addDays, subWeeks, addWeeks, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import MeetingCard, { STATUS_STYLES } from "@/components/daily-meeting/MeetingCard";
@@ -152,6 +153,14 @@ export default function DailyMeeting() {
       <div className="bg-primary text-primary-foreground px-6 py-4 rounded-b-3xl">
         <div className="max-w-[1700px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
+            <Link to="/">
+              <button
+                className="p-2 rounded-xl bg-primary-foreground/10 hover:bg-primary-foreground/20 transition-colors"
+                title="Voltar ao menu inicial"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            </Link>
             <Monitor className="w-6 h-6" />
             <div>
               <h1 className="text-xl font-bold">Reunião Diária</h1>
