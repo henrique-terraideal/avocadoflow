@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import OperatorsPanel from "../components/admin/OperatorsPanel";
 import OperationsPanel from "../components/admin/OperationsPanel";
 import SheetsConfig from "../components/admin/SheetsConfig";
+import SheetCleanup from "../components/admin/SheetCleanup";
 import UsersPanel from "../components/admin/UsersPanel";
 import OrchardsPanel from "../components/admin/OrchardsPanel";
 import OperationTemplatePanel from "../components/admin/OperationTemplatePanel";
@@ -60,7 +61,12 @@ export default function Admin() {
           {activeTab === "machinery" && <MachineryPanel />}
           {activeTab === "products" && <ProductsPanel />}
           {activeTab === "whatsapp" && <WhatsAppAgentPanel />}
-          {activeTab === "config" && <SheetsConfig />}
+          {activeTab === "config" && (
+            <div className="space-y-4">
+              <SheetsConfig />
+              <SheetCleanup />
+            </div>
+          )}
         </div>
         <QuickActionFAB />
         <BottomNav />
